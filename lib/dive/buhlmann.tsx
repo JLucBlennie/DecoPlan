@@ -1,4 +1,4 @@
-import { Dive } from "@/lib/dive/dive";
+import { Dive } from "./dive";
 
 export namespace Buhlmann {
   export type TissueCoefficient = [
