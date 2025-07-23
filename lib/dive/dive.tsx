@@ -603,7 +603,7 @@ export namespace Dive {
   }
 
   //In a single pass, collapses adjacent flat segments together.
-  export function collapseSegments(segments:Segment[]):Segment[] {
+  export function collapseSegments(segments: Segment[]): Segment[] {
     var collapsed = true;
     while (collapsed) {
       collapsed = false;
@@ -627,4 +627,245 @@ export namespace Dive {
 
     return segments;
   };
+
+  export const depthToPressFactor: number = 10.1972; // 10.1972 if meters 33.45 , if feets
+  //*****************************************
+  // Method:   getSegmentOTU
+  // Input:    segment data
+  // Output:   OTU on this segment
+  //*****************************************
+  export function getSegmentOTU(startDepth: number, endDepth: number, fO2First: number, fO2Second: number, ascentRate: number, descenRate: number, segmentTime: number): number {
+    // Calculates OTU on a given segment
+    //Segment is a accent/decent and then constant depth
+
+    var rate: number;
+    var otu: number = 0;
+
+    //*******************************
+    // imput parameter testing
+    //*******************************
+    if ((ascentRate > -1) || (descenRate < 1) || (startDepth < 0) || (endDepth < 0) ||
+      (segmentTime < 0) || (fO2First > 1) || (fO2First < 0) || (fO2Second > 1) || (fO2Second < 0))
+      return -1;
+
+    if (startDepth > endDepth)
+      rate = ascentRate;
+    else if (startDepth < endDepth)
+      rate = descenRate;
+    else
+      rate = 1; // does not mater, but it maust be value you can devide with
+
+    //*************************************
+    // ascent/descent part of the segment
+    //*************************************
+    var firstSegmentTime: number = (endDepth - startDepth) / rate;
+    if (firstSegmentTime > 0) {
+      var startPres: number = startDepth / depthToPressFactor + 1;
+      var endPres: number = endDepth / depthToPressFactor + 1;
+      var maxPres: number = Math.max(startPres, endPres);
+      var minPres: number = Math.min(startPres, endPres);
+      var maxPO2: number = maxPres * fO2First;
+      var minPO2: number = minPres * fO2First;
+      if (maxPO2 > 0.5) {
+        var lowPO2: number = Math.max(0.5, minPO2);
+        var o2Time: number = firstSegmentTime * (maxPO2 - lowPO2) / (maxPO2 - minPO2);
+        otu = 3.0 / 11.0 * o2Time / (maxPO2 - lowPO2) *
+          Math.pow((maxPO2 - 0.5) / 0.5, (11.0 / 6.0)) - Math.pow((lowPO2 - 0.5) / 0.5, (11.0 / 6.0));
+        if (otu < 0) otu = 0;
+      }
+    }
+
+    //*************************************
+    // constant depth part of the segment
+    //*************************************
+    var secondSegmentTime: number = segmentTime - firstSegmentTime;
+    var segmentPres: number = endDepth / depthToPressFactor + 1;
+    var segmentPO2: number = segmentPres * fO2Second;
+    if ((segmentPO2 > 0.5) && (secondSegmentTime > 0))
+      otu += secondSegmentTime * Math.pow(0.5 / (segmentPO2 - 0.5), (-5.0 / 6.0));
+
+    return otu;
+  }
+
+  //*****************************************
+  // Method:   getSegmentCNS
+  // Input:    segment data
+  // Output:   CNS on this segment
+  //*****************************************
+  export function getSegmentCNS(startDepth: number, endDepth: number, fO2First: number, fO2Second: number, ascentRate: number, descenRate: number, segmentTime: number): number {
+    // Calculates CNS on a given segment
+    //Segment is a accent/decent and then constant depth
+
+    var rate: number;
+    var cns: number = 0;
+    var i: number;
+    const noSegments: number = 10;
+    const pO2lo: number[] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.5, 1.6, 1.7, 1.8];
+    const pO2hi: number[] = [0.6, 0.7, 0.8, 0.9, 1.1, 1.5, 1.6, 1.7, 1.8, 2.00];
+    const limSLP: number[] = [1800, -1500, -1200, -900, -600, -300, -750, -280, -72, -44];
+    const limINT: number[] = [1800, 1620, 1410, 1171, 900, 570, 1245, 493, 139.4, 89];
+
+    //*******************************
+    // imput parameter testing
+    //*******************************
+    if ((ascentRate > -1) || (descenRate < 1) || (startDepth < 0) || (endDepth < 0) ||
+      (segmentTime < 0) || (fO2First > 1) || (fO2First < 0) || (fO2Second > 1) || (fO2Second < 0))
+      return -1;
+
+    if (startDepth > endDepth)
+      rate = ascentRate;
+    else if (startDepth < endDepth)
+      rate = descenRate;
+    else
+      rate = 1; // does not mater, but it maust be value you can devide with
+
+    //*************************************
+    // ascent/descent part of the segment
+    //*************************************
+    var firstSegmentTime: number = (endDepth - startDepth) / rate;
+    if (firstSegmentTime > 0) {
+      var startPres: number = startDepth / depthToPressFactor + 1;
+      var endPres: number = endDepth / depthToPressFactor + 1;
+      var maxPres: number = Math.max(startPres, endPres);
+      var minPres: number = Math.min(startPres, endPres);
+      var maxPO2: number = maxPres * fO2First;
+      var minPO2: number = minPres * fO2First;
+      if (maxPO2 > 2.0)
+        return 5 * segmentTime;
+
+      if (maxPO2 > 0.5) {
+        var lowPO2: number = Math.max(0.5, minPO2);
+        var o2Time = firstSegmentTime * (maxPO2 - minPO2) / (maxPO2 - lowPO2);
+
+        var oTime: number[] = [];
+        var pO2o: number[] = [];
+        var pO2f: number[] = [];
+        var segpO2: number[] = [];
+
+        for (i = 0; i < noSegments; i++) {
+          if ((maxPO2 > pO2lo[i]) && (lowPO2 <= pO2hi[i])) {
+
+            if (startDepth > endDepth) {
+              pO2o[i] = Math.min(maxPO2, pO2hi[i]);
+              pO2f[i] = Math.max(lowPO2, pO2lo[i]);
+            } else {
+              pO2o[i] = Math.max(lowPO2, pO2lo[i]);
+              pO2f[i] = Math.min(maxPO2, pO2hi[i]);
+            }
+
+            segpO2[i] = pO2f[i] - pO2o[i];
+            if (maxPO2 != lowPO2)
+              oTime[i] = firstSegmentTime * Math.abs(segpO2[i]) / (maxPO2 - lowPO2);
+            else
+              oTime[i] = 0.0;
+          }
+          else {
+            oTime[i] = 0.0;
+          }
+        } // for
+
+        for (i = 0; i < noSegments; i++) {
+          var tlimi: number, mk: number;
+          if (oTime[i] > 0.0) {
+            tlimi = limSLP[i] * pO2o[i] + limINT[i];
+            mk = limSLP[i] * (segpO2[i] / oTime[i]);
+            cns += 1.0 / mk * (Math.log(Math.abs(tlimi + mk * oTime[i])) -
+              Math.log(Math.abs(tlimi)));
+          }
+        } // for
+      } // if (maxPO2>0.5)
+    }
+
+    //*************************************
+    // constant depth part of the segment
+    //*************************************
+    var secondSegmentTime: number = segmentTime - firstSegmentTime;
+    if (secondSegmentTime > 0) {
+      var segmentPres: number = endDepth / depthToPressFactor + 1;
+      var segmentPO2: number = segmentPres * fO2Second;
+      var tlim: number = 0;
+
+      if (segmentPO2 > 2.0)
+        return (cns + 5 * secondSegmentTime);
+
+      if (segmentPO2 > 0.5) {
+        for (i = 0; i < noSegments; i++) {
+          if ((segmentPO2 > pO2lo[i]) && (segmentPO2 <= pO2hi[i])) {
+            tlim = limSLP[i] * segmentPO2 + limINT[i];
+            break;
+          }
+        } // for
+        if (tlim > 0)
+          cns += secondSegmentTime / tlim;
+        else
+          return -1;
+
+      } // if (maxPO2>0.5)
+    }
+
+    return cns;
+  }
+
+  //*****************************************
+  // Method:   getSegmentGas
+  // Input:    segment data
+  // Output:   gas needed on this segment
+  //*****************************************
+  export function getSegmentGas(startDepth: number, endDepth: number, rmv: number, ascentRate: number, descenRate: number, segmentTime: number, segment: number): number {
+    // segment==1 calculate gas only on accent/descent part of a segment
+    // segment==2 calculate gas only on constant depth part of a segment
+    // segment==3 calculate gas on both parts of a segment
+    // Calculates gas needed on a given segment
+    //Segment is a accent/decent and then constant depth
+
+    var rate: number;
+    var gas: number = 0;
+
+    //*******************************
+    // imput parameter testing
+    //*******************************
+    if ((ascentRate > -1) || (descenRate < 1) || (startDepth < 0) || (endDepth < 0) || (segmentTime < 0))
+      return -1;
+
+    if (startDepth > endDepth)
+      rate = ascentRate;
+    else if (startDepth < endDepth)
+      rate = descenRate;
+    else
+      rate = 1; // does not mater, but it maust be value you can devide with
+
+    // if not enough time
+    if ((startDepth != endDepth) && (((endDepth - startDepth) / rate) > segmentTime))
+      return -1;
+
+    //*************************************
+    // ascent/descent part of the segment
+    //*************************************
+    var firstSegmentTime: number = (endDepth - startDepth) / rate;
+    if (firstSegmentTime > 0) {
+      var startPres: number = startDepth / depthToPressFactor + 1;
+      var endPres: number = endDepth / depthToPressFactor + 1;
+      if ((segment & 1) == 1)
+        gas = (startPres + endPres) / 2 * rmv * firstSegmentTime;
+    }
+
+    //*************************************
+    // constant depth part of the segment
+    //*************************************
+    var secondSegmentTime: number = segmentTime - firstSegmentTime;
+    var segmentPres: number = endDepth / depthToPressFactor + 1;
+    if ((segment & 2) == 2)
+      gas += segmentPres * rmv * secondSegmentTime;
+
+    return gas;
+  }
+  //*****************************************
+  // Method:   depth2press
+  // Input:    depth
+  // Output:   preasure at depth/bar
+  //*****************************************
+  export function depth2press(depth: number): number {
+    return (depth / depthToPressFactor + 1);
+  }
+
 }

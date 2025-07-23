@@ -1,5 +1,7 @@
 import { View, Pressable, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Entypo from '@expo/vector-icons/Entypo';
 
 type Props = {
     iconName: string;
@@ -36,6 +38,22 @@ export default function CircleButton({ iconName, onPress, position }: Props) {
                         iconName === "image" &&
                         <MaterialIcons name="image" size={38} color="#25292e" />
                     }
+                    {
+                        iconName === "dive" &&
+                        <MaterialIcons name="scuba-diving" size={38} color="#25292e" />
+                    }
+                    {
+                        iconName === "gaz" &&
+                        <MaterialCommunityIcons name="diving-scuba-tank" size={38} color="#25292e" />
+                    }
+                    {
+                        iconName === "palmes" &&
+                        <MaterialCommunityIcons name="diving-flippers" size={38} color="#25292e" />
+                    }
+                    {
+                        iconName === "help" &&
+                        <Entypo name="help" size={38} color="#25292e" />
+                    }
                 </Pressable>
             </View>
         </View>
@@ -47,7 +65,7 @@ const styles = StyleSheet.create({
         width: 84,
         height: 84,
         borderWidth: 4,
-        borderColor: '#ffd33d',
+        borderColor: '#022353ff',
         borderRadius: 42,
         padding: 3,
     },
