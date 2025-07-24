@@ -27,7 +27,7 @@ const gazFond2 = Dive.gas("Tx2121", 0.21, 0.21);
 const gazFond3 = Dive.gas("Tx2118", 0.21, 0.18);
 const gazDeco1 = Dive.gas("Nx50", 0.5, 0);
 const gazDeco2 = Dive.gas("Nx40", 0.4, 0);
-const gazDeco3 = Dive.gas("Nx40", 0.4, 0);
+const gazDeco3 = Dive.gas("Nx80", 0.8, 0);
 
 export default function App() {
   const [showAbout, setShowAbout] = useState(false);
