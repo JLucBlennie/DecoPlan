@@ -2,6 +2,8 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 type Props = {
     iconName: string;
@@ -43,6 +45,10 @@ export default function CircleButton({ iconName, onPress, position }: Props) {
                         <MaterialIcons name="scuba-diving" size={38} color="#25292e" />
                     }
                     {
+                        iconName === "add" &&
+                        <MaterialIcons name="add" size={38} color="#25292e" />
+                    }
+                    {
                         iconName === "gaz" &&
                         <MaterialCommunityIcons name="diving-scuba-tank" size={38} color="#25292e" />
                     }
@@ -53,6 +59,14 @@ export default function CircleButton({ iconName, onPress, position }: Props) {
                     {
                         iconName === "help" &&
                         <Entypo name="help" size={38} color="#25292e" />
+                    }
+                    {
+                        iconName === "gear" &&
+                        <FontAwesome name="gear" size={38} color="#25292e" />
+                    }
+                    {
+                        iconName === "edit" &&
+                        <FontAwesome5 name="edit" size={38} color="#25292e" />
                     }
                 </Pressable>
             </View>

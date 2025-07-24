@@ -222,12 +222,12 @@ export namespace Buhlmann {
       this.segments = [];
     }
 
-    addBottomGas(gasName: string, fO2: number, fHe: number) {
-      this.bottomGasses[gasName] = Dive.gas(fO2, fHe);
+    addBottomGas(gaz: Dive.Gas) {
+      this.bottomGasses[gaz.name] = gaz;
     }
 
-    addDecoGas(gasName: string, fO2: number, fHe: number) {
-      this.decoGasses[gasName] = Dive.gas(fO2, fHe);
+    addDecoGas(gaz: Dive.Gas) {
+      this.decoGasses[gaz.name] = gaz;
     }
 
     addFlat(depth: number, gasName: string, time: number) {
@@ -243,14 +243,14 @@ export namespace Buhlmann {
     ): number {
       console.log(
         "addDepthChange(" +
-          startDepth +
-          ", " +
-          endDepth +
-          ", " +
-          gasName +
-          ", " +
-          time +
-          ")"
+        startDepth +
+        ", " +
+        endDepth +
+        ", " +
+        gasName +
+        ", " +
+        time +
+        ")"
       );
       console.log("Gaz Fond");
       console.log(this.bottomGasses);
@@ -373,18 +373,18 @@ export namespace Buhlmann {
 
         console.log(
           "Held diver at " +
-            currentDepth +
-            " for " +
-            time +
-            " minutes on gas " +
-            currentGasName +
-            "."
+          currentDepth +
+          " for " +
+          time +
+          " minutes on gas " +
+          currentGasName +
+          "."
         );
         console.log(
           "Moving diver from current depth " +
-            currentDepth +
-            " to next ceiling of " +
-            ceiling
+          currentDepth +
+          " to next ceiling of " +
+          ceiling
         );
         currentGasName = this.addDecoDepthChange(
           currentDepth,
@@ -435,19 +435,19 @@ export namespace Buhlmann {
         ) {
           console.log(
             "At depth " +
-              fromDepth +
-              " found a better deco gas " +
-              betterDecoGasName +
-              ". Switching to better gas."
+            fromDepth +
+            " found a better deco gas " +
+            betterDecoGasName +
+            ". Switching to better gas."
           );
           currentGasName = betterDecoGasName;
         }
 
         console.log(
           "Looking for the next best gas moving up between " +
-            fromDepth +
-            " and " +
-            toDepth
+          fromDepth +
+          " and " +
+          toDepth
         );
         var ceiling = toDepth; //ceiling is toDepth, unless there's a better gas to switch to on the way up.
         for (var nextDepth = fromDepth - 1; nextDepth >= ceiling; nextDepth--) {
@@ -458,18 +458,18 @@ export namespace Buhlmann {
           );
           console.log(
             "Testing next gas at depth: " +
-              nextDepth +
-              " and found: " +
-              nextDecoGasName
+            nextDepth +
+            " and found: " +
+            nextDecoGasName
           );
           if (nextDecoGasName.length > 0 && nextDecoGasName != currentGasName) {
             console.log(
               "Found a gas " +
-                nextDecoGasName +
-                " to switch to at " +
-                nextDepth +
-                " which is lower than target ceiling of " +
-                ceiling
+              nextDecoGasName +
+              " to switch to at " +
+              nextDepth +
+              " which is lower than target ceiling of " +
+              ceiling
             );
             ceiling = nextDepth; //Only carry us up to the point where we can use this better gas.
             currentGasName = nextDecoGasName;
@@ -482,14 +482,14 @@ export namespace Buhlmann {
         var time = depthdiff / 10;
         console.log(
           "Moving diver from " +
-            fromDepth +
-            " to " +
-            ceiling +
-            " on gas " +
-            currentGasName +
-            " over " +
-            time +
-            " minutes (10 meters or 30 feet per minute)."
+          fromDepth +
+          " to " +
+          ceiling +
+          " on gas " +
+          currentGasName +
+          " over " +
+          time +
+          " minutes (10 meters or 30 feet per minute)."
         );
         this.addDepthChange(fromDepth, ceiling, currentGasName, time);
 
@@ -500,10 +500,10 @@ export namespace Buhlmann {
       if (betterDecoGasName.length > 0 && betterDecoGasName != currentGasName) {
         console.log(
           "At depth " +
-            fromDepth +
-            " found a better deco gas " +
-            betterDecoGasName +
-            ". Switching to better gas."
+          fromDepth +
+          " found a better deco gas " +
+          betterDecoGasName +
+          ". Switching to better gas."
         );
         currentGasName = betterDecoGasName;
       }
@@ -528,15 +528,15 @@ export namespace Buhlmann {
         );
         console.log(
           "Found candidate deco gas " +
-            gasName +
-            ": " +
-            candidateGas.fO2 +
-            "/" +
-            candidateGas.fHe +
-            " with mod " +
-            mod +
-            " and END " +
-            end
+          gasName +
+          ": " +
+          candidateGas.fO2 +
+          "/" +
+          candidateGas.fHe +
+          " with mod " +
+          mod +
+          " and END " +
+          end
         );
         if (depth <= mod && end <= maxEND) {
           console.log(

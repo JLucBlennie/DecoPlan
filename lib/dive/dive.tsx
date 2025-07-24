@@ -7,6 +7,7 @@ export namespace Dive {
   }
 
   export interface Gas {
+    name: string;
     fO2: number;
     fHe: number;
     fN2: number;
@@ -552,8 +553,9 @@ export namespace Dive {
     );
   }
 
-  export function gas(fO2: number, fHe: number): Gas {
+  export function gas(name: string, fO2: number, fHe: number): Gas {
     const gas: Gas = {
+      name,
       fO2,
       fHe,
       fN2: 1 - (fO2 + fHe),

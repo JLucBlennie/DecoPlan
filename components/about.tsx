@@ -11,7 +11,7 @@ type Props = {
 export default function AboutScreen({ close }: Props) {
 
   return (
-    <View style={styles.aboutcontainer}>
+    <View style={mainStyles.container}>
       <View style={styles.aboutcontainerdesc}>
         <View>
           <View style={styles.circleButtonContainer}>
@@ -23,6 +23,7 @@ export default function AboutScreen({ close }: Props) {
         <View style={styles.descContainer}>
           <Text style={mainStyles.text}>Version de l'application</Text>
           <Text style={mainStyles.text}>({appJson.expo.name}) by JLuc - V{appJson.expo.version}</Text>
+          <Text style={mainStyles.text}>({appJson.expo.name}) est basé sur les travaux de l'équipe de MV-Plan et de github.com/nyxtom/dive</Text>
         </View>
         <View style={styles.disclaimerContainer}>
           <Text style={mainStyles.text}>{appJson.expo.name} est un outil pédagogique pour l'apprentissage des GF sur l'algorithme de Bühlmann ZHL16-C</Text>
@@ -39,14 +40,6 @@ export default function AboutScreen({ close }: Props) {
 }
 
 const styles = StyleSheet.create({
-  aboutcontainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%'
-  },
   aboutcontainerdesc: {
     flex: 6 / 7,
     flexDirection: 'column',

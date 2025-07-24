@@ -8,19 +8,48 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Buhlmann } from './lib/dive/buhlmann';
 import { Dive } from './lib/dive/dive';
 import TableauJSON from './components/ui/TableauJSON';
+import ButtonLine from './components/ui/ButtonLine';
+import GestionGaz from './components/gestionGaz';
+
+export interface Plongee {
+  id: number;
+  name: string;
+  segements: Dive.Segment[];
+  gazFond: Dive.Gas[];
+  gazDeco: Dive.Gas[];
+
+  profondeur: (segements: Dive.Segment[]) => number;
+  temps: (segments: Dive.Segment[]) => number;
+}
+
+const gazFond = Dive.gas("Tx2135", 0.21, 0.35);
+const gazDeco = Dive.gas("Nx50", 0.5, 0);
 
 export default function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [runtime, setRuntime] = useState<Dive.Segment[]>([]);
-  const [showTableau, setShowTableau] = useState(false);
+  const [showRuntime, setShowRuntime] = useState(false);
+  const [showGestionPlongees, setShowGestionPlongees] = useState(false);
+  const [showGestionGaz, setShowGestionGaz] = useState(false);
+  const [showGestionParametres, setShowGestionParametres] = useState(false);
+
+  const gazList: Dive.Gas[] = [gazFond, gazDeco];
+
+  function resetButton() {
+    setShowGestionGaz(false);
+    setShowGestionPlongees(false);
+    setShowGestionParametres(false);
+    setShowRuntime(false);
+    setShowAbout(false);
+  }
 
   function computeDive() {
     console.log("Chargement de l'algo...");
     var deco = new Buhlmann.Plan(Buhlmann.ZH16CTissues);
     console.log("Definition du gaz fond");
-    deco.addBottomGas("Tx2135", 0.21, 0.35);
+    deco.addBottomGas(gazFond);
     console.log("Definition du gaz Deco");
-    deco.addDecoGas("Nx50", 0.5, 0);
+    deco.addDecoGas(gazDeco);
     console.log("Descente a 50 avec le Tx");
     deco.addDepthChange(0, 50, "Tx2135", 50 / 20);
     console.log("On fait une plongee de 25 min");
@@ -30,7 +59,7 @@ export default function App() {
     console.log("Resultat de la deco :");
     console.log(runtime);
     setRuntime(runtime);
-    setShowTableau(true);
+    setShowRuntime(true);
   }
 
   return (
@@ -42,16 +71,34 @@ export default function App() {
         {!showAbout &&
           <View style={mainStyles.mainView}>
             <View style={mainStyles.descContainer}>
-              <View>
-                <Text style={mainStyles.text}>{appJson.expo.name} est un outil pédagogique pour l'apprentissage des GF sur l'algorithme de Bühlmann ZHL16-C</Text>
-                <Text style={mainStyles.attentionText}>ATTENTION !!! Il ne faut pas considérer que les runtimes générés sont qualifés pour plonger</Text>
+              <View style={mainStyles.titreContainer}>
+                <Text style={mainStyles.text}>{appJson.expo.name}</Text>
               </View>
-              {showTableau && <TableauJSON data={runtime} />}
+              {showRuntime &&
+                <View style={mainStyles.editorContainer}>
+                  <TableauJSON data={runtime} />
+                  <Text style={mainStyles.attentionText}>ATTENTION !!! Il ne faut pas considérer que les runtimes générés sont qualifés pour plonger</Text>
+                </View>
+              }
+              {!showRuntime && !showGestionGaz && !showGestionPlongees &&
+                <View style={mainStyles.editorContainer}>
+                  <ButtonLine iconName={'gaz'} text={'Gestion des Gaz'} onPress={() => setShowGestionGaz(true)} />
+                  <ButtonLine iconName={'dive'} text={'Gestion des Plongées'} onPress={() => setShowGestionPlongees(true)} />
+                  <ButtonLine iconName={'gear'} text={'Gestion des Paramètres'} onPress={() => setShowGestionParametres(true)} />
+                </View>
+              }
+              {showGestionGaz &&
+                <View style={mainStyles.editorContainer}>
+                  <GestionGaz gaz={gazList} openGaz={(name: string) => (name: string) => void {}} deleteGaz={(name: string) => (name: string) => void {}} />
+                </View>
+              }
             </View>
             <View style={mainStyles.buttonContainer}>
-              <CircleButton onPress={() => setShowAbout(true)} iconName="help" position={'Left'} />
-              {!showTableau && <CircleButton onPress={() => computeDive()} iconName="palmes" position={'Right'} />}
-              {showTableau && <CircleButton onPress={() => setShowTableau(false)} iconName="clear" position={'Right'} />}
+              {(!showRuntime && !showGestionGaz && !showGestionPlongees) && <CircleButton onPress={() => setShowAbout(true)} iconName="help" />}
+              {!showRuntime && !showGestionGaz && showGestionPlongees && <CircleButton onPress={() => computeDive()} iconName="palmes" position={'Right'} />}
+              {(showRuntime || showGestionGaz || showGestionPlongees) && <CircleButton onPress={() => resetButton()} iconName="clear" position={'Right'} />}
+              {showGestionGaz && <CircleButton onPress={() => setShowRuntime(false)} iconName="check" position={'Left'} />}
+              {showGestionGaz && <CircleButton onPress={() => { }} iconName="add" position={'Right'} />}
             </View>
           </View>
         }
@@ -80,6 +127,18 @@ export const mainStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: 'transparent',
     alignItems: 'center',
+  },
+  titreContainer: {
+    flex: 1 / 5,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  editorContainer: {
+    flex: 4 / 5,
+    flexDirection: 'column',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   descContainer: {
     flex: 5 / 6,
