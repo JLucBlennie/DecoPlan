@@ -32,7 +32,7 @@ export default function AboutScreen({ close }: Props) {
       </View>
       <View style={styles.exitbuttoncontainer}>
         <View style={styles.buttonContainer}>
-          <CircleButton onPress={close} iconName="clear" position={'Right'} />
+          <CircleButton onPress={close} iconName="back" position={'Right'} />
         </View>
       </View>
     </View>

@@ -22,8 +22,12 @@ export interface Plongee {
   temps: (segments: Dive.Segment[]) => number;
 }
 
-const gazFond = Dive.gas("Tx2135", 0.21, 0.35);
-const gazDeco = Dive.gas("Nx50", 0.5, 0);
+const gazFond1 = Dive.gas("Tx2135", 0.21, 0.35);
+const gazFond2 = Dive.gas("Tx2121", 0.21, 0.21);
+const gazFond3 = Dive.gas("Tx2118", 0.21, 0.18);
+const gazDeco1 = Dive.gas("Nx50", 0.5, 0);
+const gazDeco2 = Dive.gas("Nx40", 0.4, 0);
+const gazDeco3 = Dive.gas("Nx40", 0.4, 0);
 
 export default function App() {
   const [showAbout, setShowAbout] = useState(false);
@@ -32,8 +36,15 @@ export default function App() {
   const [showGestionPlongees, setShowGestionPlongees] = useState(false);
   const [showGestionGaz, setShowGestionGaz] = useState(false);
   const [showGestionParametres, setShowGestionParametres] = useState(false);
-
-  const gazList: Dive.Gas[] = [gazFond, gazDeco];
+  const [gazList, setGazList] = useState<Dive.Gas[]>([gazFond1, gazFond2, gazFond3, gazDeco1, gazDeco2, gazDeco3]);
+  const [showOpenGaz, setShowOpenGaz] = useState(false);
+  const [showDeleteGaz, setShowDeleteGaz] = useState(false);
+  const [gazName, setGazName] = useState("");
+  const [showAddGaz, setShowAddGaz] = useState(false);
+  const [showOpenPlongee, setShowOpenPlongee] = useState(false);
+  const [showDeletePlongee, setShowDeletePlongee] = useState(false);
+  const [showAddPlongee, setShowAddPlongee] = useState(false);
+  const [plongeeId, setPlongeeId] = useState<number>(-1);
 
   function resetButton() {
     setShowGestionGaz(false);
@@ -41,15 +52,23 @@ export default function App() {
     setShowGestionParametres(false);
     setShowRuntime(false);
     setShowAbout(false);
+    setShowOpenGaz(false);
+    setShowDeleteGaz(false);
+    setGazName("");
+    setShowAddGaz(false);
+    setShowOpenPlongee(false);
+    setShowDeletePlongee(false);
+    setPlongeeId(-1);
+    setShowAddPlongee(false);
   }
 
   function computeDive() {
     console.log("Chargement de l'algo...");
     var deco = new Buhlmann.Plan(Buhlmann.ZH16CTissues);
     console.log("Definition du gaz fond");
-    deco.addBottomGas(gazFond);
+    deco.addBottomGas(gazFond1);
     console.log("Definition du gaz Deco");
-    deco.addDecoGas(gazDeco);
+    deco.addDecoGas(gazDeco1);
     console.log("Descente a 50 avec le Tx");
     deco.addDepthChange(0, 50, "Tx2135", 50 / 20);
     console.log("On fait une plongee de 25 min");
@@ -87,18 +106,33 @@ export default function App() {
                   <ButtonLine iconName={'gear'} text={'Gestion des Paramètres'} onPress={() => setShowGestionParametres(true)} />
                 </View>
               }
-              {showGestionGaz &&
+              {showGestionGaz && !showOpenGaz && !showDeleteGaz && !showAddGaz &&
                 <View style={mainStyles.editorContainer}>
-                  <GestionGaz gaz={gazList} openGaz={(name: string) => (name: string) => void {}} deleteGaz={(name: string) => (name: string) => void {}} />
+                  <GestionGaz gaz={gazList} setShowOpenGaz={setShowOpenGaz} setShowDeleteGaz={setShowDeleteGaz} setGazName={setGazName} />
+                </View>
+              }
+              {showOpenGaz &&
+                <View style={mainStyles.editorContainer}>
+                  <Text>Edition du gaz {gazName}</Text>
+                </View>
+              }
+              {showDeleteGaz &&
+                <View style={mainStyles.editorContainer}>
+                  <Text>Suppression du gaz {gazName}</Text>
+                </View>
+              }
+              {showAddGaz &&
+                <View style={mainStyles.editorContainer}>
+                  <Text>Ajout d'un gaz</Text>
                 </View>
               }
             </View>
             <View style={mainStyles.buttonContainer}>
               {(!showRuntime && !showGestionGaz && !showGestionPlongees) && <CircleButton onPress={() => setShowAbout(true)} iconName="help" />}
               {!showRuntime && !showGestionGaz && showGestionPlongees && <CircleButton onPress={() => computeDive()} iconName="palmes" position={'Right'} />}
-              {(showRuntime || showGestionGaz || showGestionPlongees) && <CircleButton onPress={() => resetButton()} iconName="clear" position={'Right'} />}
-              {showGestionGaz && <CircleButton onPress={() => setShowRuntime(false)} iconName="check" position={'Left'} />}
-              {showGestionGaz && <CircleButton onPress={() => { }} iconName="add" position={'Right'} />}
+              {(showRuntime || showGestionGaz || showGestionPlongees) && <CircleButton onPress={() => resetButton()} iconName="back" position={'Right'} />}
+              {showAddGaz && <CircleButton onPress={() => setShowRuntime(false)} iconName="check" position={'Left'} />}
+              {showGestionGaz && !showAddGaz && <CircleButton onPress={() => setShowAddGaz(true)} iconName="add" position={'Right'} />}
             </View>
           </View>
         }

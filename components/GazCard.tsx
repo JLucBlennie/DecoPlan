@@ -1,31 +1,37 @@
 import { View, StyleSheet, Text } from "react-native";
 import CircleButton from "./ui/CircleButton";
+import { mainStyles } from "../App";
 
 type Props = {
     titre: string;
     pourcentO2: number;
     pourcentHe: number;
-    openGaz: (name: string) => void;
-    deleteGaz: (name: string) => void;
+    setShowOpenGaz: (showOpenGaz: boolean) => void;
+    setShowDeleteGaz: (showDeleteGaz: boolean) => void;
+    setGazName: (name: string) => void;
 }
 
-export default function GazCard({ titre, pourcentO2, pourcentHe, openGaz, deleteGaz }: Props) {
+export default function GazCard({ titre, pourcentO2, pourcentHe, setShowOpenGaz, setShowDeleteGaz, setGazName }: Props) {
+
     function openItem() {
-        openGaz(titre);
+        setGazName(titre);
+        setShowOpenGaz(true);
     }
 
     function deleteItem() {
-        deleteGaz(titre);
+        setGazName(titre);
+        setShowDeleteGaz(true);
     }
-    
+
     return (
         <View style={styles.cardContainer}>
             <View style={styles.titreContainer}>
-                <Text>{titre} {pourcentO2} / {pourcentHe}</Text>
+                <Text style={mainStyles.text}>{titre}</Text>
+                <Text style={mainStyles.text}>({pourcentO2} / {pourcentHe})</Text>
             </View>
             <View style={styles.buttonContainer}>
-                <CircleButton iconName={"edit"} onPress={openItem} />
-                <CircleButton iconName={"delete"} onPress={deleteItem} />
+                <CircleButton iconName={"edit"} onPress={openItem} size={24} />
+                <CircleButton iconName={"delete"} onPress={deleteItem} size={24} />
             </View>
         </View>
     )
@@ -36,14 +42,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        width: '100%'
+        width: '100%',
+        height: 55,
     },
     titreContainer: {
-        flex: 2 / 3,
+        flex: 3 / 7,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     buttonContainer: {
-        flex: 1 / 3,
-        flexDirection: 'row'
+        flex: 4 / 7,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
     }
 }
 );
