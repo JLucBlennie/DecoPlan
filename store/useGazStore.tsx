@@ -11,12 +11,6 @@ const gazDeco3 = Dive.gas("Nx80", 0.8, 0);
 
 const DEFAULT_GAZ_LIST: Dive.Gas[] = [gazFond1, gazFond2, gazFond3, gazDeco1, gazDeco2, gazDeco3];
 
-// Charger les données au démarrage
-const loadGazList = async () => {
-    const savedList = await AsyncStorage.getItem('gazList');
-    return savedList ? JSON.parse(savedList) : [];
-};
-
 // Sauvegarder les données à chaque modification
 const saveGazList = async (list: Dive.Gas[]) => {
     await AsyncStorage.setItem('gazList', JSON.stringify(list));
@@ -28,8 +22,8 @@ type GazStore = {
     updateGaz: (id: string, gaz: Partial<Dive.Gas>) => Promise<void>;
     deleteGaz: (id: string) => Promise<void>;
     setGazList: (list: Dive.Gas[]) => Promise<void>;
-    initialize: () => Promise<void>;
-    resetList: () => Promise<void>;
+    initializeGazList: () => Promise<void>;
+    resetGazList: () => Promise<void>;
 };
 
 export const useGazStore = create<GazStore>((set) => ({
@@ -39,8 +33,8 @@ export const useGazStore = create<GazStore>((set) => ({
     addGaz: async (gaz) => {
         if (gaz.id) {
             const newList = [...useGazStore.getState().gazList, gaz];
-            await AsyncStorage.setItem('gazList', JSON.stringify(newList));
             set({ gazList: newList });
+            saveGazList(newList);
         }
     },
 
@@ -49,32 +43,32 @@ export const useGazStore = create<GazStore>((set) => ({
         const newList = useGazStore.getState().gazList.map((g) =>
             g.id === id ? { ...g, ...gaz } : g
         );
-        await AsyncStorage.setItem('gazList', JSON.stringify(newList));
+        saveGazList(newList);
         set({ gazList: newList });
     },
-
+    
     // Supprime un gaz et sauvegarde
     deleteGaz: async (id) => {
         const newList = useGazStore.getState().gazList.filter((g) => g.id !== id);
-        await AsyncStorage.setItem('gazList', JSON.stringify(newList));
+        saveGazList(newList);
         set({ gazList: newList });
     },
-
+    
     setGazList: async (list) => {
         saveGazList(list);
         set({ gazList: list }
         )
     },
-
+    
     // Charger les données au démarrage
-    initialize: async () => {
+    initializeGazList: async () => {
         try {
             const savedList = await AsyncStorage.getItem('gazList');
             if (savedList) {
                 set({ gazList: JSON.parse(savedList) });
             } else {
                 // Premier démarrage : utilise la liste par défaut
-                await AsyncStorage.setItem('gazList', JSON.stringify(DEFAULT_GAZ_LIST));
+                saveGazList(DEFAULT_GAZ_LIST);
                 set({ gazList: DEFAULT_GAZ_LIST });
             }
         } catch (error) {
@@ -82,13 +76,13 @@ export const useGazStore = create<GazStore>((set) => ({
             set({ gazList: DEFAULT_GAZ_LIST });
         }
     },
-    resetList: async () => {
+    resetGazList: async () => {
         const savedList = await AsyncStorage.getItem('gazList');
         if (savedList) {
             await AsyncStorage.removeItem('gazList');
         }
         // Premier démarrage : utilise la liste par défaut
-        await AsyncStorage.setItem('gazList', JSON.stringify(DEFAULT_GAZ_LIST));
+        saveGazList(DEFAULT_GAZ_LIST);
         set({ gazList: DEFAULT_GAZ_LIST });
     }
 }));

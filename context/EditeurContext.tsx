@@ -1,6 +1,6 @@
 import { createContext, Dispatch, SetStateAction } from 'react';
 
-type EditeurActif = 'gaz' | 'plongee' | 'about' | null;
+type EditeurActif = 'gaz' | 'plongee' | 'runtime' | 'about' | null;
 
 type EditeurContextType = {
   editeurActif: EditeurActif;

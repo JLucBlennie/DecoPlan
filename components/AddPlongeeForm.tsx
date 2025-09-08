@@ -6,6 +6,7 @@ import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import uuid from 'react-native-uuid';
 import { mainStyles } from '../App';
+import CircleButton from './ui/CircleButton';
 
 type PlongeeFormProps = {
   onClose: () => void;
@@ -105,12 +106,12 @@ export default function AddPlongeeForm({ onClose }: PlongeeFormProps) {
           value={newSegment.time.toString()}
           onChangeText={(text) => setNewSegment({ ...newSegment, time: parseFloat(text) || 0 })}
         />
-        <Button title="Ajouter" onPress={addSegment} />
+        <CircleButton iconName='add' size={16} onPress={addSegment} />
       </View>
 
       <View style={styles.buttons}>
-        <Button title="Annuler" onPress={onClose} />
-        <Button title="Enregistrer" onPress={handleSubmit} />
+        <CircleButton iconName="cancel" onPress={onClose} />
+        <CircleButton iconName="check" onPress={handleSubmit} />
       </View>
     </View>
   );

@@ -7,10 +7,11 @@ import { Dive } from './lib/dive/dive';
 import GestionGaz from './components/gestionGaz';
 import { useGazStore } from './store/useGazStore';
 import { EditeurContext } from './context/EditeurContext';
-import PlongeeEditor from './components/plongeeEditor';
 import MenuPrincipal from './components/MenuPrincipal';
 import BoutonRetour from './components/BoutonRetour';
 import GestionPlongee from './components/gestionPlongee';
+import { usePlongeeStore } from './store/usePlongeeStore';
+import RuntimeScreen from './components/RuntimeScreen';
 
 export interface Plongee {
   id: number;
@@ -26,11 +27,13 @@ export interface Plongee {
 
 
 export default function App() {
-  const [editeurActif, setEditeurActif] = useState<'gaz' | 'plongee' | 'about' | null>(null);
-  const { initialize } = useGazStore();
+  const [editeurActif, setEditeurActif] = useState<'gaz' | 'plongee' | 'runtime' | 'about' | null>(null);
+  const { initializeGazList } = useGazStore();
+  const { initializePlongeeList } = usePlongeeStore();
 
-  useEffect(() => {
-    initialize();
+  useEffect(() => { 
+    initializeGazList();
+    initializePlongeeList();
   }, []);
 
   /* function computeDive() {
@@ -63,6 +66,7 @@ export default function App() {
                 <BoutonRetour />
                 {editeurActif === 'gaz' && <GestionGaz />}
                 {editeurActif === 'plongee' && <GestionPlongee />}
+                {editeurActif === 'runtime' && <RuntimeScreen />}
                 {editeurActif === 'about' && <AboutScreen />}
               </View>
             ) : (

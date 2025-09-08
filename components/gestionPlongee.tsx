@@ -9,7 +9,7 @@ import AddPlongeeForm from "./AddPlongeeForm";
 import PlongeeForm from "./PlongeeForm";
 
 export default function GestionPlongee() {
-    const { plongeeList, deletePlongee, resetList } = usePlongeeStore();
+    const { plongeeList, deletePlongee, resetPlongeeList } = usePlongeeStore();
     const [editingPlongee, setEditingPlongee] = useState<Dive.Plongee | null>(null);
     const [showAddPlongee, setShowAddPlongee] = useState(false);
 
@@ -46,7 +46,7 @@ export default function GestionPlongee() {
                             keyExtractor={(item) => item.id} />
                     </View>
                     <ButtonLine iconName={"add"} onPress={handleAddPlongee} text={"Ajouter une Plongée..."} />
-                    <ButtonLine iconName={"clear"} onPress={resetList} text={"Reset la liste des Plongées..."} />
+                    <ButtonLine iconName={"clear"} onPress={resetPlongeeList} text={"Reset la liste des Plongées..."} />
                 </View>
             }
         </View >

@@ -13,7 +13,8 @@ export default function MenuPrincipal() {
             <Text style={mainStyles.titre} >{appJson.expo.name} by JLuc - V{appJson.expo.version}</Text>
             <ButtonLine iconName={'gaz'} text={'Gestion des Gaz'} onPress={() => setEditeurActif('gaz')} />
             <ButtonLine iconName={'dive'} text={'Gestion des Plongées'} onPress={() => setEditeurActif('plongee')} />
-            <ButtonLine iconName={'gear'} text={'Gestion des Paramètres'} onPress={() => setEditeurActif('about')} />
+            <ButtonLine iconName={'gear'} text={'Lancement Runtime'} onPress={() => setEditeurActif('runtime')} />
+            <ButtonLine iconName={'help'} text={'A propos...'} onPress={() => setEditeurActif('about')} />
         </View>
     );
 }

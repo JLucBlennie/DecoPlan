@@ -4,14 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_PLONGEE_LIST: Dive.Plongee[] = [];
 
-// Charger les données au démarrage
-const loadplongeeList = async () => {
-    const savedList = await AsyncStorage.getItem('plongeeList');
-    return savedList ? JSON.parse(savedList) : [];
-};
-
 // Sauvegarder les données à chaque modification
-const saveplongeeList = async (list: Dive.Plongee[]) => {
+const savePlongeeList = async (list: Dive.Plongee[]) => {
     await AsyncStorage.setItem('plongeeList', JSON.stringify(list));
 };
 
@@ -21,8 +15,8 @@ type PlongeeStore = {
     updatePlongee: (id: string, plongee: Partial<Dive.Plongee>) => Promise<void>;
     deletePlongee: (id: string) => Promise<void>;
     setplongeeList: (list: Dive.Plongee[]) => Promise<void>;
-    initialize: () => Promise<void>;
-    resetList: () => Promise<void>;
+    initializePlongeeList: () => Promise<void>;
+    resetPlongeeList: () => Promise<void>;
 };
 
 export const usePlongeeStore = create<PlongeeStore>((set) => ({
@@ -32,7 +26,7 @@ export const usePlongeeStore = create<PlongeeStore>((set) => ({
     addPlongee: async (plongee) => {
         if (plongee.id) {
             const newList = [...usePlongeeStore.getState().plongeeList, plongee];
-            await AsyncStorage.setItem('plongeeList', JSON.stringify(newList));
+            savePlongeeList(newList);
             set({ plongeeList: newList });
         }
     },
@@ -42,32 +36,32 @@ export const usePlongeeStore = create<PlongeeStore>((set) => ({
         const newList = usePlongeeStore.getState().plongeeList.map((p) =>
             p.id === id ? { ...p, ...plongee } : p
         );
-        await AsyncStorage.setItem('plongeeList', JSON.stringify(newList));
+        savePlongeeList(newList);
         set({ plongeeList: newList });
     },
 
     // Supprime un plongee et sauvegarde
     deletePlongee: async (id) => {
         const newList = usePlongeeStore.getState().plongeeList.filter((p) => p.id !== id);
-        await AsyncStorage.setItem('plongeeList', JSON.stringify(newList));
+        savePlongeeList(newList);
         set({ plongeeList: newList });
     },
 
     setplongeeList: async (list) => {
-        saveplongeeList(list);
+        savePlongeeList(list);
         set({ plongeeList: list }
         )
     },
 
     // Charger les données au démarrage
-    initialize: async () => {
+    initializePlongeeList: async () => {
         try {
             const savedList = await AsyncStorage.getItem('plongeeList');
             if (savedList) {
                 set({ plongeeList: JSON.parse(savedList) });
             } else {
                 // Premier démarrage : utilise la liste par défaut
-                await AsyncStorage.setItem('plongeeList', JSON.stringify(DEFAULT_PLONGEE_LIST));
+                savePlongeeList(DEFAULT_PLONGEE_LIST);
                 set({ plongeeList: DEFAULT_PLONGEE_LIST });
             }
         } catch (error) {
@@ -75,13 +69,13 @@ export const usePlongeeStore = create<PlongeeStore>((set) => ({
             set({ plongeeList: DEFAULT_PLONGEE_LIST });
         }
     },
-    resetList: async () => {
+    resetPlongeeList: async () => {
         const savedList = await AsyncStorage.getItem('plongeeList');
         if (savedList) {
             await AsyncStorage.removeItem('plongeeList');
         }
         // Premier démarrage : utilise la liste par défaut
-        await AsyncStorage.setItem('plongeeList', JSON.stringify(DEFAULT_PLONGEE_LIST));
+        savePlongeeList(DEFAULT_PLONGEE_LIST);
         set({ plongeeList: DEFAULT_PLONGEE_LIST });
     }
 }));
