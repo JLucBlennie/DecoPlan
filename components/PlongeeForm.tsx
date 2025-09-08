@@ -5,6 +5,8 @@ import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import CheckBox from 'react-native-check-box';
 import { mainStyles } from '../App';
+import GestionSegments from './gestionSegments';
+import CircleButton from './ui/CircleButton';
 
 type PlongeeFormProps = {
     plongee: Dive.Plongee;
@@ -20,7 +22,6 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
     const [segments, setSegments] = useState<Dive.Segment[]>(plongee.segments);
     const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
 
-    // TODO voir la mise à jour d'un segment...
     const addSegment = () => {
         setSegments([...segments, newSegment]);
         setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
@@ -31,7 +32,7 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
             name: nom,
             gazFond,
             gazDeco,
-            segments: [], // À remplir plus tard
+            segments, // À remplir plus tard
         });
         onClose();
     };
@@ -65,7 +66,7 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
     );
 
     return (
-        <View style={mainStyles.editorContainer}>
+        <View style={styles.form}>
             <Text style={styles.label}>Nom de la plongée</Text>
             <TextInput
                 style={styles.input}
@@ -74,50 +75,39 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
                 placeholder="Ex: Plongée à Marseille"
             />
 
-            <Text style={styles.label}>Gaz de décompression</Text>
-            <FlatList
-                data={gazList}
-                renderItem={({ item }) => renderGazItem(item, gazFond, setGazFond)}
-                keyExtractor={item => item.id}
-                style={styles.list}
-            />
-
-            <Text style={styles.label}>Gaz de décompression</Text>
-            <FlatList
-                data={gazList}
-                renderItem={({ item }) => renderGazItem(item, gazDeco, setGazDeco)}
-                keyExtractor={item => item.id}
-                style={styles.list}
-            />
-            <View>
-                <Text>Ajouter un segment</Text>
-                <TextInput
-                    placeholder="Profondeur de début"
-                    value={newSegment.startDepth.toString()}
-                    onChangeText={(text) => setNewSegment({ ...newSegment, startDepth: parseFloat(text) || 0 })}
-                />
-                <TextInput
-                    placeholder="Profondeur de fin"
-                    value={newSegment.endDepth.toString()}
-                    onChangeText={(text) => setNewSegment({ ...newSegment, endDepth: parseFloat(text) || 0 })}
-                />
-                <TextInput
-                    placeholder="Temps (min)"
-                    value={newSegment.time.toString()}
-                    onChangeText={(text) => setNewSegment({ ...newSegment, time: parseFloat(text) || 0 })}
-                />
-                <Button title="Ajouter" onPress={addSegment} />
+            <View style={styles.gazLists}>
+                <View style={styles.gazList}>
+                    <Text style={styles.label}>Gaz Fond</Text>
+                    <FlatList
+                        data={gazList}
+                        renderItem={({ item }) => renderGazItem(item, gazFond, setGazFond)}
+                        keyExtractor={item => item.id}
+                        style={styles.list}
+                    />
+                </View>
+                <View style={styles.gazList}>
+                    <Text style={styles.label}>Gaz déco</Text>
+                    <FlatList
+                        data={gazList}
+                        renderItem={({ item }) => renderGazItem(item, gazDeco, setGazDeco)}
+                        keyExtractor={item => item.id}
+                        style={styles.list}
+                    />
+                </View>
             </View>
+            {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
+            <GestionSegments newSegment={newSegment} setNewSegment={setNewSegment} addSegment={addSegment} />
 
             <View style={styles.buttons}>
-                <Button title="Annuler" onPress={onClose} />
-                <Button title="Enregistrer" onPress={handleSubmit} />
+                <CircleButton iconName="cancel" onPress={onClose} position='Left' />
+                <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    form: { padding: 16 },
     label: {
         fontSize: 16,
         marginBottom: 8
@@ -151,4 +141,13 @@ const styles = StyleSheet.create({
     },
     segmentContainer: {
     },
+    gazLists: {
+        flexDirection: 'row',
+        paddingBottom: 5
+    },
+    gazList: {
+        flex: 1 / 2,
+        flexDirection: 'column',
+        padding: 5
+    }
 });

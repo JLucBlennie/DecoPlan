@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useGazStore } from '../store/useGazStore';
 import { Dive } from '../lib/dive/dive';
+import CircleButton from './ui/CircleButton';
 
 type GazFormProps = {
     onClose: () => void;
@@ -25,37 +26,70 @@ export default function AddGazForm({ onClose }: GazFormProps) {
     return (
         <View style={styles.form}>
             <Text style={styles.title}>Modifier le Gaz</Text>
-            <TextInput
-                placeholder="Nom"
-                value={nom}
-                onChangeText={setNom}
-                style={styles.input}
-            />
-            <TextInput
-                placeholder="O2 (%)"
-                value={o2}
-                onChangeText={setO2}
-                keyboardType="numeric"
-                style={styles.input}
-            />
-            <TextInput
-                placeholder="He (%)"
-                value={he}
-                onChangeText={setHe}
-                keyboardType="numeric"
-                style={styles.input}
-            />
+            <View style={styles.textInput}>
+                <Text style={styles.labelInput}>Nom :</Text>
+                <TextInput
+                    placeholder="Nom"
+                    value={nom}
+                    onChangeText={setNom}
+                    style={styles.input}
+                />
+            </View>
+            <View style={styles.textInput}>
+                <Text style={styles.labelInput}>O2 (%) :</Text>
+                <TextInput
+                    placeholder="O2 (%)"
+                    value={o2}
+                    onChangeText={setO2}
+                    keyboardType="numeric"
+                    style={styles.input}
+                />
+            </View>
+            <View style={styles.textInput}>
+                <Text style={styles.labelInput}>He (%) :</Text>
+                <TextInput
+                    placeholder="He (%)"
+                    value={he}
+                    onChangeText={setHe}
+                    keyboardType="numeric"
+                    style={styles.input}
+                />
+            </View>
             <View style={styles.buttons}>
-                <Button title="Annuler" onPress={onClose} />
-                <Button title="Enregistrer" onPress={handleSubmit} />
+                <CircleButton iconName="cancel" onPress={onClose} position='Left' />
+                <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    form: { padding: 16 },
-    title: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-    input: { borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 8 },
-    buttons: { flexDirection: 'row', justifyContent: 'space-around' },
+    form: {
+        padding: 16
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16
+    },
+    buttons: {
+        flexDirection: 'row',
+        justifyContent: 'space-around'
+    },
+    input: {
+        flex: 3 / 4,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        padding: 8,
+        marginBottom: 8
+    },
+    textInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    labelInput: {
+        flex: 1 / 4,
+        padding: 8,
+        marginBottom: 8
+    }
 });
