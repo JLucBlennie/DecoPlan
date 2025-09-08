@@ -1,47 +1,72 @@
-import React from "react";
-import { FlatList, Pressable, View, StyleSheet } from "react-native"
-import { Plongee } from "../App";
+import React, { useState } from "react";
+import { FlatList, View, StyleSheet, Text } from "react-native"
+import { Dive } from "../lib/dive/dive";
+import { usePlongeeStore } from "../store/usePlongeeStore";
+import { mainStyles } from "../App";
+import ButtonLine from "./ui/ButtonLine";
 import PlongeeCard from "./PlongeeCard";
+import AddPlongeeForm from "./AddPlongeeForm";
+import PlongeeForm from "./PlongeeForm";
 
-type Props = {
-    plongees: Plongee[];
-    openPlongee: (id: number) => void;
-    deletePlongee: (id: number) => void;
-};
+export default function GestionPlongee() {
+    const { plongeeList, deletePlongee, resetList } = usePlongeeStore();
+    const [editingPlongee, setEditingPlongee] = useState<Dive.Plongee | null>(null);
+    const [showAddPlongee, setShowAddPlongee] = useState(false);
 
-export default function GestionPlongee({ plongees, openPlongee, deletePlongee }: Props) {
+    const handleEditPlongee = (plongee: Dive.Plongee) => {
+        setEditingPlongee(plongee);
+    };
+
+    const handleCloseForm = () => {
+        setEditingPlongee(null);
+        setShowAddPlongee(false);
+    };
+
+    const handleAddPlongee = () => {
+        setShowAddPlongee(true);
+    }
+
     return (
-        <View style={styles.listcontainer}>
-            <FlatList
-                style={styles.flatlist}
-                data={plongees}
-                showsVerticalScrollIndicator={true}
-                renderItem={({ item }) =>
-                    <View >
-                        <Pressable onPress={() => { openPlongee(item.id) }} onLongPress={() => { deletePlongee(item.id) }}>
-                            <PlongeeCard titre={item.name} profondeur={item.profondeur(item.segements)} temps={item.temps(item.segements)} gazFond={item.gazFond[0].name} />
-                        </Pressable>
+        <View style={mainStyles.editorContainer}>
+            {editingPlongee &&
+                <PlongeeForm plongee={editingPlongee} onClose={handleCloseForm} />
+            }
+            {showAddPlongee &&
+                <AddPlongeeForm onClose={handleCloseForm} />
+            }
+            {!showAddPlongee && editingPlongee === null &&
+                <View style={mainStyles.editorContainer}>
+                    <Text style={styles.title}>Liste des Plongées</Text>
+                    <View style={styles.listcontainer}>
+                        <FlatList
+                            style={styles.flatlist}
+                            data={plongeeList}
+                            showsVerticalScrollIndicator={true}
+                            renderItem={({ item }) => <PlongeeCard plongee={item} onPress={() => { handleEditPlongee(item); }} onDelete={() => { deletePlongee(item.id); }} />}
+                            keyExtractor={(item) => item.id} />
                     </View>
-                }
-                keyExtractor={(item, index) => index.toString()}
-            />
-        </View>);
+                    <ButtonLine iconName={"add"} onPress={handleAddPlongee} text={"Ajouter une Plongée..."} />
+                    <ButtonLine iconName={"clear"} onPress={resetList} text={"Reset la liste des Plongées..."} />
+                </View>
+            }
+        </View >
+    );
 }
 
 const styles = StyleSheet.create({
-    listTitle: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: 'white',
-        backgroundColor: 'transprent'
-    },
     flatlist: {
-        flex: 1,
-        backgroundColor: 'transprent'
+        backgroundColor: 'transprent',
+        width: '100%'
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        width: '100%'
     },
     listcontainer: {
         flex: 1,
+        flexDirection: 'row',
         backgroundColor: 'transparent',
-        alignItems: 'center'
-    }
+    },
 });

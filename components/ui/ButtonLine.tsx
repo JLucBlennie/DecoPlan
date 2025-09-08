@@ -4,13 +4,19 @@ import CircleButton from './CircleButton';
 type Props = {
     iconName: string;
     text: string;
+    buttonSize?: number;
     onPress: () => void;
 };
 
-export default function ButtonLine({ iconName, text, onPress }: Props) {
+export default function ButtonLine({ iconName, text, buttonSize, onPress }: Props) {
     return (
         <View style={styles.lineButtonContainer}>
-            <CircleButton iconName={iconName} onPress={onPress} />
+            {
+                buttonSize === undefined ?
+                    <CircleButton iconName={iconName} onPress={onPress} />
+                    :
+                    <CircleButton iconName={iconName} onPress={onPress} size={buttonSize} />
+            }
             <Pressable style={styles.textContainer} onPress={onPress}>
                 <Text style={styles.textDesc}>{text}</Text>
             </Pressable>

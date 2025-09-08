@@ -1,37 +1,24 @@
 import { View, StyleSheet, Text } from "react-native";
 import CircleButton from "./ui/CircleButton";
 import { mainStyles } from "../App";
+import { Dive } from "../lib/dive/dive";
 
-type Props = {
-    titre: string;
-    pourcentO2: number;
-    pourcentHe: number;
-    setShowOpenGaz: (showOpenGaz: boolean) => void;
-    setShowDeleteGaz: (showDeleteGaz: boolean) => void;
-    setGazName: (name: string) => void;
+type GazCardProps = {
+    gaz: Dive.Gas;
+    onPress: () => void;
+    onDelete: () => void;
 }
 
-export default function GazCard({ titre, pourcentO2, pourcentHe, setShowOpenGaz, setShowDeleteGaz, setGazName }: Props) {
-
-    function openItem() {
-        setGazName(titre);
-        setShowOpenGaz(true);
-    }
-
-    function deleteItem() {
-        setGazName(titre);
-        setShowDeleteGaz(true);
-    }
+export default function GazCard({ gaz, onPress, onDelete }: GazCardProps) {
 
     return (
         <View style={styles.cardContainer}>
             <View style={styles.titreContainer}>
-                <Text style={mainStyles.text}>{titre}</Text>
-                <Text style={mainStyles.text}>({pourcentO2} / {pourcentHe})</Text>
+                <Text style={mainStyles.text}>{gaz.name} - ({gaz.fO2 * 100} / {gaz.fHe * 100})</Text>
             </View>
             <View style={styles.buttonContainer}>
-                <CircleButton iconName={"edit"} onPress={openItem} size={24} />
-                <CircleButton iconName={"delete"} onPress={deleteItem} size={24} />
+                <CircleButton iconName={"edit"} onPress={onPress} size={24} />
+                <CircleButton iconName={"delete"} onPress={onDelete} size={24} />
             </View>
         </View>
     )
@@ -44,18 +31,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         height: 55,
+        alignSelf: 'stretch',
     },
     titreContainer: {
-        flex: 3 / 7,
+        flex: 5 / 8,
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
+        alignSelf: 'stretch',
     },
     buttonContainer: {
-        flex: 4 / 7,
+        flex: 3 / 8,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-    }
+        alignSelf: 'stretch',
+    },
 }
 );

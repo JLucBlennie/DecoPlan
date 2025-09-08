@@ -1,4 +1,14 @@
+import uuid from 'react-native-uuid';
+
 export namespace Dive {
+  export interface Plongee {
+    id: string;
+    name: string;
+    segments: Dive.Segment[];
+    gazFond: Dive.Gas[];
+    gazDeco: Dive.Gas[];
+  }
+
   export interface Segment {
     startDepth: number;
     endDepth: number;
@@ -7,6 +17,7 @@ export namespace Dive {
   }
 
   export interface Gas {
+    id: string;
     name: string;
     fO2: number;
     fHe: number;
@@ -555,6 +566,7 @@ export namespace Dive {
 
   export function gas(name: string, fO2: number, fHe: number): Gas {
     const gas: Gas = {
+      id: uuid.v4(),
       name,
       fO2,
       fHe,
@@ -870,4 +882,44 @@ export namespace Dive {
     return (depth / depthToPressFactor + 1);
   }
 
+  // Gestion des plongee
+  export function plongee(name: string): Plongee {
+    const plongee: Plongee = {
+      id: uuid.v4(),
+      name: name,
+      segments: [],
+      gazFond: [],
+      gazDeco: []
+    };
+    return plongee;
+  }
+
+  export function calculProfondeurMax(plongee: Plongee): number {
+    if (!plongee.segments || plongee.segments.length === 0) {
+      return 0; // Retourne 0 si aucun segment
+    }
+    return Math.max(...plongee.segments.flatMap(segment => [segment.startDepth, segment.endDepth]));
+  }
+
+  export function calculTemps(plongee: Plongee): number {
+    if (!plongee.segments) {
+      return 0; // Retourne 0 si aucun segment
+    }
+    return plongee.segments.reduce((total, segment) => total + segment.time, 0);
+  }
+
+  export function addSegmentToPlongee(plongee: Plongee, segment: Segment) {
+    const newList = [...plongee.segments, segment];
+    plongee.segments = newList;
+  }
+
+  export function addGazFondToPlongee(plongee: Plongee, gazFond: Gas) {
+    const newList = [...plongee.gazFond, gazFond];
+    plongee.gazFond = newList;
+  }
+
+  export function addGazDecoToPlongee(plongee: Plongee, gazDeco: Gas) {
+    const newList = [...plongee.gazDeco, gazDeco];
+    plongee.gazDeco = newList;
+  }
 }
