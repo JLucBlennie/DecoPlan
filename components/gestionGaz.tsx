@@ -7,48 +7,36 @@ import { mainStyles } from "../App";
 import GazForm from "./GazForm";
 import ButtonLine from "./ui/ButtonLine";
 import AddGazForm from "./AddGazForm";
+import { useEditeur } from "../context/EditeurContext";
 
 export default function GestionGaz() {
-    const { gazList, deleteGaz, resetList } = useGazStore();
-    const [editingGaz, setEditingGaz] = useState<Dive.Gas | null>(null);
-    const [showAddGaz, setShowAddGaz] = useState(false);
+    const { ouvrirEditeur } = useEditeur();
+    const { gazList, deleteGaz, resetGazList, setSelectedGaz } = useGazStore();
 
     const handleEditGaz = (gaz: Dive.Gas) => {
-        setEditingGaz(gaz);
-    };
-
-    const handleCloseForm = () => {
-        setEditingGaz(null);
-        setShowAddGaz(false);
+        setSelectedGaz(gaz);
+        ouvrirEditeur('editgaz');
     };
 
     const handleAddGaz = () => {
-        setShowAddGaz(true);
+        ouvrirEditeur('addgaz');
     }
 
     return (
         <View style={mainStyles.editorContainer}>
-            {editingGaz &&
-                <GazForm gaz={editingGaz} onClose={handleCloseForm} />
-            }
-            {showAddGaz &&
-                <AddGazForm onClose={handleCloseForm} />
-            }
-            {!showAddGaz && editingGaz === null &&
-                <View style={mainStyles.editorContainer}>
-                    <Text style={styles.title}>Liste des Gaz</Text>
-                    <View style={styles.listcontainer}>
-                        <FlatList
-                            style={styles.flatlist}
-                            data={gazList}
-                            showsVerticalScrollIndicator={true}
-                            renderItem={({ item }) => <GazCard gaz={item} onPress={() => { handleEditGaz(item); }} onDelete={() => { deleteGaz(item.id); }} />}
-                            keyExtractor={(item) => item.id} />
-                    </View>
-                    <ButtonLine iconName={"add"} onPress={handleAddGaz} text={"Ajouter un Gaz..."} />
-                    <ButtonLine iconName={"clear"} onPress={resetList} text={"Reset la liste des Gaz..."} />
+            <View style={mainStyles.editorContainer}>
+                <Text style={styles.title}>Liste des Gaz</Text>
+                <View style={styles.listcontainer}>
+                    <FlatList
+                        style={styles.flatlist}
+                        data={gazList}
+                        showsVerticalScrollIndicator={true}
+                        renderItem={({ item }) => <GazCard gaz={item} onPress={() => { handleEditGaz(item); }} onDelete={() => { deleteGaz(item.id); }} />}
+                        keyExtractor={(item) => item.id} />
                 </View>
-            }
+                <ButtonLine iconName={"add"} onPress={handleAddGaz} text={"Ajouter un Gaz..."} />
+                <ButtonLine iconName={"clear"} onPress={resetGazList} text={"Reset la liste des Gaz..."} />
+            </View>
         </View >
     );
 }

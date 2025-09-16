@@ -8,12 +8,10 @@ import uuid from 'react-native-uuid';
 import { mainStyles } from '../App';
 import CircleButton from './ui/CircleButton';
 import GestionSegments from './gestionSegments';
+import { useEditeur } from '../context/EditeurContext';
 
-type PlongeeFormProps = {
-  onClose: () => void;
-};
-
-export default function AddPlongeeForm({ onClose }: PlongeeFormProps) {
+export default function AddPlongeeForm() {
+  const { fermerEditeur } = useEditeur();
   const { gazList } = useGazStore();
   const [nom, setNom] = useState("");
   const [gazFond, setGazFond] = useState<Dive.Gas[]>([]);
@@ -26,6 +24,11 @@ export default function AddPlongeeForm({ onClose }: PlongeeFormProps) {
     setSegments([...segments, newSegment]);
     setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
   };
+
+  const closeEditeur = () => {
+    fermerEditeur();
+  };
+
   const handleSubmit = () => {
     addPlongee({
       id: uuid.v4(),
@@ -34,7 +37,7 @@ export default function AddPlongeeForm({ onClose }: PlongeeFormProps) {
       gazDeco,
       segments
     });
-    onClose();
+    closeEditeur();
   };
 
   // Préparer les options pour les sélecteurs
@@ -99,7 +102,7 @@ export default function AddPlongeeForm({ onClose }: PlongeeFormProps) {
       <GestionSegments newSegment={newSegment} setNewSegment={setNewSegment} addSegment={addSegment} />
 
       <View style={styles.buttons}>
-        <CircleButton iconName="cancel" onPress={onClose} position='Left' />
+        <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
         <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
       </View>
     </View>

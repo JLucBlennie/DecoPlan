@@ -5,50 +5,37 @@ import { usePlongeeStore } from "../store/usePlongeeStore";
 import { mainStyles } from "../App";
 import ButtonLine from "./ui/ButtonLine";
 import PlongeeCard from "./PlongeeCard";
-import AddPlongeeForm from "./AddPlongeeForm";
 import PlongeeForm from "./PlongeeForm";
+import { useEditeur } from "../context/EditeurContext";
 
 export default function GestionPlongee() {
-    const { plongeeList, deletePlongee, resetPlongeeList } = usePlongeeStore();
-    const [editingPlongee, setEditingPlongee] = useState<Dive.Plongee | null>(null);
-    const [showAddPlongee, setShowAddPlongee] = useState(false);
+    const { ouvrirEditeur } = useEditeur();
+    const { plongeeList, deletePlongee, resetPlongeeList, setSelectedPlongee } = usePlongeeStore();
 
     const handleEditPlongee = (plongee: Dive.Plongee) => {
-        setEditingPlongee(plongee);
-    };
-
-    const handleCloseForm = () => {
-        setEditingPlongee(null);
-        setShowAddPlongee(false);
+        setSelectedPlongee(plongee);
+        ouvrirEditeur('editplongee');
     };
 
     const handleAddPlongee = () => {
-        setShowAddPlongee(true);
-    }
+        ouvrirEditeur('addplongee')
+    };
 
     return (
         <View style={mainStyles.editorContainer}>
-            {editingPlongee &&
-                <PlongeeForm plongee={editingPlongee} onClose={handleCloseForm} />
-            }
-            {showAddPlongee &&
-                <AddPlongeeForm onClose={handleCloseForm} />
-            }
-            {!showAddPlongee && editingPlongee === null &&
-                <View style={mainStyles.editorContainer}>
-                    <Text style={styles.title}>Liste des Plongées</Text>
-                    <View style={styles.listcontainer}>
-                        <FlatList
-                            style={styles.flatlist}
-                            data={plongeeList}
-                            showsVerticalScrollIndicator={true}
-                            renderItem={({ item }) => <PlongeeCard plongee={item} onPress={() => { handleEditPlongee(item); }} onDelete={() => { deletePlongee(item.id); }} />}
-                            keyExtractor={(item) => item.id} />
-                    </View>
-                    <ButtonLine iconName={"add"} onPress={handleAddPlongee} text={"Ajouter une Plongée..."} />
-                    <ButtonLine iconName={"clear"} onPress={resetPlongeeList} text={"Reset la liste des Plongées..."} />
+            <View style={mainStyles.editorContainer}>
+                <Text style={styles.title}>Liste des Plongées</Text>
+                <View style={styles.listcontainer}>
+                    <FlatList
+                        style={styles.flatlist}
+                        data={plongeeList}
+                        showsVerticalScrollIndicator={true}
+                        renderItem={({ item }) => <PlongeeCard plongee={item} onPress={() => { handleEditPlongee(item); }} onDelete={() => { deletePlongee(item.id); }} />}
+                        keyExtractor={(item) => item.id} />
                 </View>
-            }
+                <ButtonLine iconName={"add"} onPress={handleAddPlongee} text={"Ajouter une Plongée..."} />
+                <ButtonLine iconName={"clear"} onPress={resetPlongeeList} text={"Reset la liste des Plongées..."} />
+            </View>
         </View >
     );
 }

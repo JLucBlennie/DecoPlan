@@ -3,16 +3,18 @@ import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useGazStore } from '../store/useGazStore';
 import { Dive } from '../lib/dive/dive';
 import CircleButton from './ui/CircleButton';
+import { useEditeur } from '../context/EditeurContext';
 
-type GazFormProps = {
-    onClose: () => void;
-};
-
-export default function AddGazForm({ onClose }: GazFormProps) {
+export default function AddGazForm() {
+    const { fermerEditeur } = useEditeur();
     const { addGaz } = useGazStore();
     const [nom, setNom] = useState("");
     const [o2, setO2] = useState("21");
     const [he, setHe] = useState("0");
+
+    const closeEditeur = () => {
+        fermerEditeur();
+    };
 
     const handleSubmit = () => {
         if (!nom || !o2 || !he) {
@@ -20,7 +22,7 @@ export default function AddGazForm({ onClose }: GazFormProps) {
             return;
         }
         addGaz(Dive.gas(nom, parseFloat(o2) / 100, parseFloat(he) / 100));
-        onClose();
+        closeEditeur();
     };
 
     return (
@@ -56,7 +58,7 @@ export default function AddGazForm({ onClose }: GazFormProps) {
                 />
             </View>
             <View style={styles.buttons}>
-                <CircleButton iconName="cancel" onPress={onClose} position='Left' />
+                <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
                 <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
         </View>

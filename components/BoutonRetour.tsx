@@ -1,11 +1,12 @@
 import React, { useContext } from 'react';
-import { EditeurContext } from '../context/EditeurContext';
 import ButtonLine from './ui/ButtonLine';
 
-export default function BoutonRetour() {
-  const { setEditeurActif } = useContext(EditeurContext);
+type BoutonRetourProps = {
+  onPress: () => void;
+};
+export default function BoutonRetour({onPress}:BoutonRetourProps) {
 
   return (
-    <ButtonLine iconName={'back'} text={'Retour au menu...'} onPress={() => setEditeurActif(null)} buttonSize={24} />
+    <ButtonLine iconName={'back'} text={'Retour au menu...'} onPress={onPress} buttonSize={24} />
   );
 }

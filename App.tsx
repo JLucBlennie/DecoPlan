@@ -1,81 +1,88 @@
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import AboutScreen from './components/about';
+import { Platform, StyleSheet, View, Text } from 'react-native';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Dive } from './lib/dive/dive';
-import GestionGaz from './components/gestionGaz';
+import { EditeurProvider, useEditeur } from './context/EditeurContext';
 import { useGazStore } from './store/useGazStore';
-import { EditeurContext } from './context/EditeurContext';
+import { usePlongeeStore } from './store/usePlongeeStore';
+import GestionGaz from './components/gestionGaz';
 import MenuPrincipal from './components/MenuPrincipal';
 import BoutonRetour from './components/BoutonRetour';
+import AboutScreen from './components/about';
 import GestionPlongee from './components/gestionPlongee';
-import { usePlongeeStore } from './store/usePlongeeStore';
 import RuntimeScreen from './components/RuntimeScreen';
-
-export interface Plongee {
-  id: number;
-  name: string;
-  segements: Dive.Segment[];
-  gazFond: Dive.Gas[];
-  gazDeco: Dive.Gas[];
-
-  profondeur: (segments: Dive.Segment[]) => number;
-  temps: (segments: Dive.Segment[]) => number;
-}
-
-
+import AddPlongeeForm from './components/AddPlongeeForm';
+import PlongeeForm from './components/PlongeeForm';
+import AddGazForm from './components/AddGazForm';
+import GazForm from './components/GazForm';
 
 export default function App() {
-  const [editeurActif, setEditeurActif] = useState<'gaz' | 'plongee' | 'runtime' | 'about' | null>(null);
-  const { initializeGazList } = useGazStore();
-  const { initializePlongeeList } = usePlongeeStore();
+  return (
+    <SafeAreaProvider>
+      <EditeurProvider>
+        <AppContent />
+      </EditeurProvider>
+    </SafeAreaProvider>
+  );
+}
 
-  useEffect(() => { 
+function AppContent() {
+  const { editeurActif, fermerEditeur } = useEditeur();
+  const { initializeGazList, selectedGaz, setSelectedGaz } = useGazStore();
+  const { initializePlongeeList, selectedPlongee, setSelectedPlongee, plongeeList, deletePlongee, resetPlongeeList } = usePlongeeStore();
+
+  useEffect(() => {
     initializeGazList();
     initializePlongeeList();
   }, []);
 
-  /* function computeDive() {
-    console.log("Chargement de l'algo...");
-    var deco = new Buhlmann.Plan(Buhlmann.ZH16CTissues);
-    console.log("Definition du gaz fond");
-    deco.addBottomGas(gazFond1);
-    console.log("Definition du gaz Deco");
-    deco.addDecoGas(gazDeco1);
-    console.log("Descente a 50 avec le Tx");
-    deco.addDepthChange(0, 50, "Tx2135", 50 / 20);
-    console.log("On fait une plongee de 25 min");
-    deco.addFlat(50, "Tx2135", 25);
-    console.log("Calcul de la deco...");
-    var runtime = deco.calculateDecompression(false, 0.5, 0.7, 1.6, 30, undefined);
-    console.log("Resultat de la deco :");
-    console.log(runtime);
-    setRuntime(runtime);
-    setShowRuntime(true);
-  } */
+  const handleClosePlongeeForm = () => {
+    setSelectedPlongee({
+      name: '',
+      id: '',
+      segments: [],
+      gazFond: [],
+      gazDeco: []
+    });
+  };
+  const handleCloseGazForm = () => {
+    setSelectedGaz({
+      id: '',
+      name: '',
+      fO2: 0,
+      fHe: 0,
+      fN2: 0,
+      modInMeters: function (ppO2: number, isFreshWater: boolean): number {
+        throw new Error('Function not implemented.');
+      },
+      endInMeters: function (depth: number, isFreshWater: boolean): number {
+        throw new Error('Function not implemented.');
+      },
+      eadInMeters: function (depth: number, isFreshWater: boolean): number {
+        throw new Error('Function not implemented.');
+      }
+    });
+  };
 
   return (
-    <SafeAreaProvider>
-      <EditeurContext.Provider value={{ editeurActif, setEditeurActif }}>
-        <SafeAreaView style={mainStyles.container}>
-          <StatusBar style="auto" />
-          {editeurActif ?
-            (
-              <View style={mainStyles.editorContainer}>
-                <BoutonRetour />
-                {editeurActif === 'gaz' && <GestionGaz />}
-                {editeurActif === 'plongee' && <GestionPlongee />}
-                {editeurActif === 'runtime' && <RuntimeScreen />}
-                {editeurActif === 'about' && <AboutScreen />}
-              </View>
-            ) : (
-              <MenuPrincipal />
-            )
-          }
-        </SafeAreaView>
-      </EditeurContext.Provider>
-    </SafeAreaProvider>
+    <SafeAreaView style={mainStyles.container}>
+      <StatusBar style="auto" />
+      {editeurActif ? (
+        <View style={mainStyles.editorContainer}>
+          {(editeurActif === 'gaz' || editeurActif === 'plongee' || editeurActif === 'runtime' || editeurActif === 'about') && <BoutonRetour onPress={fermerEditeur} />}
+          {editeurActif === 'gaz' && <GestionGaz />}
+          {editeurActif === 'addgaz' && <AddGazForm />}
+          {editeurActif === 'editgaz' && <GazForm onClose={handleCloseGazForm} gaz={selectedGaz} />}
+          {editeurActif === 'plongee' && <GestionPlongee />}
+          {editeurActif === 'addplongee' && <AddPlongeeForm />}
+          {editeurActif === 'editplongee' && <PlongeeForm onClose={handleClosePlongeeForm} plongee={selectedPlongee} />}
+          {editeurActif === 'runtime' && <RuntimeScreen />}
+          {editeurActif === 'about' && <AboutScreen />}
+        </View>
+      ) : (
+        <MenuPrincipal />
+      )}
+    </SafeAreaView>
   );
 }
 

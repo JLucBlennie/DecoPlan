@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useGazStore } from '../store/useGazStore';
 import { Dive } from '../lib/dive/dive';
 import CircleButton from './ui/CircleButton';
+import { useEditeur } from '../context/EditeurContext';
 
 type GazFormProps = {
     gaz: Dive.Gas;
@@ -10,10 +11,16 @@ type GazFormProps = {
 };
 
 export default function GazForm({ gaz, onClose }: GazFormProps) {
+    const { fermerEditeur } = useEditeur();
     const { updateGaz } = useGazStore();
     const [nom, setNom] = useState(gaz.name);
     const [o2, setO2] = useState((gaz.fO2 * 100).toString());
     const [he, setHe] = useState((gaz.fHe * 100).toString());
+
+    const closeEditeur = () => {
+        fermerEditeur();
+        onClose();
+    };
 
     const handleSubmit = () => {
         if (!nom || !o2 || !he) {
@@ -21,7 +28,7 @@ export default function GazForm({ gaz, onClose }: GazFormProps) {
             return;
         }
         updateGaz(gaz.id, { name: nom, fO2: parseFloat(o2) / 100, fHe: parseFloat(he) / 100, fN2: 1 - (parseFloat(o2) / 100 + parseFloat(he) / 100) });
-        onClose();
+        closeEditeur();
     };
 
     return (
@@ -57,7 +64,7 @@ export default function GazForm({ gaz, onClose }: GazFormProps) {
                 />
             </View>
             <View style={styles.buttons}>
-                <CircleButton iconName="cancel" onPress={onClose} position='Left' />
+                <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
                 <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
         </View>

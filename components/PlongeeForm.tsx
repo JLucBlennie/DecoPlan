@@ -7,6 +7,8 @@ import CheckBox from 'react-native-check-box';
 import { mainStyles } from '../App';
 import GestionSegments from './gestionSegments';
 import CircleButton from './ui/CircleButton';
+import PlongeeProfileGraph from './PlongeeProfileGraph';
+import { useEditeur } from '../context/EditeurContext';
 
 type PlongeeFormProps = {
     plongee: Dive.Plongee;
@@ -14,6 +16,7 @@ type PlongeeFormProps = {
 };
 
 export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
+    const { fermerEditeur } = useEditeur();
     const { gazList } = useGazStore();
     const [nom, setNom] = useState(plongee.name);
     const [gazFond, setGazFond] = useState<Dive.Gas[]>(plongee.gazFond);
@@ -27,6 +30,11 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
         setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
     };
 
+    const closeEditeur = () => {
+        fermerEditeur();
+        onClose();
+    };
+
     const handleSubmit = () => {
         updatePlongee(plongee.id, {
             name: nom,
@@ -34,7 +42,7 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
             gazDeco,
             segments, // À remplir plus tard
         });
-        onClose();
+        closeEditeur();
     };
 
     // Préparer les options pour les sélecteurs
@@ -96,10 +104,18 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
                 </View>
             </View>
             {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
-            <GestionSegments newSegment={newSegment} setNewSegment={setNewSegment} addSegment={addSegment} />
+            <PlongeeProfileGraph
+                segments={plongee.segments}
+                onUpdateSegment={(index, updatedSegment) => {
+                    const newSegments = [...plongee.segments];
+                    newSegments[index] = updatedSegment;
+                    updatePlongee(plongee.id, { ...plongee, segments: newSegments });
+                }}
+            />
+            {/* <GestionSegments newSegment={newSegment} setNewSegment={setNewSegment} addSegment={addSegment} /> */}
 
             <View style={styles.buttons}>
-                <CircleButton iconName="cancel" onPress={onClose} position='Left' />
+                <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
                 <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
         </View>

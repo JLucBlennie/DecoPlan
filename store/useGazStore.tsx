@@ -18,6 +18,8 @@ const saveGazList = async (list: Dive.Gas[]) => {
 
 type GazStore = {
     gazList: Dive.Gas[];
+    selectedGaz: Dive.Gas;
+    setSelectedGaz: (gaz: Dive.Gas) => Promise<void>;
     addGaz: (gaz: Dive.Gas) => Promise<void>;
     updateGaz: (id: string, gaz: Partial<Dive.Gas>) => Promise<void>;
     deleteGaz: (id: string) => Promise<void>;
@@ -28,7 +30,25 @@ type GazStore = {
 
 export const useGazStore = create<GazStore>((set) => ({
     gazList: [],
-
+    selectedGaz: {
+        id: '',
+        name: '',
+        fO2: 0,
+        fHe: 0,
+        fN2: 0,
+        modInMeters: function (ppO2: number, isFreshWater: boolean): number {
+            throw new Error('Function not implemented.');
+        },
+        endInMeters: function (depth: number, isFreshWater: boolean): number {
+            throw new Error('Function not implemented.');
+        },
+        eadInMeters: function (depth: number, isFreshWater: boolean): number {
+            throw new Error('Function not implemented.');
+        }
+    },
+    setSelectedGaz: async (gaz) => {
+        set({ selectedGaz: gaz });
+    },
     // Ajoute un gaz et sauvegarde
     addGaz: async (gaz) => {
         if (gaz.id) {
@@ -46,20 +66,20 @@ export const useGazStore = create<GazStore>((set) => ({
         saveGazList(newList);
         set({ gazList: newList });
     },
-    
+
     // Supprime un gaz et sauvegarde
     deleteGaz: async (id) => {
         const newList = useGazStore.getState().gazList.filter((g) => g.id !== id);
         saveGazList(newList);
         set({ gazList: newList });
     },
-    
+
     setGazList: async (list) => {
         saveGazList(list);
         set({ gazList: list }
         )
     },
-    
+
     // Charger les données au démarrage
     initializeGazList: async () => {
         try {

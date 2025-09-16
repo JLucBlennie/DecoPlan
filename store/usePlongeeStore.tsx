@@ -11,6 +11,8 @@ const savePlongeeList = async (list: Dive.Plongee[]) => {
 
 type PlongeeStore = {
     plongeeList: Dive.Plongee[];
+    selectedPlongee: Dive.Plongee;
+    setSelectedPlongee: (plongee: Dive.Plongee) => Promise<void>;
     addPlongee: (plongee: Dive.Plongee) => Promise<void>;
     updatePlongee: (id: string, plongee: Partial<Dive.Plongee>) => Promise<void>;
     deletePlongee: (id: string) => Promise<void>;
@@ -21,7 +23,16 @@ type PlongeeStore = {
 
 export const usePlongeeStore = create<PlongeeStore>((set) => ({
     plongeeList: [],
-
+    selectedPlongee: {
+        name: '',
+        id: '',
+        segments: [],
+        gazFond: [],
+        gazDeco: []
+    },
+    setSelectedPlongee: async (plongee) => {
+        set({ selectedPlongee: plongee });
+    },
     // Ajoute un plongee et sauvegarde
     addPlongee: async (plongee) => {
         if (plongee.id) {
