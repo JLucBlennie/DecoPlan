@@ -1,25 +1,41 @@
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Dive } from "../lib/dive/dive";
 import CircleButton from "./ui/CircleButton";
+import { useEffect, useState } from "react";
 
 type GestionSegmentsProps = {
-    newSegment: Dive.Segment;
+    segment: Dive.Segment | null;
+    addSegmentMode: boolean;
     setNewSegment: (segment: Dive.Segment) => void;
-    addSegment: () => void;
+    onClose: () => void;
 };
 
-export default function GestionSegments({ newSegment, setNewSegment, addSegment }: GestionSegmentsProps) {
+export default function GestionSegments({ segment, addSegmentMode, setNewSegment, onClose }: GestionSegmentsProps) {
+    const [localSegment, setLocalSegment] = useState<Dive.Segment>({
+        startDepth: 0,
+        endDepth: 0,
+        gasName: '',
+        time: 0
+    })
+
+    // Met à jour `localSegment` uniquement quand `segment` change
+    useEffect(() => {
+        if (segment !== null) {
+            setLocalSegment(segment);
+        }
+    }, [segment]);  // ⬅️ Déclenché uniquement si `segment` change
+
     return (
         <View style={styles.segmentContainer}>
             {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
             <View style={styles.inputContainer}>
-                <Text style={styles.label}>Ajouter un segment</Text>
+                <Text style={styles.label}>{addSegmentMode ? 'Ajouter' : 'Editer'} un segment</Text>
                 <View style={styles.textInput}>
                     <Text style={[styles.labelInput, styles.label]}>Profondeur de début :</Text>
                     <TextInput
                         placeholder="Profondeur de début"
-                        value={newSegment.startDepth.toString()}
-                        onChangeText={(text) => setNewSegment({ ...newSegment, startDepth: parseFloat(text) || 0 })}
+                        value={localSegment.startDepth.toString()}
+                        onChangeText={(text) => setLocalSegment({ ...localSegment, startDepth: parseFloat(text) || 0 })}
                         keyboardType="numeric"
                         style={styles.input}
                     />
@@ -28,8 +44,8 @@ export default function GestionSegments({ newSegment, setNewSegment, addSegment 
                     <Text style={[styles.labelInput, styles.label]}>Profondeur de fin :</Text>
                     <TextInput
                         placeholder="Profondeur de fin"
-                        value={newSegment.endDepth.toString()}
-                        onChangeText={(text) => setNewSegment({ ...newSegment, endDepth: parseFloat(text) || 0 })}
+                        value={localSegment.endDepth.toString()}
+                        onChangeText={(text) => setLocalSegment({ ...localSegment, endDepth: parseFloat(text) || 0 })}
                         keyboardType="numeric"
                         style={styles.input}
                     />
@@ -38,8 +54,8 @@ export default function GestionSegments({ newSegment, setNewSegment, addSegment 
                     <Text style={[styles.labelInput, styles.label]}>Temps (min) :</Text>
                     <TextInput
                         placeholder="Temps (min)"
-                        value={newSegment.time.toString()}
-                        onChangeText={(text) => setNewSegment({ ...newSegment, time: parseFloat(text) || 0 })}
+                        value={localSegment.time.toString()}
+                        onChangeText={(text) => setLocalSegment({ ...localSegment, time: parseFloat(text) || 0 })}
                         keyboardType="numeric"
                         style={styles.input}
                     />
@@ -47,7 +63,8 @@ export default function GestionSegments({ newSegment, setNewSegment, addSegment 
             </View>
             {/* Ajouter la liste de gaz fond sélectionnés dans la page */}
             <View style={styles.buttonContainer}>
-                <CircleButton iconName="add" onPress={addSegment} size={16} />
+                {addSegmentMode && <CircleButton iconName="add" onPress={() => { setNewSegment(localSegment); onClose(); }} />}
+                {!addSegmentMode && <CircleButton iconName="check" onPress={() => { setNewSegment(localSegment); onClose(); }} />}
             </View>
         </View >
     );

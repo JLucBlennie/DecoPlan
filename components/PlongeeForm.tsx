@@ -25,11 +25,6 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
     const [segments, setSegments] = useState<Dive.Segment[]>(plongee.segments);
     const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
 
-    const addSegment = () => {
-        setSegments([...segments, newSegment]);
-        setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
-    };
-
     const closeEditeur = () => {
         fermerEditeur();
         onClose();
@@ -105,15 +100,27 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
             </View>
             {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
             <PlongeeProfileGraph
-                segments={plongee.segments}
+                segments={segments}
                 onUpdateSegment={(index, updatedSegment) => {
-                    const newSegments = [...plongee.segments];
+                    const newSegments = [...segments];
+                    console.log("UpdateSegment : ", newSegments);
                     newSegments[index] = updatedSegment;
+                    console.log("UpdateSegment modifier par : ", updatedSegment);
+                    console.log("UpdateSegment modifie : ", newSegments);
+                    setSegments(newSegments);
                     updatePlongee(plongee.id, { ...plongee, segments: newSegments });
                 }}
+                onAddSegment={(addedSegment) => {
+                    const newSegments = [...segments];
+                    console.log("AddSegment avant ajout : ", newSegments);
+                    const newSegmentsList = [...newSegments, addedSegment];
+                    console.log("AddSegment A ajouter : ", addedSegment);
+                    console.log("AddSegment apres ajout : ", newSegmentsList);
+                    setSegments(newSegmentsList);
+                    updatePlongee(plongee.id, { ...plongee, segments: newSegmentsList });
+                    setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+                }}
             />
-            {/* <GestionSegments newSegment={newSegment} setNewSegment={setNewSegment} addSegment={addSegment} /> */}
-
             <View style={styles.buttons}>
                 <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
                 <CircleButton iconName="check" onPress={handleSubmit} position='Right' />

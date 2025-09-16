@@ -7,8 +7,8 @@ import { usePlongeeStore } from '../store/usePlongeeStore';
 import uuid from 'react-native-uuid';
 import { mainStyles } from '../App';
 import CircleButton from './ui/CircleButton';
-import GestionSegments from './gestionSegments';
 import { useEditeur } from '../context/EditeurContext';
+import PlongeeProfileGraph from './PlongeeProfileGraph';
 
 export default function AddPlongeeForm() {
   const { fermerEditeur } = useEditeur();
@@ -16,14 +16,16 @@ export default function AddPlongeeForm() {
   const [nom, setNom] = useState("");
   const [gazFond, setGazFond] = useState<Dive.Gas[]>([]);
   const [gazDeco, setGazDeco] = useState<Dive.Gas[]>([]);
-  const { addPlongee } = usePlongeeStore();
+  const { addPlongee, updatePlongee } = usePlongeeStore();
   const [segments, setSegments] = useState<Dive.Segment[]>([]);
   const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
-
-  const addSegment = () => {
-    setSegments([...segments, newSegment]);
-    setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
-  };
+  const [plongee, setPlongee] = useState<Dive.Plongee>({
+    id: uuid.v4(),
+    name: '',
+    gazFond: [],
+    gazDeco: [],
+    segments: []
+  })
 
   const closeEditeur = () => {
     fermerEditeur();
@@ -31,7 +33,7 @@ export default function AddPlongeeForm() {
 
   const handleSubmit = () => {
     addPlongee({
-      id: uuid.v4(),
+      id: plongee.id,
       name: nom,
       gazFond,
       gazDeco,
@@ -99,8 +101,28 @@ export default function AddPlongeeForm() {
       </View>
 
       {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
-      <GestionSegments newSegment={newSegment} setNewSegment={setNewSegment} addSegment={addSegment} />
-
+      <PlongeeProfileGraph
+        segments={segments}
+        onUpdateSegment={(index, updatedSegment) => {
+          const newSegments = [...segments];
+          console.log("UpdateSegment : ", newSegments);
+          newSegments[index] = updatedSegment;
+          console.log("UpdateSegment modifier par : ", updatedSegment);
+          console.log("UpdateSegment modifie : ", newSegments);
+          setSegments(newSegments);
+          setPlongee({ ...plongee, segments: newSegments });
+        }}
+        onAddSegment={(addedSegment) => {
+          const newSegments = [...segments];
+          console.log("AddSegment avant ajout : ", newSegments);
+          const newSegmentsList = [...newSegments, addedSegment];
+          console.log("AddSegment A ajouter : ", addedSegment);
+          console.log("AddSegment apres ajout : ", newSegmentsList);
+          setSegments(newSegmentsList);
+          setPlongee({ ...plongee, segments: newSegmentsList });
+          setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+        }}
+      />
       <View style={styles.buttons}>
         <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
         <CircleButton iconName="check" onPress={handleSubmit} position='Right' />

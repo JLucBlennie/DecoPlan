@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Modal, Button, TextInput, Pressable } from 'react-native';
 import Svg, { Line, G, Text as SvgText } from 'react-native-svg';
 import { Dive } from '../lib/dive/dive';
+import GestionSegments from './gestionSegments';
+import CircleButton from './ui/CircleButton';
 
 type PlongeeProfileGraphProps = {
     segments: Dive.Segment[];
     onUpdateSegment: (index: number, updatedSegment: Dive.Segment) => void;
+    onAddSegment: (addedSegment: Dive.Segment) => void;
 };
 
-export default function PlongeeProfileGraph({ segments, onUpdateSegment }: PlongeeProfileGraphProps) {
+export default function PlongeeProfileGraph({ segments, onUpdateSegment, onAddSegment }: PlongeeProfileGraphProps) {
     const [selectedSegmentIndex, setSelectedSegmentIndex] = useState<number | null>(null);
     const [editedSegment, setEditedSegment] = useState<Dive.Segment | null>(null);
+    const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+    const [addSegmentFlag, setAddSegmentFlag] = useState(false);
 
+    const addSegment = () => {
+        console.log("AddSegment : ", newSegment);
+        onAddSegment(newSegment);
+        setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+    };
     // Ajoute un segment fictif pour partir de la surface
     const segmentsWithSurface = [
         {
@@ -35,11 +45,41 @@ export default function PlongeeProfileGraph({ segments, onUpdateSegment }: Plong
         setEditedSegment({ ...segments[index] });
     };
 
+    useEffect(() => {
+        console.log("Update NewSegment : ", newSegment);
+        if (newSegment.endDepth > 0 && newSegment.startDepth > 0 && newSegment.time > 0)
+            handleUpdateSegment();
+    }, [newSegment]);
+
+    const onClose = () => {
+        console.log("onClose...", newSegment);
+        if (newSegment === editedSegment) {
+            console.log("Cancel...");
+            setSelectedSegmentIndex(null); setAddSegmentFlag(false)
+        }
+    };
+
     // Mettre à jour un segment
     const handleUpdateSegment = () => {
-        if (selectedSegmentIndex !== null && editedSegment) {
-            onUpdateSegment(selectedSegmentIndex, editedSegment);
-            setSelectedSegmentIndex(null);
+        console.log("HandleUpdateSegment...", newSegment);
+        if (newSegment === editedSegment) {
+            console.log("Cancel...");
+            setSelectedSegmentIndex(null); setAddSegmentFlag(false)
+        } else {
+            console.log("Valider...", addSegmentFlag);
+            console.log("Valider...", selectedSegmentIndex);
+            console.log("Valider...", newSegment);
+            if (selectedSegmentIndex !== null && newSegment) {
+                console.log("Modifier le segment...");
+                onUpdateSegment(selectedSegmentIndex, newSegment);
+                setSelectedSegmentIndex(null);
+            }
+            if (addSegmentFlag) {
+                console.log("Ajouter le segment...", newSegment);
+                onAddSegment(newSegment);
+                setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+                setAddSegmentFlag(false);
+            }
         }
     };
 
@@ -111,10 +151,10 @@ export default function PlongeeProfileGraph({ segments, onUpdateSegment }: Plong
                                 key={index}
                                 style={({ pressed }) => ({
                                     position: 'absolute',
-                                    left: Math.min(x1, x2) + 10 - 20,
-                                    top: Math.min(y1, y2) + 10 - 20,
-                                    width: Math.abs(x2 - x1) + 40,
-                                    height: Math.abs(y2 - y1) + 40,
+                                    left: Math.min(x1, x2) + 5,
+                                    top: Math.min(y1, y2) - 5,
+                                    width: Math.abs(x2 - x1),
+                                    height: Math.abs(y2 - y1) + 20,
                                     backgroundColor: pressed ? 'rgba(0, 0, 255, 0.3)' : 'rgba(0, 0, 255, 0.1)',
                                     zIndex: 10,
                                     justifyContent: 'center',
@@ -133,47 +173,20 @@ export default function PlongeeProfileGraph({ segments, onUpdateSegment }: Plong
             </View>
 
             {/* Modal pour éditer un segment */}
-            <Modal visible={selectedSegmentIndex !== null} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Éditer le segment</Text>
-                    {editedSegment && (
-                        <>
-                            <Text>Profondeur de début (m)</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={editedSegment.startDepth.toString()}
-                                onChangeText={(text) => setEditedSegment({ ...editedSegment, startDepth: parseFloat(text) || 0 })}
-                                keyboardType="numeric"
-                            />
-                            <Text>Profondeur de fin (m)</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={editedSegment.endDepth.toString()}
-                                onChangeText={(text) => setEditedSegment({ ...editedSegment, endDepth: parseFloat(text) || 0 })}
-                                keyboardType="numeric"
-                            />
-                            <Text>Temps (min)</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={editedSegment.time.toString()}
-                                onChangeText={(text) => setEditedSegment({ ...editedSegment, time: parseFloat(text) || 0 })}
-                                keyboardType="numeric"
-                            />
-                            <View style={styles.modalButtons}>
-                                <Button title="Annuler" onPress={() => setSelectedSegmentIndex(null)} />
-                                <Button title="Enregistrer" onPress={handleUpdateSegment} />
-                            </View>
-                        </>
-                    )}
-                </View>
+            <Modal visible={selectedSegmentIndex !== null || addSegmentFlag} animationType="slide">
+                {(editedSegment || addSegmentFlag) &&
+                    <GestionSegments segment={editedSegment} setNewSegment={setNewSegment} addSegmentMode={addSegmentFlag} onClose={onClose} />
+                }
             </Modal>
+            <View style={styles.modalButtons}>
+                <CircleButton iconName="add" onPress={() => setAddSegmentFlag(true)} />
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
     },
     graphContainer: {
         alignItems: 'center',
