@@ -103,6 +103,7 @@ export default function AddPlongeeForm() {
       {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
       <PlongeeProfileGraph
         segments={segments}
+        gazFondList={gazFond}
         onUpdateSegment={(index, updatedSegment) => {
           const newSegments = [...segments];
           console.log("UpdateSegment : ", newSegments);

@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-picker/picker": "^2.11.1",
     "expo": "^54.0.7",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
@@ -27,9 +28,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "~19.0.10",
+    "@types/react": "~19.1.10",
     "@types/react-native-check-box": "^2.1.6",
-    "typescript": "~5.8.3"
+    "typescript": "~5.9.2"
   },
   "private": true
 }

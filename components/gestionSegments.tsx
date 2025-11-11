@@ -2,21 +2,36 @@ import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Dive } from "../lib/dive/dive";
 import CircleButton from "./ui/CircleButton";
 import { useEffect, useState } from "react";
+import GasPicker from "./GazPicker";
 
 type GestionSegmentsProps = {
     segment: Dive.Segment | null;
     addSegmentMode: boolean;
+    gazFondList: Dive.Gas[];
     setNewSegment: (segment: Dive.Segment) => void;
     onClose: () => void;
 };
 
-export default function GestionSegments({ segment, addSegmentMode, setNewSegment, onClose }: GestionSegmentsProps) {
+export default function GestionSegments({ segment, addSegmentMode, gazFondList, setNewSegment, onClose }: GestionSegmentsProps) {
     const [localSegment, setLocalSegment] = useState<Dive.Segment>({
         startDepth: 0,
         endDepth: 0,
         gasName: '',
         time: 0
     })
+    
+    console.log("Gaz Liste : ", gazFondList);
+
+    function gazFondId(name: string): string {
+        if (gazFondList) {
+            for (var i = 0; i < gazFondList.length; i++) {
+                if (gazFondList[i].name === name) {
+                    return gazFondList[i].id;
+                }
+            }
+        }
+        return "";
+    }
 
     // Met à jour `localSegment` uniquement quand `segment` change
     useEffect(() => {
@@ -24,6 +39,14 @@ export default function GestionSegments({ segment, addSegmentMode, setNewSegment
             setLocalSegment(segment);
         }
     }, [segment]);  // ⬅️ Déclenché uniquement si `segment` change
+
+    const handleGasSelect = (gasId: string) => {
+        const selectedGas = gazFondList.find(gas => gas.id === gasId);
+        setLocalSegment({
+            ...localSegment,
+            gasName: selectedGas ? selectedGas.name : '',
+        });
+    };
 
     return (
         <View style={styles.segmentContainer}>
@@ -58,6 +81,15 @@ export default function GestionSegments({ segment, addSegmentMode, setNewSegment
                         onChangeText={(text) => setLocalSegment({ ...localSegment, time: parseFloat(text) || 0 })}
                         keyboardType="numeric"
                         style={styles.input}
+                    />
+                </View>
+                <View style={styles.textInput}>
+                    <Text style={[styles.labelInput, styles.label]}>Gaz Fond :</Text>
+                    {/* Picker pour sélectionner le gaz */}
+                    <GasPicker
+                        gases={gazFondList}
+                        selectedGas={gazFondId(localSegment.gasName)}
+                        onGasSelect={handleGasSelect}
                     />
                 </View>
             </View>

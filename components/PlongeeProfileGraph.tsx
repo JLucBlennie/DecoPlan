@@ -7,21 +7,17 @@ import CircleButton from './ui/CircleButton';
 
 type PlongeeProfileGraphProps = {
     segments: Dive.Segment[];
+    gazFondList: Dive.Gas[];
     onUpdateSegment: (index: number, updatedSegment: Dive.Segment) => void;
     onAddSegment: (addedSegment: Dive.Segment) => void;
 };
 
-export default function PlongeeProfileGraph({ segments, onUpdateSegment, onAddSegment }: PlongeeProfileGraphProps) {
+export default function PlongeeProfileGraph({ segments, gazFondList, onUpdateSegment, onAddSegment }: PlongeeProfileGraphProps) {
     const [selectedSegmentIndex, setSelectedSegmentIndex] = useState<number | null>(null);
     const [editedSegment, setEditedSegment] = useState<Dive.Segment | null>(null);
     const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
     const [addSegmentFlag, setAddSegmentFlag] = useState(false);
 
-    const addSegment = () => {
-        console.log("AddSegment : ", newSegment);
-        onAddSegment(newSegment);
-        setNewSegment({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
-    };
     // Ajoute un segment fictif pour partir de la surface
     const segmentsWithSurface = [
         {
@@ -175,7 +171,7 @@ export default function PlongeeProfileGraph({ segments, onUpdateSegment, onAddSe
             {/* Modal pour éditer un segment */}
             <Modal visible={selectedSegmentIndex !== null || addSegmentFlag} animationType="slide">
                 {(editedSegment || addSegmentFlag) &&
-                    <GestionSegments segment={editedSegment} setNewSegment={setNewSegment} addSegmentMode={addSegmentFlag} onClose={onClose} />
+                    <GestionSegments segment={editedSegment} setNewSegment={setNewSegment} addSegmentMode={addSegmentFlag} onClose={onClose} gazFondList={gazFondList} />
                 }
             </Modal>
             <View style={styles.modalButtons}>
