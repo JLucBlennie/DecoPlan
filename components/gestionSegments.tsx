@@ -3,6 +3,7 @@ import { Dive } from "../lib/dive/dive";
 import CircleButton from "./ui/CircleButton";
 import { useEffect, useState } from "react";
 import GasPicker from "./GazPicker";
+import { mainStyles } from "../styles/mainStyles";
 
 type GestionSegmentsProps = {
     segment: Dive.Segment | null;
@@ -13,14 +14,12 @@ type GestionSegmentsProps = {
 };
 
 export default function GestionSegments({ segment, addSegmentMode, gazFondList, setNewSegment, onClose }: GestionSegmentsProps) {
-    const [localSegment, setLocalSegment] = useState<Dive.Segment>({
+    const [localSegment, setLocalSegment] = useState<Dive.Segment>(segment ?? {
         startDepth: 0,
         endDepth: 0,
         gasName: '',
         time: 0
     })
-    
-    console.log("Gaz Liste : ", gazFondList);
 
     function gazFondId(name: string): string {
         if (gazFondList) {
@@ -29,18 +28,12 @@ export default function GestionSegments({ segment, addSegmentMode, gazFondList, 
                     return gazFondList[i].id;
                 }
             }
+            return gazFondList[0].id;
         }
         return "";
     }
 
-    // Met à jour `localSegment` uniquement quand `segment` change
-    useEffect(() => {
-        if (segment !== null) {
-            setLocalSegment(segment);
-        }
-    }, [segment]);  // ⬅️ Déclenché uniquement si `segment` change
-
-    const handleGasSelect = (gasId: string) => {
+    function handleGasSelect(gasId: string | null) {
         const selectedGas = gazFondList.find(gas => gas.id === gasId);
         setLocalSegment({
             ...localSegment,
@@ -49,7 +42,7 @@ export default function GestionSegments({ segment, addSegmentMode, gazFondList, 
     };
 
     return (
-        <View style={styles.segmentContainer}>
+        <View style={mainStyles.editorContainer}>
             {/* Ici il faut voir comment on affiche les segments et aussi la possibilité d'en AjouterIl faut pouvoir les trier par profondeurs ==> Faire un composant pour ça... */}
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>{addSegmentMode ? 'Ajouter' : 'Editer'} un segment</Text>
@@ -103,15 +96,6 @@ export default function GestionSegments({ segment, addSegmentMode, gazFondList, 
 }
 
 const styles = StyleSheet.create({
-    segmentContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        alignContent: 'space-around',
-        alignItems: 'flex-end',
-        alignSelf: 'stretch',
-        backgroundColor: 'transparent',
-        paddingBottom: 15
-    },
     label: {
         fontSize: 16,
         marginBottom: 8

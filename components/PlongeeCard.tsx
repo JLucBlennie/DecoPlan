@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Dive } from "../lib/dive/dive";
-import { mainStyles } from "../App";
 import CircleButton from "./ui/CircleButton";
+import { mainStyles } from "../styles/mainStyles";
 
 type PlongeeCardProps = {
     plongee: Dive.Plongee;

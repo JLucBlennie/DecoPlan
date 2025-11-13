@@ -1,7 +1,7 @@
 import { Text, View, StyleSheet } from 'react-native';
 import appJson from '../app.json';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { mainStyles } from '../App';
+import { mainStyles } from '../styles/mainStyles';
 
 export default function AboutScreen() {
 

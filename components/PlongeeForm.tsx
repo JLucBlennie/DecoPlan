@@ -4,8 +4,6 @@ import { Dive } from '../lib/dive/dive';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import CheckBox from 'react-native-check-box';
-import { mainStyles } from '../App';
-import GestionSegments from './gestionSegments';
 import CircleButton from './ui/CircleButton';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
 import { useEditeur } from '../context/EditeurContext';

@@ -4,36 +4,36 @@ import { View, StyleSheet } from 'react-native';
 import { Dive } from '../lib/dive/dive';
 import DropDownPicker from 'react-native-dropdown-picker';
 
-type GasPickerProps = {
-    gases: Dive.Gas[];          // Liste des gaz disponibles
-    selectedGas: string | null; // ID du gaz sélectionné
-    onGasSelect: (gasId: string | null) => void; // Callback pour la sélection
+type PlongeePickerProps = {
+    plongees: Dive.Plongee[];          // Liste des plongees disponibles
+    selectedPlongee: string | null; // ID de la plongee sélectionnée
+    onPlongeeSelect: (plongeeId: string | null) => void; // Callback pour la sélection
 };
 
-export default function GasPicker({ gases, selectedGas: selectedGas, onGasSelect: onGasSelect }: GasPickerProps) {
+export default function PlongeePicker({ plongees, selectedPlongee: selectedPlongee, onPlongeeSelect: onPlongeeSelect }: PlongeePickerProps) {
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState<string | null>(selectedGas);
+    const [value, setValue] = useState<string | null>(selectedPlongee);
 
     // Met à jour la valeur locale si `selectedPlongee` change (ex: depuis le parent)
     useEffect(() => {
-        setValue(selectedGas);
-    }, [selectedGas]);
+        setValue(selectedPlongee);
+    }, [selectedPlongee]);
 
     return (
         <View style={styles.container}>
             <DropDownPicker
                 open={open}
                 value={value}
-                items={gases.map(gas => ({
-                    label: gas.name,
-                    value: gas.id,
+                items={plongees.map(plongee => ({
+                    label: plongee.name,
+                    value: plongee.id,
                 }))}
                 setOpen={setOpen}
                 setValue={setValue}
                 onChangeValue={(selectedValue) => {
-                    onGasSelect(selectedValue);  // ⬅️ Appelle le callback parent avec la nouvelle valeur
+                    onPlongeeSelect(selectedValue);  // ⬅️ Appelle le callback parent avec la nouvelle valeur
                 }}
-                placeholder="Sélectionnez un gaz"
+                placeholder="Sélectionnez une plongée"
                 style={styles.picker}
                 dropDownContainerStyle={styles.dropDownContainer}
                 placeholderStyle={styles.placeholder}

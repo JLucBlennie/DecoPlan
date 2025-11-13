@@ -1,9 +1,9 @@
 import React, { useContext } from 'react';
 import { View, Text } from 'react-native';
 import { useEditeur } from '../context/EditeurContext';
-import { mainStyles } from '../App';
 import ButtonLine from './ui/ButtonLine';
 import appJson from '../app.json';
+import { mainStyles } from '../styles/mainStyles';
 
 export default function MenuPrincipal() {
     const { ouvrirEditeur } = useEditeur();

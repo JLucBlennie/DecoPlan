@@ -1,7 +1,7 @@
 import { View, StyleSheet, Text } from "react-native";
 import CircleButton from "./ui/CircleButton";
-import { mainStyles } from "../App";
 import { Dive } from "../lib/dive/dive";
+import { mainStyles } from "../styles/mainStyles";
 
 type GazCardProps = {
     gaz: Dive.Gas;

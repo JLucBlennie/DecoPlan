@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import { FlatList, View, StyleSheet, Text } from "react-native"
 import { Dive } from "../lib/dive/dive";
 import { usePlongeeStore } from "../store/usePlongeeStore";
-import { mainStyles } from "../App";
 import ButtonLine from "./ui/ButtonLine";
 import PlongeeCard from "./PlongeeCard";
-import PlongeeForm from "./PlongeeForm";
 import { useEditeur } from "../context/EditeurContext";
+import { mainStyles } from "../styles/mainStyles";
 
 export default function GestionPlongee() {
     const { ouvrirEditeur } = useEditeur();
@@ -23,20 +22,18 @@ export default function GestionPlongee() {
 
     return (
         <View style={mainStyles.editorContainer}>
-            <View style={mainStyles.editorContainer}>
-                <Text style={styles.title}>Liste des Plongées</Text>
-                <View style={styles.listcontainer}>
-                    <FlatList
-                        style={styles.flatlist}
-                        data={plongeeList}
-                        showsVerticalScrollIndicator={true}
-                        renderItem={({ item }) => <PlongeeCard plongee={item} onPress={() => { handleEditPlongee(item); }} onDelete={() => { deletePlongee(item.id); }} />}
-                        keyExtractor={(item) => item.id} />
-                </View>
-                <ButtonLine iconName={"add"} onPress={handleAddPlongee} text={"Ajouter une Plongée..."} />
-                <ButtonLine iconName={"clear"} onPress={resetPlongeeList} text={"Reset la liste des Plongées..."} />
+            <Text style={styles.title}>Liste des Plongées</Text>
+            <View style={styles.listcontainer}>
+                <FlatList
+                    style={styles.flatlist}
+                    data={plongeeList}
+                    showsVerticalScrollIndicator={true}
+                    renderItem={({ item }) => <PlongeeCard plongee={item} onPress={() => { handleEditPlongee(item); }} onDelete={() => { deletePlongee(item.id); }} />}
+                    keyExtractor={(item) => item.id} />
             </View>
-        </View >
+            <ButtonLine iconName={"add"} onPress={handleAddPlongee} text={"Ajouter une Plongée..."} />
+            <ButtonLine iconName={"clear"} onPress={resetPlongeeList} text={"Reset la liste des Plongées..."} />
+        </View>
     );
 }
 

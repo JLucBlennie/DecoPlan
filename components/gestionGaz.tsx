@@ -3,11 +3,9 @@ import { FlatList, View, StyleSheet, Text } from "react-native"
 import { Dive } from "../lib/dive/dive";
 import GazCard from "./GazCard";
 import { useGazStore } from "../store/useGazStore";
-import { mainStyles } from "../App";
-import GazForm from "./GazForm";
 import ButtonLine from "./ui/ButtonLine";
-import AddGazForm from "./AddGazForm";
 import { useEditeur } from "../context/EditeurContext";
+import { mainStyles } from "../styles/mainStyles";
 
 export default function GestionGaz() {
     const { ouvrirEditeur } = useEditeur();

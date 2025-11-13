@@ -5,7 +5,6 @@ import { Dive } from '../lib/dive/dive';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import uuid from 'react-native-uuid';
-import { mainStyles } from '../App';
 import CircleButton from './ui/CircleButton';
 import { useEditeur } from '../context/EditeurContext';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
