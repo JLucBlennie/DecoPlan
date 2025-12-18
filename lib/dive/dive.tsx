@@ -22,10 +22,6 @@ export namespace Dive {
     fO2: number;
     fHe: number;
     fN2: number;
-
-    modInMeters: (ppO2: number, isFreshWater: boolean) => number;
-    endInMeters: (depth: number, isFreshWater: boolean) => number;
-    eadInMeters: (depth: number, isFreshWater: boolean) => number;
   }
 
   export const DiveLib = {
@@ -571,33 +567,33 @@ export namespace Dive {
       fO2,
       fHe,
       fN2: 1 - (fO2 + fHe),
-
-      modInMeters(ppO2: number, isFreshWater: boolean) {
-        return barToDepthInMeters(ppO2 / this.fO2, isFreshWater);
-      },
-
-      endInMeters(depth: number, isFreshWater: boolean) {
-        // Helium has a narc factor of 0 while N2 and O2 have a narc factor of 1
-        var narcIndex = this.fO2 + this.fN2;
-
-        var bars = depthInMetersToBars(depth, isFreshWater);
-        var equivalentBars = bars * narcIndex;
-        //console.log("Depth: " + depth + " Bars:" + bars + "Relation: " + narcIndex + " Equivalent Bars:" +equivalentBars);
-        return barToDepthInMeters(equivalentBars, isFreshWater);
-      },
-
-      eadInMeters(depth: number, isFreshWater: boolean) {
-        // Helium has a narc factor of 0 while N2 and O2 have a narc factor of 1
-        var narcIndex = this.fO2 + this.fN2;
-
-        var bars = depthInMetersToBars(depth, isFreshWater);
-        var equivalentBars = bars / narcIndex;
-        //console.log("Depth: " + depth + " Bars:" + bars + "Relation: " + narcIndex + " Equivalent Bars:" +equivalentBars);
-        return barToDepthInMeters(equivalentBars, isFreshWater);
-      },
     };
 
     return gas;
+  }
+
+  export function modInMeters(ppO2: number, fO2: number, isFreshWater: boolean) {
+    return barToDepthInMeters(ppO2 / fO2, isFreshWater);
+  }
+
+  export function endInMeters(depth: number, fO2: number, fN2: number, isFreshWater: boolean) {
+    // Helium has a narc factor of 0 while N2 and O2 have a narc factor of 1
+    var narcIndex = fO2 + fN2;
+
+    var bars = depthInMetersToBars(depth, isFreshWater);
+    var equivalentBars = bars * narcIndex;
+    //console.log("Depth: " + depth + " Bars:" + bars + "Relation: " + narcIndex + " Equivalent Bars:" +equivalentBars);
+    return barToDepthInMeters(equivalentBars, isFreshWater);
+  }
+
+  export function eadInMeters(depth: number, fO2: number, fN2: number, isFreshWater: boolean) {
+    // Helium has a narc factor of 0 while N2 and O2 have a narc factor of 1
+    var narcIndex = fO2 + fN2;
+
+    var bars = depthInMetersToBars(depth, isFreshWater);
+    var equivalentBars = bars / narcIndex;
+    //console.log("Depth: " + depth + " Bars:" + bars + "Relation: " + narcIndex + " Equivalent Bars:" +equivalentBars);
+    return barToDepthInMeters(equivalentBars, isFreshWater);
   }
 
   export function segment(
@@ -626,10 +622,10 @@ export namespace Dive {
         var segment2 = segments[i + 1];
         //if both are flat and match the same depth
         if (
-          segment1.startDepth == segment1.endDepth &&
-          segment2.startDepth == segment2.endDepth &&
-          segment1.endDepth == segment2.startDepth &&
-          segment1.gasName == segment2.gasName
+          segment1.startDepth === segment1.endDepth &&
+          segment2.startDepth === segment2.endDepth &&
+          segment1.endDepth === segment2.startDepth &&
+          segment1.gasName === segment2.gasName
         ) {
           segment1.time = segment1.time + segment2.time;
           segments.splice(i + 1, 1); //remove segment i+1

@@ -5,17 +5,60 @@ import { usePlongeeStore } from "../store/usePlongeeStore";
 import PlongeePicker from "./PlongeePicker";
 import { Dive } from "../lib/dive/dive";
 import { mainStyles } from "../styles/mainStyles";
+import RuntimeResult from "./RuntimeResult";
+import { Buhlmann } from "../lib/dive/buhlmann";
 
 export default function RuntimeScreen() {
     const [gfBas, setGFBas] = useState("90");
     const [gfHaut, setGFHaut] = useState("90");
     const { plongeeList } = usePlongeeStore();
     const [selectedPlongee, setSelectedPlongee] = useState<Dive.Plongee | null>(null);
+    const [showResult, setShowResult] = useState(false);
+
+    const [decoPlan, setDecoPlan] = useState<Dive.Segment[]>([]);
 
     console.log("Liste des plongées disponibles :", plongeeList);
 
+    function computeDive(selectedPlongee: Dive.Plongee, gfBas: number, gfHaut: number): Dive.Segment[] {
+        console.log("Chargement de l'algo...");
+        var deco = new Buhlmann.Plan(Buhlmann.ZH16CTissues);
+        console.log("Definition des gaz Fond");
+        for (let gaz of selectedPlongee.gazFond) {
+            deco.addBottomGas(gaz);
+        }
+        console.log("Definition des gaz Deco");
+        for (let gaz of selectedPlongee.gazDeco) {
+            deco.addDecoGas(gaz);
+        }
+
+        var isFirstSegment = true;
+        for (let segment of selectedPlongee.segments) {
+            console.log("Descente avec le Tx");
+            if (isFirstSegment && segment.startDepth === segment.endDepth) {
+                deco.addDepthChange(0, segment.endDepth, segment.gasName, (segment.endDepth - 0) / 20);
+            } else if (segment.startDepth < segment.endDepth) {
+                deco.addDepthChange(segment.startDepth, segment.endDepth, segment.gasName, (segment.endDepth - segment.startDepth) / 20);
+            } else if (segment.startDepth === segment.endDepth) {
+                console.log("On fait une plongee de 25 min");
+                deco.addFlat(segment.startDepth, segment.gasName, segment.time);
+            }
+        }
+        console.log("Calcul de la deco...");
+        var decoPlan = deco.calculateDecompression(false, gfBas / 100, gfHaut / 100, 1.6, 30, undefined);
+        console.log("Resultat de la deco :");
+        console.log(decoPlan);
+        return decoPlan;
+    }
+
     function handleSubmit(): void {
-        console.log("Lancement du calcul du Runtime avec GF Bas:", gfBas, "GF Haut:", gfHaut, "Plongée sélectionnée:", selectedPlongee);
+        setShowResult(false);
+        if (selectedPlongee !== null) {
+            console.log("Lancement du calcul du Runtime avec GF Bas:", gfBas, "GF Haut:", gfHaut, "Plongée sélectionnée:", selectedPlongee);
+            const plongeeSegments = [...selectedPlongee.segments];
+            const runtime = computeDive(selectedPlongee!, parseInt(gfBas), parseInt(gfHaut));
+            setDecoPlan([...plongeeSegments, ...runtime]);
+            setShowResult(true);
+        }
     }
 
     const handlePlongeeSelect = (plongeeId: string | null) => {
@@ -67,6 +110,11 @@ export default function RuntimeScreen() {
                 <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
             {/* Affichage du tableau de résultat */}
+            <View style={styles.listcontainer}>
+                {showResult && decoPlan && (
+                    <RuntimeResult data={decoPlan} />
+                )}
+            </View>
         </View>
     );
 }

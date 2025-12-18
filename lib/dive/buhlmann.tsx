@@ -521,10 +521,10 @@ export namespace Buhlmann {
       for (var gasName in this.decoGasses) {
         var candidateGas = this.decoGasses[gasName];
         var mod = Math.round(
-          candidateGas.modInMeters(maxppO2, this.isFreshWater)
+          Dive.modInMeters(maxppO2, candidateGas.fO2, this.isFreshWater)
         );
         var end = Math.round(
-          candidateGas.endInMeters(depth, this.isFreshWater)
+          Dive.endInMeters(depth, candidateGas.fO2, candidateGas.fN2, this.isFreshWater)
         );
         console.log(
           "Found candidate deco gas " +
