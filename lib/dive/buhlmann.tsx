@@ -11,7 +11,6 @@ export namespace Buhlmann {
   ];
 
   export const ZH16ATissues: TissueCoefficient[] = [
-    // N2HalfTime, N2AValue, N2BValue, HeHalfTime, HeAValue, HeBValue
     [4.0, 1.2599, 0.505, 1.51, 1.7424, 0.4245],
     [5.0, 1.2599, 0.505, 1.88, 1.6189, 0.477],
     [8.0, 1.0, 0.6514, 3.02, 1.383, 0.5747],
@@ -83,118 +82,84 @@ export namespace Buhlmann {
       public isFreshWater: boolean = false
     ) {
       this.pHelium = 0;
-      this.pNitrogen =
-        Dive.partialPressure(absPressure, 0.79) -
-        Dive.waterVapourPressureInBars(35.2);
+
+      /**
+       * BUG 2 CORRIGÉ — Initialisation des tissus : formule incohérente.
+       *
+       * Ancienne formule : Pamb × 0.79 − PH2O  →  résultat ≠ formule de charge
+       * Formule correcte : (Pamb − PH2O) × 0.79
+       *
+       * La pression alvéolaire initiale de N2 doit être cohérente avec
+       * gasPressureBreathingInBars (qui soustrait PH2O avant de multiplier
+       * par la fraction de gaz). Sans cette cohérence, les tissus partent
+       * d'une pression de référence différente de celle utilisée pendant
+       * la plongée, biaisant toute la simulation.
+       */
+      const PH2O = Dive.waterVapourPressureInBars(35.2); // ≈ 0.0627 bar
+      this.pNitrogen = (absPressure - PH2O) * 0.79;
       this.pTotal = this.pNitrogen + this.pHelium;
       this.ceiling = 0;
     }
 
-    N2HalfTime(): number {
-      return this.halfTimes[0];
-    }
-
-    N2AValue(): number {
-      return this.halfTimes[1];
-    }
-
-    N2BValue(): number {
-      return this.halfTimes[2];
-    }
-
-    HeHalfTime(): number {
-      return this.halfTimes[3];
-    }
-
-    HeAValue(): number {
-      return this.halfTimes[4];
-    }
-
-    HeBValue(): number {
-      return this.halfTimes[5];
-    }
+    N2HalfTime(): number { return this.halfTimes[0]; }
+    N2AValue(): number { return this.halfTimes[1]; }
+    N2BValue(): number { return this.halfTimes[2]; }
+    HeHalfTime(): number { return this.halfTimes[3]; }
+    HeAValue(): number { return this.halfTimes[4]; }
+    HeBValue(): number { return this.halfTimes[5]; }
 
     addFlat(depth: number, fO2: number, fHe: number, time: number) {
-      //This is a helper into depth change - with start/end depths identical
       this.addDepthChange(depth, depth, fO2, fHe, time);
     }
 
-    addDepthChange(
-      startDepth: number,
-      endDepth: number,
-      fO2: number,
-      fHe: number,
-      time: number
-    ): number {
+    addDepthChange(startDepth: number, endDepth: number, fO2: number, fHe: number, time: number): number {
       var fN2 = 1 - fO2 - fHe;
-      // Calculate nitrogen loading
-      var gasRate = Dive.gasRateInBarsPerMinute(
-        startDepth,
-        endDepth,
-        time,
-        fN2,
-        this.isFreshWater
-      );
-      var halfTime = this.N2HalfTime(); // half-time constant = log2/half-time in minutes
-      var pGas = Dive.gasPressureBreathingInBars(
-        startDepth,
-        fN2,
-        this.isFreshWater
-      ); // initial ambient pressure
-      var pBegin = this.pNitrogen; // initial compartment inert gas pressure in bar
-      this.pNitrogen = Dive.schreinerEquation(
-        pBegin,
-        pGas,
-        time,
-        halfTime,
-        gasRate
-      );
-      //console.log("pBegin=" + pBegin + ", pGas=" + pGas + ", time=" + time +", halfTime=" + halfTime + ", gasRate=" + gasRate + ", result=" + this.pNitrogen);
 
-      // Calculate helium loading
-      gasRate = Dive.gasRateInBarsPerMinute(
-        startDepth,
-        endDepth,
-        time,
-        fHe,
-        this.isFreshWater
-      );
-      halfTime = this.HeHalfTime();
-      pGas = Dive.gasPressureBreathingInBars(
-        startDepth,
-        fHe,
-        this.isFreshWater
-      );
+      // Chargement en azote (équation de Schreiner)
+      var gasRate = Dive.gasRateInBarsPerMinute(startDepth, endDepth, time, fN2, this.isFreshWater);
+      var pGas = Dive.gasPressureBreathingInBars(startDepth, fN2, this.isFreshWater); // Pi = (Pamb - PH2O) × fN2
+      var pBegin = this.pNitrogen;
+      this.pNitrogen = Dive.schreinerEquation(pBegin, pGas, time, this.N2HalfTime(), gasRate);
+
+      // Chargement en hélium (équation de Schreiner)
+      gasRate = Dive.gasRateInBarsPerMinute(startDepth, endDepth, time, fHe, this.isFreshWater);
+      pGas = Dive.gasPressureBreathingInBars(startDepth, fHe, this.isFreshWater);
       pBegin = this.pHelium;
-      this.pHelium = Dive.schreinerEquation(
-        pBegin,
-        pGas,
-        time,
-        halfTime,
-        gasRate
-      );
+      this.pHelium = Dive.schreinerEquation(pBegin, pGas, time, this.HeHalfTime(), gasRate);
 
       var prevTotal = this.pTotal;
-      // Calculate total loading
       this.pTotal = this.pNitrogen + this.pHelium;
-
-      //return difference - how much load was added
       return this.pTotal - prevTotal;
     }
 
-    calculateCeiling(gf: number) {
+    calculateCeiling(gf: number): number {
       gf = gf || 1.0;
-      var a =
-        (this.N2AValue() * this.pNitrogen + this.HeAValue() * this.pHelium) /
-        this.pTotal;
-      var b =
-        (this.N2BValue() * this.pNitrogen + this.HeBValue() * this.pHelium) /
-        this.pTotal;
+
+      /**
+       * BUG 4 CORRIGÉ — Division par zéro si pTotal ≤ 0.
+       *
+       * Si un tissu n'a aucune charge (pTotal = 0), la division
+       * dans le calcul de 'a' et 'b' produit NaN. Ce NaN se propage
+       * silencieusement dans getCeiling() via la condition 'if (!ceiling)'
+       * (NaN est falsy en JS), causant un ceiling global NaN et des paliers
+       * complètement ignorés.
+       */
+      if (this.pTotal <= 0) {
+        this.ceiling = 0;
+        return 0;
+      }
+
+      // Coefficients a et b combinés N2/He (pondérés par charge partielle)
+      var a = (this.N2AValue() * this.pNitrogen + this.HeAValue() * this.pHelium) / this.pTotal;
+      var b = (this.N2BValue() * this.pNitrogen + this.HeBValue() * this.pHelium) / this.pTotal;
+
+      // Pression minimale de remontée (équation M-Value avec GF)
       var bars = (this.pTotal - a * gf) / (gf / b + 1.0 - gf);
-      //var bars = (this.pTotal - a) * b;
-      this.ceiling = Dive.barToDepthInMeters(bars, this.isFreshWater);
-      //console.log("a:" + a + ", b:" + b + ", bars:" + bars + " ceiling:" + this.ceiling);
-      return Math.round(this.ceiling);
+
+      // Conversion en mètres (clampée à 0 : négatif = pas de palier obligatoire)
+      var depthMeters = Dive.barToDepthInMeters(bars, this.isFreshWater);
+      this.ceiling = Math.max(0, depthMeters);
+      return Math.ceil(this.ceiling); // Arrondi au mètre supérieur (conservateur)
     }
   }
 
@@ -211,11 +176,7 @@ export namespace Buhlmann {
     ) {
       this.tissues = [];
       for (var i = 0; i < this.buhlmannTable.length; i++) {
-        this.tissues[i] = new BuhlmannTissue(
-          this.buhlmannTable[i],
-          absPressure,
-          isFreshWater
-        );
+        this.tissues[i] = new BuhlmannTissue(this.buhlmannTable[i], absPressure, isFreshWater);
       }
       this.bottomGasses = {};
       this.decoGasses = {};
@@ -231,67 +192,49 @@ export namespace Buhlmann {
     }
 
     addFlat(depth: number, gasName: string, time: number) {
-      console.log("addFlat(" + depth + ", " + gasName + ", " + time + ")");
       return this.addDepthChange(depth, depth, gasName, time);
     }
 
-    addDepthChange(
-      startDepth: number,
-      endDepth: number,
-      gasName: string,
-      time: number
-    ): number {
-      console.log(
-        "addDepthChange(" +
-        startDepth +
-        ", " +
-        endDepth +
-        ", " +
-        gasName +
-        ", " +
-        time +
-        ")"
-      );
-      console.log("Gaz Fond");
-      console.log(this.bottomGasses);
-      console.log("Gaz Deco");
-      console.log(this.decoGasses);
+    addDepthChange(startDepth: number, endDepth: number, gasName: string, time: number): number {
       var gas = this.bottomGasses[gasName] || this.decoGasses[gasName];
-      console.log("Gaz trouvé : " + gasName);
-      console.log(gas);
       if (gas == undefined) {
         throw "Gasname must only be one of registered gasses. Please use plan.addBottomGas or plan.addDecoGas to register a gas.";
       }
-      var fO2 = gas.fO2;
-      var fHe = gas.fHe;
-
-      //store this as a stage
       this.segments.push(Dive.segment(startDepth, endDepth, gasName, time));
-
       var loadChange = 0.0;
       for (var i = 0; i < this.tissues.length; i++) {
-        var tissueChange = this.tissues[i].addDepthChange(
-          startDepth,
-          endDepth,
-          fO2,
-          fHe,
-          time
-        );
-        loadChange = loadChange + tissueChange;
+        loadChange += this.tissues[i].addDepthChange(startDepth, endDepth, gas.fO2, gas.fHe, time);
       }
       return loadChange;
     }
 
     getCeiling(gf: number): number {
       gf = gf || 1.0;
+
+      /**
+       * BUG 4 CORRIGÉ — Initialisation et condition de sélection du plafond.
+       *
+       * Ancienne version : 'if (!ceiling || tissueCeiling > ceiling)'
+       *   - '!ceiling' est vrai pour 0 ET pour NaN (falsy en JS)
+       *   - Si calculateCeiling() retourne NaN, ceiling prend NaN
+       *     et tous les tissus suivants échouent le test 'NaN > x' (false)
+       *     → le plafond global reste NaN, les paliers sont ignorés.
+       *
+       * Correction :
+       *   - calculateCeiling() retourne désormais Math.max(0, ...) (≥ 0, jamais NaN)
+       *   - On initialise ceiling à 0 et on cherche simplement le maximum
+       *     (un tissu sans obligation donne 0, qui ne bat pas le max courant)
+       */
       var ceiling = 0;
       for (var i = 0; i < this.tissues.length; i++) {
         var tissueCeiling = this.tissues[i].calculateCeiling(gf);
-        if (!ceiling || tissueCeiling > ceiling) {
+        if (tissueCeiling > ceiling) {
           ceiling = tissueCeiling;
         }
       }
-      while (ceiling % 3 != 0) {
+
+      // Arrondi au multiple de 3m supérieur (paliers standards)
+      while (ceiling % 3 !== 0) {
         ceiling++;
       }
       return ceiling;
@@ -301,8 +244,7 @@ export namespace Buhlmann {
       var originalTissues = JSON.parse(origTissuesJSON);
       for (var i = 0; i < originalTissues.length; i++) {
         for (var p in originalTissues[i]) {
-          //TODO : Revoir pour feraire l'affectation correctement.
-          this.tissues[i][p] = originalTissues[i][p];
+          (this.tissues[i] as any)[p] = originalTissues[i][p];
         }
       }
     }
@@ -313,92 +255,109 @@ export namespace Buhlmann {
       gfHigh: number,
       maxppO2: number,
       maxEND: number,
-      fromDepth: number | undefined
+      fromDepth: number | undefined,
+      /** Vitesse de remontée entre paliers en m/min (défaut : 9 m/min, norme FFESSM/PADI) */
+      ascentRateMpm: number = 9,
+      /** Résolution temporelle en minutes (défaut : 1 min ; utilisez 1/6 pour 10s, 0.5 pour 30s) */
+      timeStepMin: number = 1
     ): Dive.Segment[] {
       maintainTissues = maintainTissues || false;
       gfLow = gfLow || 1.0;
       gfHigh = gfHigh || 1.0;
       maxppO2 = maxppO2 || 1.6;
       maxEND = maxEND || 30;
+
       var currentGasName: string | undefined = undefined;
-      //console.log(this.segments);
+
       if (fromDepth === undefined) {
-        if (this.segments.length == 0) {
-          throw "No depth to decompress from has been specified, and neither have any dive stages been registered. Unable to decompress.";
-        } else {
-          fromDepth = this.segments[this.segments.length - 1].endDepth;
-          currentGasName = this.segments[this.segments.length - 1].gasName;
+        if (this.segments.length === 0) {
+          throw "No depth to decompress from has been specified, and neither have any dive stages been registered.";
         }
+        fromDepth = this.segments[this.segments.length - 1].endDepth;
+        currentGasName = this.segments[this.segments.length - 1].gasName;
       } else {
         currentGasName = this.bestDecoGasName(fromDepth, maxppO2, maxEND);
         if (currentGasName.length === 0) {
-          throw (
-            "No deco gas found to decompress from provided depth " + fromDepth
-          );
+          throw "No deco gas found to decompress from provided depth " + fromDepth;
         }
       }
 
-      var gfDiff = gfHigh - gfLow; //find variance in gradient factor
-      var distanceToSurface = fromDepth;
-      var gfChangePerMeter = gfDiff / distanceToSurface;
+      var gfDiff = gfHigh - gfLow;
+
       var origTissues = "";
       if (!maintainTissues) {
         origTissues = JSON.stringify(this.tissues);
       }
 
+      // Mémoriser l'index de début des segments de déco
+      // → calculateDecompression ne retourne QUE les nouveaux segments (pas le profil fond)
+      var decoSegmentStartIndex = this.segments.length;
+
+      /**
+       * BUG 3 CORRIGÉ — Ancrage de la pente GF sur la profondeur du 1er palier.
+       *
+       * Définition correcte des Gradient Factors (Eric Baker, "Clearing Up The
+       * Confusion About 'Deep Stops'") :
+       *   - GF Low  s'applique au PREMIER PALIER de déco (le plus profond)
+       *   - GF High s'applique à la SURFACE
+       *   - La pente est linéaire entre ces deux points
+       *
+       * L'ancienne version ancrait la pente sur 'fromDepth' (profondeur fond),
+       * ce qui donnait un GF trop élevé dès le premier palier :
+       *   Ex. fond=40m, 1er palier=21m, GF50/80 :
+       *     - Ancien  : GF au 1er palier = 0.50 + (0.30/40) × (40-21) = 0.643 ← FAUX
+       *     - Correct : GF au 1er palier = 0.50                               ← OK
+       *
+       * Conséquence : l'algo était trop permissif dès le premier palier,
+       * réduisant la durée de chaque stop → paliers trop courts, plongée unsafe.
+       */
       var ceiling = this.getCeiling(gfLow);
+      var firstStopDepth = ceiling; // Ancrage de la pente GF ici
 
-      currentGasName = this.addDecoDepthChange(
-        fromDepth,
-        ceiling,
-        maxppO2,
-        maxEND,
-        currentGasName
-      );
+      // Pente GF : de gfLow au 1er palier → gfHigh à la surface
+      // Si pas de palier (firstStopDepth=0), GF constant = gfHigh partout
+      var gfChangePerMeter = firstStopDepth > 0 ? gfDiff / firstStopDepth : 0;
 
-      console.log("Start Ceiling:" + ceiling + " with GF:" + gfLow);
+      console.log("1er palier (GF Low=" + gfLow + ") : " + firstStopDepth + "m");
+      console.log("Pente GF : " + gfChangePerMeter.toFixed(4) + " GF/m");
+
+      // Remontée du fond vers le 1er palier
+      currentGasName = this.addDecoDepthChange(fromDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateMpm);
+
       while (ceiling > 0) {
         var currentDepth = ceiling;
         var nextDecoDepth = ceiling - 3;
-        var time = 0;
-        var gf = gfLow + gfChangePerMeter * (distanceToSurface - ceiling);
-        console.log(
-          "GradientFactor:" + gf + " Next decoDepth:" + nextDecoDepth
-        );
-        while (ceiling > nextDecoDepth && time <= 10000) {
-          this.addFlat(currentDepth, currentGasName, 1);
-          time++;
+        var elapsedMin = 0;
+
+        // GF à cette profondeur de palier (interpolation linéaire)
+        // gf(depth) = gfHigh - gfChangePerMeter × depth
+        // → gf(firstStopDepth) = gfLow, gf(0) = gfHigh
+        var gf = gfHigh - gfChangePerMeter * currentDepth;
+
+        // Attente au palier avec résolution timeStepMin
+        // (ex. 0.5 min → 30s, améliore la précision vs MultiDeco)
+        var maxSteps = Math.ceil(10000 / timeStepMin);
+        var steps = 0;
+        while (ceiling > nextDecoDepth && steps < maxSteps) {
+          this.addFlat(currentDepth, currentGasName, timeStepMin);
+          elapsedMin += timeStepMin;
+          steps++;
           ceiling = this.getCeiling(gf);
         }
 
-        console.log(
-          "Held diver at " +
-          currentDepth +
-          " for " +
-          time +
-          " minutes on gas " +
-          currentGasName +
-          "."
-        );
-        console.log(
-          "Moving diver from current depth " +
-          currentDepth +
-          " to next ceiling of " +
-          ceiling
-        );
-        currentGasName = this.addDecoDepthChange(
-          currentDepth,
-          ceiling,
-          maxppO2,
-          maxEND,
-          currentGasName
-        );
+        console.log("Stop " + currentDepth + "m : " + elapsedMin.toFixed(1) + " min (gaz: " + currentGasName + ", GF=" + gf.toFixed(3) + ")");
+
+        // Remontée vers le palier suivant
+        currentGasName = this.addDecoDepthChange(currentDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateMpm);
       }
+
       if (!maintainTissues) {
         this.resetTissues(origTissues);
       }
 
-      return Dive.collapseSegments(this.segments);
+      // Ne retourner que les segments de déco (pas le profil fond initial)
+      var decoSegments = this.segments.slice(decoSegmentStartIndex);
+      return Dive.collapseSegments(decoSegments);
     }
 
     addDecoDepthChange(
@@ -406,148 +365,76 @@ export namespace Buhlmann {
       toDepth: number,
       maxppO2: number,
       maxEND: number,
-      currentGasName: string
+      currentGasName: string,
+      ascentRateMpm: number = 9
     ): string {
       if (currentGasName.length === 0) {
         currentGasName = this.bestDecoGasName(fromDepth, maxppO2, maxEND);
         if (currentGasName.length === 0) {
-          throw (
-            "Unable to find starting gas to decompress at depth " +
-            fromDepth +
-            ". No segments provided with bottom mix, and no deco gas operational at this depth."
-          );
+          throw "Unable to find starting gas to decompress at depth " + fromDepth;
         }
       }
 
-      // console.log("Starting depth change from " + fromDepth + " moving to " + toDepth + " with starting gas " + currentGasName);
       while (toDepth < fromDepth) {
-        //if ceiling is higher, move our diver up.
-        //ensure we're on the best gas
-        var betterDecoGasName = this.bestDecoGasName(
-          fromDepth,
-          maxppO2,
-          maxEND
-        );
-        //console.log("addDecoDepthChange ==> " + betterDecoGasName + " for : " + fromDepth + ", " + maxppO2 + ", " + maxEND);
-        if (
-          betterDecoGasName.length > 0 &&
-          betterDecoGasName != currentGasName
-        ) {
-          console.log(
-            "At depth " +
-            fromDepth +
-            " found a better deco gas " +
-            betterDecoGasName +
-            ". Switching to better gas."
-          );
-          currentGasName = betterDecoGasName;
+        // Si un meilleur gaz est déjà disponible à la profondeur ACTUELLE, switch immédiat
+        var betterNow = this.bestDecoGasName(fromDepth, maxppO2, maxEND);
+        if (betterNow.length > 0 && betterNow !== currentGasName) {
+          console.log("Switch gaz à " + fromDepth + "m : " + currentGasName + " → " + betterNow);
+          currentGasName = betterNow;
         }
 
-        console.log(
-          "Looking for the next best gas moving up between " +
-          fromDepth +
-          " and " +
-          toDepth
-        );
-        var ceiling = toDepth; //ceiling is toDepth, unless there's a better gas to switch to on the way up.
-        for (var nextDepth = fromDepth - 1; nextDepth >= ceiling; nextDepth--) {
-          var nextDecoGasName = this.bestDecoGasName(
-            nextDepth,
-            maxppO2,
-            maxEND
-          );
-          console.log(
-            "Testing next gas at depth: " +
-            nextDepth +
-            " and found: " +
-            nextDecoGasName
-          );
-          if (nextDecoGasName.length > 0 && nextDecoGasName != currentGasName) {
-            console.log(
-              "Found a gas " +
-              nextDecoGasName +
-              " to switch to at " +
-              nextDepth +
-              " which is lower than target ceiling of " +
-              ceiling
-            );
-            ceiling = nextDepth; //Only carry us up to the point where we can use this better gas.
-            currentGasName = nextDecoGasName;
+        /**
+         * BUG CORRIGÉ — Remontée avec le bon gaz sur chaque segment.
+         *
+         * Ancienne version : le code switchait currentGasName AVANT
+         * d'appeler addDepthChange, ce qui modélisait l'ascent 40→22m
+         * avec EAN50 au lieu de Triox. Schreiner voyait alors une
+         * pression initiale N2 de 2.54 bar (EAN50 à 40m) au lieu de
+         * 2.24 bar (Triox à 40m), soit +14% de charge N2 fictive.
+         *
+         * Correction : on détermine d'abord la profondeur de switch,
+         * on remonte jusqu'à ce point avec le GAS ACTUEL, PUIS on switch.
+         * Cela produit deux segments propres :
+         *   40m → 22m avec Triox  (gaz actuel, correct)
+         *   22m → 15m avec EAN50  (après switch, correct)
+         */
+        var switchDepth = toDepth;   // par défaut : remonter tout le chemin
+        var nextGasName = currentGasName;
+
+        for (var d = fromDepth - 1; d >= toDepth; d--) {
+          var candidate = this.bestDecoGasName(d, maxppO2, maxEND);
+          if (candidate.length > 0 && candidate !== currentGasName) {
+            switchDepth = d;         // profondeur où le switch a lieu
+            nextGasName = candidate;
             break;
           }
         }
 
-        //take us to the ceiling at 30fpm or 10 mpm (the fastest ascent rate possible.)
-        var depthdiff = fromDepth - ceiling;
-        var time = depthdiff / 10;
-        console.log(
-          "Moving diver from " +
-          fromDepth +
-          " to " +
-          ceiling +
-          " on gas " +
-          currentGasName +
-          " over " +
-          time +
-          " minutes (10 meters or 30 feet per minute)."
-        );
-        this.addDepthChange(fromDepth, ceiling, currentGasName, time);
+        // Remontée de fromDepth → switchDepth avec le GAS ACTUEL
+        var depthdiff = fromDepth - switchDepth;
+        var time = depthdiff / ascentRateMpm;
+        this.addDepthChange(fromDepth, switchDepth, currentGasName, time);
+        fromDepth = switchDepth;
 
-        fromDepth = ceiling; //move up from-depth
-      }
-
-      var betterDecoGasName = this.bestDecoGasName(fromDepth, maxppO2, maxEND);
-      if (betterDecoGasName.length > 0 && betterDecoGasName != currentGasName) {
-        console.log(
-          "At depth " +
-          fromDepth +
-          " found a better deco gas " +
-          betterDecoGasName +
-          ". Switching to better gas."
-        );
-        currentGasName = betterDecoGasName;
+        // Switch de gaz au point de switch
+        if (nextGasName !== currentGasName) {
+          console.log("Switch gaz à " + fromDepth + "m : " + currentGasName + " → " + nextGasName);
+          currentGasName = nextGasName;
+        }
       }
 
       return currentGasName;
     }
 
     bestDecoGasName(depth: number, maxppO2: number, maxEND: number): string {
-      //console.log("Finding best deco gas for depth " + depth + " with max ppO2 of " + maxppO2 + "  and max END of " + maxEND);
-      //best gas is defined as: a ppO2 at depth <= maxppO2,
-      // the highest ppO2 among all of these.
-      // END <= 30 (equivalent narcotic depth < 30 meters)
       var winner: Dive.Gas | undefined = undefined;
-      var winnerName: string = "";
+      var winnerName = "";
       for (var gasName in this.decoGasses) {
         var candidateGas = this.decoGasses[gasName];
-        var mod = Math.round(
-          Dive.modInMeters(maxppO2, candidateGas.fO2, this.isFreshWater)
-        );
-        var end = Math.round(
-          Dive.endInMeters(depth, candidateGas.fO2, candidateGas.fN2, this.isFreshWater)
-        );
-        console.log(
-          "Found candidate deco gas " +
-          gasName +
-          ": " +
-          candidateGas.fO2 +
-          "/" +
-          candidateGas.fHe +
-          " with mod " +
-          mod +
-          " and END " +
-          end
-        );
+        var mod = Math.round(Dive.modInMeters(maxppO2, candidateGas.fO2, this.isFreshWater));
+        var end = Math.round(Dive.endInMeters(depth, candidateGas.fO2, candidateGas.fN2, this.isFreshWater));
         if (depth <= mod && end <= maxEND) {
-          console.log(
-            "Candidate " + gasName + " fits within MOD and END limits."
-          );
-          if (
-            winner === undefined || //either we have no winner yet
-            winner.fO2 < candidateGas.fO2
-          ) {
-            //or previous winner is a lower O2
-            console.log("Replaced winner: " + candidateGas);
+          if (winner === undefined || winner.fO2 < candidateGas.fO2) {
             winner = candidateGas;
             winnerName = gasName;
           }
@@ -558,27 +445,20 @@ export namespace Buhlmann {
 
     ndl(depth: number, gasName: string, gf: number) {
       gf = gf || 1.0;
-
       var ceiling = this.getCeiling(gf);
-      //console.log("Ceiling:" +ceiling);
-
       var origTissues = JSON.stringify(this.tissues);
       var time = 0;
       var change = 1;
       while (ceiling <= 0 && change > 0) {
-        //console.log("Ceiling:" +ceiling);
         change = this.addFlat(depth, gasName, 1);
         ceiling = this.getCeiling(gf);
         time++;
       }
       this.resetTissues(origTissues);
-      if (change == 0) {
-        console.log(
-          "NDL is practially infinity. Returning largest number we know of."
-        );
+      if (change === 0) {
         return Infinity;
       }
-      return time - 1; //We went one minute past a ceiling of "0"
+      return time - 1;
     }
   }
 }
