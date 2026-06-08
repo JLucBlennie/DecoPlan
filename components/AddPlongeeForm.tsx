@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CheckBox from 'react-native-check-box';
-import { Dive } from '../lib/dive/dive';
+import uuid from 'react-native-uuid';
+import { useEditeur } from '../context/EditeurContext';
+import { Gas, Plongee, Segment } from '../lib/dive';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
-import uuid from 'react-native-uuid';
-import CircleButton from './ui/CircleButton';
-import { useEditeur } from '../context/EditeurContext';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
+import CircleButton from './ui/CircleButton';
 
 export default function AddPlongeeForm() {
   const { fermerEditeur } = useEditeur();
   const { gazList } = useGazStore();
   const [nom, setNom] = useState("");
-  const [gazFond, setGazFond] = useState<Dive.Gas[]>([]);
-  const [gazDeco, setGazDeco] = useState<Dive.Gas[]>([]);
+  const [gazFond, setGazFond] = useState<Gas[]>([]);
+  const [gazDeco, setGazDeco] = useState<Gas[]>([]);
   const { addPlongee, updatePlongee } = usePlongeeStore();
-  const [segments, setSegments] = useState<Dive.Segment[]>([]);
-  const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
-  const [plongee, setPlongee] = useState<Dive.Plongee>({
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [newSegment, setNewSegment] = useState<Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+  const [plongee, setPlongee] = useState<Plongee>({
     id: uuid.v4(),
     name: '',
     gazFond: [],
@@ -46,7 +46,7 @@ export default function AddPlongeeForm() {
 
   // Gérer la sélection des gaz
   // Fonction pour basculer la sélection d'un gaz (fond ou déco)
-  const toggleGazSelection = (gaz: Dive.Gas, setSelectedGaz: React.Dispatch<React.SetStateAction<Dive.Gas[]>>, selectedGaz: Dive.Gas[]) => {
+  const toggleGazSelection = (gaz: Gas, setSelectedGaz: React.Dispatch<React.SetStateAction<Gas[]>>, selectedGaz: Gas[]) => {
     setSelectedGaz(prev =>
       prev.some(g => g.id === gaz.id)
         ? prev.filter(g => g.id !== gaz.id)  // Désélectionne si déjà sélectionné
@@ -55,7 +55,7 @@ export default function AddPlongeeForm() {
   };
 
   // Rendre un item de gaz avec une CheckBox
-  const renderGazItem = (gaz: Dive.Gas, selectedGaz: Dive.Gas[], setSelectedGaz: React.Dispatch<React.SetStateAction<Dive.Gas[]>>) => (
+  const renderGazItem = (gaz: Gas, selectedGaz: Gas[], setSelectedGaz: React.Dispatch<React.SetStateAction<Gas[]>>) => (
     <TouchableOpacity
       style={styles.gazItem}
       onPress={() => toggleGazSelection(gaz, setSelectedGaz, selectedGaz)}

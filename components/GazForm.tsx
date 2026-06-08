@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { useGazStore } from '../store/useGazStore';
-import { Dive } from '../lib/dive/dive';
-import CircleButton from './ui/CircleButton';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useEditeur } from '../context/EditeurContext';
+import { Gas } from '../lib/dive';
+import { useGazStore } from '../store/useGazStore';
+import CircleButton from './ui/CircleButton';
 
 type GazFormProps = {
-    gaz: Dive.Gas;
+    gaz: Gas;
     onClose: () => void;
 };
 

@@ -1,11 +1,11 @@
 // components/GasPicker.tsx
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Dive } from '../lib/dive/dive';
+import { StyleSheet, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { Plongee } from '../lib/dive';
 
 type PlongeePickerProps = {
-    plongees: Dive.Plongee[];          // Liste des plongees disponibles
+    plongees: Plongee[];          // Liste des plongees disponibles
     selectedPlongee: string | null; // ID de la plongee sélectionnée
     onPlongeeSelect: (plongeeId: string | null) => void; // Callback pour la sélection
 };

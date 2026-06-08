@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Modal, Button, TextInput, Pressable } from 'react-native';
-import Svg, { Line, G, Text as SvgText } from 'react-native-svg';
-import { Dive } from '../lib/dive/dive';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { G, Line, Text as SvgText } from 'react-native-svg';
+import { Gas, Segment } from '../lib/dive';
 import GestionSegments from './gestionSegments';
 import CircleButton from './ui/CircleButton';
 
 type PlongeeProfileGraphProps = {
-    segments: Dive.Segment[];
-    gazFondList: Dive.Gas[];
-    onUpdateSegment: (index: number, updatedSegment: Dive.Segment) => void;
-    onAddSegment: (addedSegment: Dive.Segment) => void;
+    segments: Segment[];
+    gazFondList: Gas[];
+    onUpdateSegment: (index: number, updatedSegment: Segment) => void;
+    onAddSegment: (addedSegment: Segment) => void;
 };
 
 export default function PlongeeProfileGraph({ segments, gazFondList, onUpdateSegment, onAddSegment }: PlongeeProfileGraphProps) {
     const [selectedSegmentIndex, setSelectedSegmentIndex] = useState<number | null>(null);
-    const [editedSegment, setEditedSegment] = useState<Dive.Segment | null>(null);
-    const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+    const [editedSegment, setEditedSegment] = useState<Segment | null>(null);
+    const [newSegment, setNewSegment] = useState<Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
     const [addSegmentFlag, setAddSegmentFlag] = useState(false);
 
     // Ajoute un segment fictif pour partir de la surface
@@ -80,7 +80,7 @@ export default function PlongeeProfileGraph({ segments, gazFondList, onUpdateSeg
     };
 
     // Calculer les coordonnées SVG pour un segment
-    const getSegmentCoordinates = (segment: Dive.Segment, cumulativeTime: number) => {
+    const getSegmentCoordinates = (segment: Segment, cumulativeTime: number) => {
         const x1 = (cumulativeTime / totalTime) * 300; // Échelle X (temps)
         const y1 = (segment.startDepth / maxDepth) * 200; // Échelle Y corrigée : 0 en haut
         const x2 = ((cumulativeTime + segment.time) / totalTime) * 300;

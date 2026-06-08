@@ -1,10 +1,11 @@
 import { Platform, StyleSheet } from "react-native";
+import { ocean } from "./theme";
 
 export const mainStyles = StyleSheet.create({
     container: {
         flex: 1,
         flexDirection: 'column',
-        backgroundColor: '#b4e3e98c',
+        backgroundColor: ocean.bg.deep,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',

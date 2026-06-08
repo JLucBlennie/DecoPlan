@@ -1,9 +1,9 @@
-import { ScrollView, View, Text, StyleSheet } from "react-native";
-import { Dive } from "../lib/dive/dive";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Segment } from "../lib/dive";
 import { mainStyles } from "../styles/mainStyles";
 
 type Props = {
-    data: Dive.Segment[];
+    data: Segment[];
 };
 
 export default function RuntimeResult({ data }: Props) {

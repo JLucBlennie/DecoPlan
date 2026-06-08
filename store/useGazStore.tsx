@@ -1,29 +1,29 @@
-import { create } from 'zustand';
-import { Dive } from '../lib/dive/dive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { Gas, GasData } from '../lib/dive';
 
-const gazFond1 = Dive.gas("Tx2135", 0.21, 0.35);
-const gazFond2 = Dive.gas("Tx2121", 0.21, 0.21);
-const gazFond3 = Dive.gas("Tx2118", 0.21, 0.18);
-const gazDeco1 = Dive.gas("Nx50", 0.5, 0);
-const gazDeco2 = Dive.gas("Nx40", 0.4, 0);
-const gazDeco3 = Dive.gas("Nx80", 0.8, 0);
+const gazFond1 = Gas.create("Tx2135", 0.21, 0.35);
+const gazFond2 = Gas.create("Tx2121", 0.21, 0.21);
+const gazFond3 = Gas.create("Tx2118", 0.21, 0.18);
+const gazDeco1 = Gas.create("Nx50", 0.5, 0);
+const gazDeco2 = Gas.create("Nx40", 0.4, 0);
+const gazDeco3 = Gas.create("Nx80", 0.8, 0);
 
-const DEFAULT_GAZ_LIST: Dive.Gas[] = [gazFond1, gazFond2, gazFond3, gazDeco1, gazDeco2, gazDeco3];
+const DEFAULT_GAZ_LIST: Gas[] = [gazFond1, gazFond2, gazFond3, gazDeco1, gazDeco2, gazDeco3];
 
 // Sauvegarder les données à chaque modification
-const saveGazList = async (list: Dive.Gas[]) => {
+const saveGazList = async (list: Gas[]) => {
     await AsyncStorage.setItem('gazList', JSON.stringify(list));
 };
 
 type GazStore = {
-    gazList: Dive.Gas[];
-    selectedGaz: Dive.Gas;
-    setSelectedGaz: (gaz: Dive.Gas) => Promise<void>;
-    addGaz: (gaz: Dive.Gas) => Promise<void>;
-    updateGaz: (id: string, gaz: Partial<Dive.Gas>) => Promise<void>;
+    gazList: Gas[];
+    selectedGaz: GasData;
+    setSelectedGaz: (gaz: GasData) => Promise<void>;
+    addGaz: (gaz: Gas) => Promise<void>;
+    updateGaz: (id: string, gaz: Partial<GasData>) => Promise<void>;
     deleteGaz: (id: string) => Promise<void>;
-    setGazList: (list: Dive.Gas[]) => Promise<void>;
+    setGazList: (list: GasData[]) => Promise<void>;
     initializeGazList: () => Promise<void>;
     resetGazList: () => Promise<void>;
 };
@@ -36,15 +36,6 @@ export const useGazStore = create<GazStore>((set) => ({
         fO2: 0,
         fHe: 0,
         fN2: 0,
-        modInMeters: function (ppO2: number, isFreshWater: boolean): number {
-            throw new Error('Function not implemented.');
-        },
-        endInMeters: function (depth: number, isFreshWater: boolean): number {
-            throw new Error('Function not implemented.');
-        },
-        eadInMeters: function (depth: number, isFreshWater: boolean): number {
-            throw new Error('Function not implemented.');
-        }
     },
     setSelectedGaz: async (gaz) => {
         set({ selectedGaz: gaz });

@@ -1,20 +1,20 @@
-import { View, Text, TextInput, StyleSheet } from "react-native";
-import { Dive } from "../lib/dive/dive";
-import CircleButton from "./ui/CircleButton";
-import { useEffect, useState } from "react";
-import GasPicker from "./GazPicker";
+import { useState } from "react";
+import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Gas, Segment } from "../lib/dive";
 import { mainStyles } from "../styles/mainStyles";
+import GasPicker from "./GazPicker";
+import CircleButton from "./ui/CircleButton";
 
 type GestionSegmentsProps = {
-    segment: Dive.Segment | null;
+    segment: Segment | null;
     addSegmentMode: boolean;
-    gazFondList: Dive.Gas[];
-    setNewSegment: (segment: Dive.Segment) => void;
+    gazFondList: Gas[];
+    setNewSegment: (segment: Segment) => void;
     onClose: () => void;
 };
 
 export default function GestionSegments({ segment, addSegmentMode, gazFondList, setNewSegment, onClose }: GestionSegmentsProps) {
-    const [localSegment, setLocalSegment] = useState<Dive.Segment>(segment ?? {
+    const [localSegment, setLocalSegment] = useState<Segment>(segment ?? {
         startDepth: 0,
         endDepth: 0,
         gasName: '',

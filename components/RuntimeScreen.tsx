@@ -1,33 +1,32 @@
-import { View, Text, TextInput, StyleSheet } from "react-native";
-import CircleButton from "./ui/CircleButton";
 import { useState } from "react";
+import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Gas, Plan, Plongee, Segment, ZH16CTissues } from "../lib/dive";
 import { usePlongeeStore } from "../store/usePlongeeStore";
-import PlongeePicker from "./PlongeePicker";
-import { Dive } from "../lib/dive/dive";
 import { mainStyles } from "../styles/mainStyles";
+import PlongeePicker from "./PlongeePicker";
 import RuntimeResult from "./RuntimeResult";
-import { Buhlmann } from "../lib/dive/buhlmann";
+import CircleButton from "./ui/CircleButton";
 
 export default function RuntimeScreen() {
     const [gfBas, setGFBas] = useState("90");
     const [gfHaut, setGFHaut] = useState("90");
     const { plongeeList } = usePlongeeStore();
-    const [selectedPlongee, setSelectedPlongee] = useState<Dive.Plongee | null>(null);
+    const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
     const [showResult, setShowResult] = useState(false);
 
-    const [decoPlan, setDecoPlan] = useState<Dive.Segment[]>([]);
+    const [decoPlan, setDecoPlan] = useState<Segment[]>([]);
 
     console.log("Liste des plongées disponibles :", plongeeList);
 
-    function computeDive(selectedPlongee: Dive.Plongee, gfBas: number, gfHaut: number): Dive.Segment[] {
+    function computeDive(selectedPlongee: Plongee, gfBas: number, gfHaut: number): Segment[] {
         console.log("Chargement de l'algo...");
-        var deco = new Buhlmann.Plan(Buhlmann.ZH16CTissues);
+        var deco = new Plan(ZH16CTissues);
         console.log("Definition des gaz Fond");
-        for (let gaz of selectedPlongee.gazFond) {
+        for (let gaz of selectedPlongee.gazFond.map(Gas.fromJSON)) {
             deco.addBottomGas(gaz);
         }
         console.log("Definition des gaz Deco");
-        for (let gaz of selectedPlongee.gazDeco) {
+        for (let gaz of selectedPlongee.gazDeco.map(Gas.fromJSON)) {
             deco.addDecoGas(gaz);
         }
 

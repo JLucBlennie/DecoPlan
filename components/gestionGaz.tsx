@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { FlatList, View, StyleSheet, Text } from "react-native"
-import { Dive } from "../lib/dive/dive";
-import GazCard from "./GazCard";
-import { useGazStore } from "../store/useGazStore";
-import ButtonLine from "./ui/ButtonLine";
+import React from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useEditeur } from "../context/EditeurContext";
+import { Gas } from "../lib/dive";
+import { useGazStore } from "../store/useGazStore";
 import { mainStyles } from "../styles/mainStyles";
+import GazCard from "./GazCard";
+import ButtonLine from "./ui/ButtonLine";
 
 export default function GestionGaz() {
     const { ouvrirEditeur } = useEditeur();
     const { gazList, deleteGaz, resetGazList, setSelectedGaz } = useGazStore();
 
-    const handleEditGaz = (gaz: Dive.Gas) => {
+    const handleEditGaz = (gaz: Gas) => {
         setSelectedGaz(gaz);
         ouvrirEditeur('editgaz');
     };

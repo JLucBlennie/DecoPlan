@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { Dive } from '../lib/dive/dive';
+import React, { useState } from 'react';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import CheckBox from 'react-native-check-box';
+import { useEditeur } from '../context/EditeurContext';
+import { Gas, Plongee, Segment } from '../lib/dive';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
-import CheckBox from 'react-native-check-box';
-import CircleButton from './ui/CircleButton';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
-import { useEditeur } from '../context/EditeurContext';
+import CircleButton from './ui/CircleButton';
 
 type PlongeeFormProps = {
-    plongee: Dive.Plongee;
+    plongee: Plongee;
     onClose: () => void;
 };
 
@@ -17,11 +17,11 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
     const { fermerEditeur } = useEditeur();
     const { gazList } = useGazStore();
     const [nom, setNom] = useState(plongee.name);
-    const [gazFond, setGazFond] = useState<Dive.Gas[]>(plongee.gazFond);
-    const [gazDeco, setGazDeco] = useState<Dive.Gas[]>(plongee.gazDeco);
+    const [gazFond, setGazFond] = useState<Gas[]>(plongee.gazFond.map(Gas.fromJSON));
+    const [gazDeco, setGazDeco] = useState<Gas[]>(plongee.gazDeco.map(Gas.fromJSON));
     const { updatePlongee } = usePlongeeStore();
-    const [segments, setSegments] = useState<Dive.Segment[]>(plongee.segments);
-    const [newSegment, setNewSegment] = useState<Dive.Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
+    const [segments, setSegments] = useState<Segment[]>(plongee.segments);
+    const [newSegment, setNewSegment] = useState<Segment>({ startDepth: 0, endDepth: 0, gasName: '', time: 0 });
 
     const closeEditeur = () => {
         fermerEditeur();
@@ -43,7 +43,7 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
 
     // Gérer la sélection des gaz
     // Fonction pour basculer la sélection d'un gaz (fond ou déco)
-    const toggleGazSelection = (gaz: Dive.Gas, setSelectedGaz: React.Dispatch<React.SetStateAction<Dive.Gas[]>>, selectedGaz: Dive.Gas[]) => {
+    const toggleGazSelection = (gaz: Gas, setSelectedGaz: React.Dispatch<React.SetStateAction<Gas[]>>, selectedGaz: Gas[]) => {
         setSelectedGaz(prev =>
             prev.some(g => g.id === gaz.id)
                 ? prev.filter(g => g.id !== gaz.id)  // Désélectionne si déjà sélectionné
@@ -52,7 +52,7 @@ export default function PlongeeForm({ plongee, onClose }: PlongeeFormProps) {
     };
 
     // Rendre un item de gaz avec une CheckBox
-    const renderGazItem = (gaz: Dive.Gas, selectedGaz: Dive.Gas[], setSelectedGaz: React.Dispatch<React.SetStateAction<Dive.Gas[]>>) => (
+    const renderGazItem = (gaz: Gas, selectedGaz: Gas[], setSelectedGaz: React.Dispatch<React.SetStateAction<Gas[]>>) => (
         <TouchableOpacity
             style={styles.gazItem}
             onPress={() => toggleGazSelection(gaz, setSelectedGaz, selectedGaz)}

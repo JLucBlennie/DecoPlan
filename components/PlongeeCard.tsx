@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet } from "react-native";
-import { Dive } from "../lib/dive/dive";
-import CircleButton from "./ui/CircleButton";
+import { StyleSheet, Text, View } from "react-native";
+import { calculProfondeurMax, calculTemps, Plongee } from "../lib/dive";
 import { mainStyles } from "../styles/mainStyles";
+import CircleButton from "./ui/CircleButton";
 
 type PlongeeCardProps = {
-    plongee: Dive.Plongee;
+    plongee: Plongee;
     onPress: () => void;
     onDelete: () => void;
 }
@@ -13,7 +13,7 @@ export default function PlongeeCard({ plongee, onPress, onDelete }: PlongeeCardP
     return (
         <View style={styles.cardContainer}>
             <View style={styles.titreContainer}>
-                <Text style={mainStyles.text}>{plongee.name} - ({Dive.calculProfondeurMax(plongee)} / {Dive.calculTemps(plongee)})</Text>
+                <Text style={mainStyles.text}>{plongee.name} - ({calculProfondeurMax(plongee)} / {calculTemps(plongee)})</Text>
             </View>
             <View style={styles.buttonContainer}>
                 <CircleButton iconName={"edit"} onPress={onPress} size={24} />

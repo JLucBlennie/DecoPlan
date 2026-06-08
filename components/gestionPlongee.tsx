@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { FlatList, View, StyleSheet, Text } from "react-native"
-import { Dive } from "../lib/dive/dive";
-import { usePlongeeStore } from "../store/usePlongeeStore";
-import ButtonLine from "./ui/ButtonLine";
-import PlongeeCard from "./PlongeeCard";
+import React from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useEditeur } from "../context/EditeurContext";
+import { Plongee } from "../lib/dive";
+import { usePlongeeStore } from "../store/usePlongeeStore";
 import { mainStyles } from "../styles/mainStyles";
+import PlongeeCard from "./PlongeeCard";
+import ButtonLine from "./ui/ButtonLine";
 
 export default function GestionPlongee() {
     const { ouvrirEditeur } = useEditeur();
     const { plongeeList, deletePlongee, resetPlongeeList, setSelectedPlongee } = usePlongeeStore();
 
-    const handleEditPlongee = (plongee: Dive.Plongee) => {
+    const handleEditPlongee = (plongee: Plongee) => {
         setSelectedPlongee(plongee);
         ouvrirEditeur('editplongee');
     };

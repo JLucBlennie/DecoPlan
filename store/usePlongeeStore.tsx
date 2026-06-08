@@ -1,22 +1,22 @@
-import { create } from 'zustand';
-import { Dive } from '../lib/dive/dive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { Plongee } from '../lib/dive';
 
-const DEFAULT_PLONGEE_LIST: Dive.Plongee[] = [];
+const DEFAULT_PLONGEE_LIST: Plongee[] = [];
 
 // Sauvegarder les données à chaque modification
-const savePlongeeList = async (list: Dive.Plongee[]) => {
+const savePlongeeList = async (list: Plongee[]) => {
     await AsyncStorage.setItem('plongeeList', JSON.stringify(list));
 };
 
 type PlongeeStore = {
-    plongeeList: Dive.Plongee[];
-    selectedPlongee: Dive.Plongee;
-    setSelectedPlongee: (plongee: Dive.Plongee) => Promise<void>;
-    addPlongee: (plongee: Dive.Plongee) => Promise<void>;
-    updatePlongee: (id: string, plongee: Partial<Dive.Plongee>) => Promise<void>;
+    plongeeList: Plongee[];
+    selectedPlongee: Plongee;
+    setSelectedPlongee: (plongee: Plongee) => Promise<void>;
+    addPlongee: (plongee: Plongee) => Promise<void>;
+    updatePlongee: (id: string, plongee: Partial<Plongee>) => Promise<void>;
     deletePlongee: (id: string) => Promise<void>;
-    setplongeeList: (list: Dive.Plongee[]) => Promise<void>;
+    setplongeeList: (list: Plongee[]) => Promise<void>;
     initializePlongeeList: () => Promise<void>;
     resetPlongeeList: () => Promise<void>;
 };

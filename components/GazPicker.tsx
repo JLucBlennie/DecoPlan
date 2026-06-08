@@ -1,11 +1,11 @@
 // components/GasPicker.tsx
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Dive } from '../lib/dive/dive';
+import { StyleSheet, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { Gas } from '../lib/dive';
 
 type GasPickerProps = {
-    gases: Dive.Gas[];          // Liste des gaz disponibles
+    gases: Gas[];          // Liste des gaz disponibles
     selectedGas: string | null; // ID du gaz sélectionné
     onGasSelect: (gasId: string | null) => void; // Callback pour la sélection
 };

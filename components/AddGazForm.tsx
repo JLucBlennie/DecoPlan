@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { useGazStore } from '../store/useGazStore';
-import { Dive } from '../lib/dive/dive';
-import CircleButton from './ui/CircleButton';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useEditeur } from '../context/EditeurContext';
+import { Gas } from '../lib/dive';
+import { useGazStore } from '../store/useGazStore';
+import CircleButton from './ui/CircleButton';
 
 export default function AddGazForm() {
     const { fermerEditeur } = useEditeur();
@@ -21,7 +21,7 @@ export default function AddGazForm() {
             alert("Veuillez remplir tous les champs.");
             return;
         }
-        addGaz(Dive.gas(nom, parseFloat(o2) / 100, parseFloat(he) / 100));
+        addGaz(Gas.create(nom, parseFloat(o2) / 100, parseFloat(he) / 100));
         closeEditeur();
     };
 

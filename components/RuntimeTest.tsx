@@ -1,24 +1,23 @@
-import { View, Text } from "react-native";
-import { Dive } from "../lib/dive/dive";
-import { Buhlmann } from "../lib/dive/buhlmann";
+import { Text, View } from "react-native";
+import { Gas, Plan, Plongee, Segment, ZH16CTissues } from "../lib/dive";
 
 type Props = {
-    plongee: Dive.Plongee;
+    plongee: Plongee;
     gfBas?: number;
     gfHaut?: number;
 };
 
 export default function RuntimeTest({ plongee: plongee, gfBas: gfBas, gfHaut: gfHaut }: Props) {
 
-    function computeDive(selectedPlongee: Dive.Plongee, gfBas: number, gfHaut: number): Dive.Segment[] {
+    function computeDive(selectedPlongee: Plongee, gfBas: number, gfHaut: number): Segment[] {
         console.log("Chargement de l'algo...");
-        var deco = new Buhlmann.Plan(Buhlmann.ZH16CTissues);
+        var deco = new Plan(ZH16CTissues);
         console.log("Definition des gaz Fond");
-        for (let gaz of selectedPlongee.gazFond) {
+        for (let gaz of selectedPlongee.gazFond.map(Gas.fromJSON)) {
             deco.addBottomGas(gaz);
         }
         console.log("Definition des gaz Deco");
-        for (let gaz of selectedPlongee.gazDeco) {
+        for (let gaz of selectedPlongee.gazDeco.map(Gas.fromJSON)) {
             deco.addDecoGas(gaz);
         }
 
