@@ -6,8 +6,9 @@
  */
 
 import uuid from 'react-native-uuid';
-import type { Plongee, Segment, Gas } from './types';
+import { Gas } from './gas';
 import { maxDepth, totalTime } from './segment';
+import type { Plongee, Segment } from './types';
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 

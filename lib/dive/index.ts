@@ -28,72 +28,40 @@
  */
 
 // Types de données (interfaces JSON-safe)
-export type { Gas as GasData, Segment, Plongee } from './types';
+export type { GasData, Plongee, Segment } from './types';
 
 // Classe Gas avec méthodes
 export { Gas } from './gas';
 
 // Physique
 export {
-  ENV,
-  feetToMeters,
-  metersToFeet,
-  depthInMetersToBars,
-  barToDepthInMeters,
-  depthInMetersToAtm,
-  atmToDepthInMeters,
-  gasPressureBreathingInBars,
-  partialPressure,
-  partialPressureAtDepth,
-  waterVapourPressure,
-  waterVapourPressureInBars,
-  LUNG_VAPOUR_PRESSURE_BAR,
-  schreinerEquation,
-  instantaneousEquation,
-  depthChangeInBarsPerMinute,
-  gasRateInBarsPerMinute,
-  dac,
-  sac,
-  rmv,
-  depth2press,
-  DEPTH_TO_PRESS_FACTOR,
+  atmToDepthInMeters, barToDepthInMeters, dac, depth2press,
+  DEPTH_TO_PRESS_FACTOR, depthChangeInBarsPerMinute, depthInMetersToAtm, depthInMetersToBars, ENV,
+  feetToMeters, gasPressureBreathingInBars, gasRateInBarsPerMinute, instantaneousEquation, LUNG_VAPOUR_PRESSURE_BAR, metersToFeet, partialPressure,
+  partialPressureAtDepth, rmv, sac, schreinerEquation, waterVapourPressure,
+  waterVapourPressureInBars
 } from './physics';
 
 // Segments
 export {
-  createSegment,
-  collapseSegments,
-  totalTime,
-  maxDepth,
-  isDecoStop,
-  isAscent,
-  isDescent,
-  getSegmentGas,
+  collapseSegments, createSegment, getSegmentGas, isAscent, isDecoStop, isDescent, maxDepth, totalTime
 } from './segment';
 
 // Plongée
 export {
-  createPlongee,
-  addSegment,
-  removeSegment,
-  addGazFond,
-  addGazDeco,
-  removeGazFond,
-  removeGazDeco,
-  calculProfondeurMax,
-  calculTemps,
-  isPlongeeValid,
+  addGazDeco, addGazFond, addSegment, calculProfondeurMax,
+  calculTemps, createPlongee, isPlongeeValid, removeGazDeco, removeGazFond, removeSegment
 } from './plongee';
 
 // Toxicité oxygène
-export { getSegmentOTU, getSegmentCNS } from './toxicity';
+export { getSegmentCNS, getSegmentOTU } from './toxicity';
 
 // Algorithme Bühlmann ZHL-16
 export {
-  ZH16ATissues,
-  ZH16BTissues,
-  ZH16CTissues,
   BuhlmannTissue,
-  Plan,
+  Plan, ZH16ATissues,
+  ZH16BTissues,
+  ZH16CTissues
 } from './buhlmann';
 export type { TissueCoefficient } from './buhlmann';
+

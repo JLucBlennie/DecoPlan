@@ -1,4 +1,5 @@
-import { View, StyleSheet, Text, Pressable } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { fontSize, ocean } from '../../styles/theme';
 import CircleButton from './CircleButton';
 
 type Props = {
@@ -35,8 +36,8 @@ const styles = StyleSheet.create({
         padding: 3
     },
     textDesc: {
-        fontSize: 24,
-        color: '#0428f1ff'
+        fontSize: fontSize.xs,
+        color: ocean.text.muted
     },
     textContainer: {
         width: '70%',

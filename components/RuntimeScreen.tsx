@@ -1,167 +1,215 @@
-import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import { Gas, Plan, Plongee, Segment, ZH16CTissues } from "../lib/dive";
-import { usePlongeeStore } from "../store/usePlongeeStore";
-import { mainStyles } from "../styles/mainStyles";
-import PlongeePicker from "./PlongeePicker";
-import RuntimeResult from "./RuntimeResult";
-import CircleButton from "./ui/CircleButton";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { useEditeur } from '../context/EditeurContext';
+import { Gas, Plan, Plongee, Segment, ZH16CTissues } from '../lib/dive';
+import { usePlongeeStore } from '../store/usePlongeeStore';
+import { sharedStyles } from '../styles/sharedStyles';
+import { fontSize, ocean, radius, spacing } from '../styles/theme';
+
+import { GFSliderPair, GFValues } from './GFSliderPair';
+import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
+import PlongeePicker from './PlongeePicker';
+import RuntimeResult from './RuntimeResult';
 
 export default function RuntimeScreen() {
-    const [gfBas, setGFBas] = useState("90");
-    const [gfHaut, setGFHaut] = useState("90");
-    const { plongeeList } = usePlongeeStore();
-    const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
-    const [showResult, setShowResult] = useState(false);
+  const { ouvrirEditeur, setPedagogicalPlans } = useEditeur();
+  const { plongeeList } = usePlongeeStore();
 
-    const [decoPlan, setDecoPlan] = useState<Segment[]>([]);
+  // ── Paramètres ─────────────────────────────────────────────────────────────
+  const [gfValues, setGfValues] = useState<GFValues>({ gfLow: 0.30, gfHigh: 0.85 });
+  const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
 
-    console.log("Liste des plongées disponibles :", plongeeList);
+  // ── Résultats ──────────────────────────────────────────────────────────────
+  const [decoPlan, setDecoPlan] = useState<Segment[]>([]);
+  const [decoObject, setDecoObject] = useState<Plan | null>(null);  // ← Plan conservé pour le mode péda
+  const [showResult, setShowResult] = useState(false);
 
-    function computeDive(selectedPlongee: Plongee, gfBas: number, gfHaut: number): Segment[] {
-        console.log("Chargement de l'algo...");
-        var deco = new Plan(ZH16CTissues);
-        console.log("Definition des gaz Fond");
-        for (let gaz of selectedPlongee.gazFond.map(Gas.fromJSON)) {
-            deco.addBottomGas(gaz);
-        }
-        console.log("Definition des gaz Deco");
-        for (let gaz of selectedPlongee.gazDeco.map(Gas.fromJSON)) {
-            deco.addDecoGas(gaz);
-        }
+  // ── Calcul ─────────────────────────────────────────────────────────────────
+  /**
+   * Retourne à la fois les segments de résultat ET le Plan complet.
+   * Le Plan est nécessaire pour buildDivePlanFromPlan() dans le mode pédagogique.
+   */
+  function computeDive(
+    plongee: Plongee,
+    gfLow: number,
+    gfHigh: number,
+  ): { segments: Segment[]; plan: Plan } {
+    const deco = new Plan(ZH16CTissues);
 
-        var isFirstSegment = true;
-        for (let segment of selectedPlongee.segments) {
-            console.log("Descente avec le Tx");
-            if (isFirstSegment && segment.startDepth === segment.endDepth) {
-                deco.addDepthChange(0, segment.endDepth, segment.gasName, (segment.endDepth - 0) / 20);
-            } else if (segment.startDepth < segment.endDepth) {
-                deco.addDepthChange(segment.startDepth, segment.endDepth, segment.gasName, (segment.endDepth - segment.startDepth) / 20);
-            } else if (segment.startDepth === segment.endDepth) {
-                console.log("On fait une plongee de 25 min");
-                deco.addFlat(segment.startDepth, segment.gasName, segment.time);
-            }
-        }
-        console.log("Calcul de la deco...");
-        var decoPlan = deco.calculateDecompression(false, gfBas / 100, gfHaut / 100, 1.6, 30, undefined);
-        console.log("Resultat de la deco :");
-        console.log(decoPlan);
-        return decoPlan;
+    for (const gaz of plongee.gazFond.map(Gas.fromJSON)) {
+      deco.addBottomGas(gaz);
+    }
+    for (const gaz of plongee.gazDeco.map(Gas.fromJSON)) {
+      deco.addDecoGas(gaz);
     }
 
-    function handleSubmit(): void {
-        setShowResult(false);
-        if (selectedPlongee !== null) {
-            console.log("Lancement du calcul du Runtime avec GF Bas:", gfBas, "GF Haut:", gfHaut, "Plongée sélectionnée:", selectedPlongee);
-            const plongeeSegments = [...selectedPlongee.segments];
-            const runtime = computeDive(selectedPlongee!, parseInt(gfBas), parseInt(gfHaut));
-            setDecoPlan([...plongeeSegments, ...runtime]);
-            setShowResult(true);
-        }
+    let isFirstSegment = true;
+    for (const segment of plongee.segments) {
+      if (isFirstSegment && segment.startDepth === segment.endDepth) {
+        deco.addDepthChange(0, segment.endDepth, segment.gasName, segment.endDepth / 20);
+      } else if (segment.startDepth < segment.endDepth) {
+        deco.addDepthChange(
+          segment.startDepth, segment.endDepth,
+          segment.gasName,
+          (segment.endDepth - segment.startDepth) / 20,
+        );
+      } else if (segment.startDepth === segment.endDepth) {
+        deco.addFlat(segment.startDepth, segment.gasName, segment.time);
+      }
+      isFirstSegment = false;
     }
 
-    const handlePlongeeSelect = (plongeeId: string | null) => {
-        const plongee = plongeeList.find(plongee => plongee.id === plongeeId);
-        console.log("Plongée sélectionnée :", plongee);
-        if (plongee === undefined) {
-            console.log("Plongée non trouvée pour l'ID :", plongeeId);
-            return;
-        } else {
-            setSelectedPlongee(plongee);
-        }
-    };
-
-    return (
-        <View style={mainStyles.editorContainer}>
-            <Text style={mainStyles.text}>Lancement du calul du Runtime...</Text>
-
-            {/* Partie de paramétrage pour les GF et vitesses ... */}
-            <View style={styles.textInput}>
-                <Text style={styles.labelInput}>GF Bas :</Text>
-                <TextInput
-                    placeholder="GF Bas"
-                    value={gfBas}
-                    onChangeText={setGFBas}
-                    keyboardType="numeric"
-                    style={styles.input}
-                />
-            </View>
-            <View style={styles.textInput}>
-                <Text style={styles.labelInput}>GF Haut :</Text>
-                <TextInput
-                    placeholder="GF Haut"
-                    value={gfHaut}
-                    onChangeText={setGFHaut}
-                    keyboardType="numeric"
-                    style={styles.input}
-                />
-            </View>
-            {/* Liste des plongée avec 1 seul choix */}
-            <View style={styles.pickerContainer}>
-                <PlongeePicker
-                    plongees={plongeeList}
-                    selectedPlongee={null}
-                    onPlongeeSelect={handlePlongeeSelect}
-                />
-            </View>
-            {/* Bouton de lancement du calcul */}
-            <View style={styles.buttons}>
-                <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
-            </View>
-            {/* Affichage du tableau de résultat */}
-            <View style={styles.listcontainer}>
-                {showResult && decoPlan && (
-                    <RuntimeResult data={decoPlan} />
-                )}
-            </View>
-        </View>
+    const decoSegments = deco.calculateDecompression(
+      false, gfLow, gfHigh, 1.6, 30, undefined,
     );
+
+    return { segments: decoSegments, plan: deco };
+  }
+
+  function handleSubmit() {
+    if (!selectedPlongee) return;
+    setShowResult(false);
+
+    const { segments: runtime, plan } = computeDive(
+      selectedPlongee,
+      gfValues.gfLow,
+      gfValues.gfHigh,
+    );
+
+    setDecoPlan([...selectedPlongee.segments, ...runtime]);
+    setDecoObject(plan);          // ← Plan stocké pour le mode pédagogique
+    setShowResult(true);
+  }
+
+  const handlePlongeeSelect = (plongeeId: string | null) => {
+    const found = plongeeList.find(p => p.id === plongeeId);
+    setSelectedPlongee(found ?? null);
+    setShowResult(false);
+  };
+
+  // ── Rendu ──────────────────────────────────────────────────────────────────
+  return (
+    <View style={sharedStyles.screenContainer}>
+
+      <Text style={sharedStyles.screenTitle}>Calcul décompression</Text>
+
+      {/* Sélection de la plongée */}
+      <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.sm }]}>Plongée</Text>
+      <View style={styles.pickerWrapper}>
+        <PlongeePicker
+          plongees={plongeeList}
+          selectedPlongee={null}
+          onPlongeeSelect={handlePlongeeSelect}
+        />
+      </View>
+
+      {/* GF avec sliders */}
+      <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>Gradient Factors</Text>
+      <View style={styles.gfCard}>
+        <GFSliderPair
+          values={gfValues}
+          onChange={setGfValues}
+          accentColor={ocean.accent.blue}
+        />
+      </View>
+
+      {/* Bouton de calcul */}
+      <TouchableOpacity
+        style={[styles.calcBtn, !selectedPlongee && styles.calcBtnDisabled]}
+        onPress={handleSubmit}
+        disabled={!selectedPlongee}
+        activeOpacity={0.8}
+      >
+        <MaterialIcons name="calculate" size={20} color={ocean.bg.deep} />
+        <Text style={styles.calcBtnTxt}>Calculer</Text>
+      </TouchableOpacity>
+
+      {/* Résultat + bouton pédagogique */}
+      {showResult && decoPlan.length > 0 && (
+        <View style={styles.resultArea}>
+          <View style={styles.resultHeader}>
+            <Text style={styles.resultTitle}>Résultat</Text>
+            {/* Bouton mode pédagogique — visible uniquement après calcul */}
+            {decoObject && selectedPlongee && (
+              <PedagogicalLaunchButton
+                plan={decoObject}
+                planName={selectedPlongee.name}
+                currentGfLow={gfValues.gfLow}
+                currentGfHigh={gfValues.gfHigh}
+                variant="button"
+                onLaunch={(planA, planB) => {
+                  setPedagogicalPlans(planA, planB);
+                  ouvrirEditeur('pedagogical');
+                }}
+              />
+            )}
+          </View>
+
+          <RuntimeResult data={decoPlan} />
+        </View>
+      )}
+
+    </View>
+  );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    form: {
-        padding: 16
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 16
-    },
-    input: {
-        flex: 3 / 4,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 8,
-        marginBottom: 8
-    },
-    buttons: {
-        flexDirection: 'row',
-        justifyContent: 'space-around'
-    },
-    textInput: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    labelInput: {
-        flex: 1 / 4,
-        padding: 8,
-        marginBottom: 8
-    },
-    flatlist: {
-        backgroundColor: 'transprent',
-        width: '100%'
-    },
-    listcontainer: {
-        flex: 1,
-        flexDirection: 'row',
-        backgroundColor: 'transparent',
-    },
-    pickerContainer: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        marginBottom: 16,
-        backgroundColor: '#fff',  // Fond blanc pour mieux voir le champ
-        justifyContent: 'center',
-    },
+  pickerWrapper: {
+    alignSelf: 'stretch',
+    borderWidth: 1,
+    borderColor: ocean.border.subtle,
+    borderRadius: radius.md,
+    backgroundColor: ocean.bg.surface,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  gfCard: {
+    alignSelf: 'stretch',
+    backgroundColor: ocean.bg.surface,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    borderColor: ocean.border.subtle,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  calcBtn: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: ocean.accent.green,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+  },
+  calcBtnDisabled: {
+    opacity: 0.4,
+  },
+  calcBtnTxt: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: ocean.bg.deep,
+  },
+
+  resultArea: {
+    alignSelf: 'stretch',
+    flex: 1,
+  },
+  resultHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  resultTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+    color: ocean.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });
