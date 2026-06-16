@@ -1,23 +1,21 @@
-import React from "react";
+import { router } from "expo-router";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import { useEditeur } from "../context/EditeurContext";
 import { Gas } from "../lib/dive";
+import { ROUTES } from "../navigation/types";
 import { useGazStore } from "../store/useGazStore";
 import { mainStyles } from "../styles/mainStyles";
 import GazCard from "./GazCard";
 import ButtonLine from "./ui/ButtonLine";
 
 export default function GestionGaz() {
-    const { ouvrirEditeur } = useEditeur();
-    const { gazList, deleteGaz, resetGazList, setSelectedGaz } = useGazStore();
+    const { gazList, deleteGaz, resetGazList } = useGazStore();
 
     const handleEditGaz = (gaz: Gas) => {
-        setSelectedGaz(gaz);
-        ouvrirEditeur('editgaz');
+        router.push({ pathname: ROUTES.EDIT_GAZ, params: { gazId: gaz.id } });
     };
 
     const handleAddGaz = () => {
-        ouvrirEditeur('addgaz');
+        router.push(ROUTES.ADD_GAZ);
     }
 
     return (

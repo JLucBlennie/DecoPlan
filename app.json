@@ -6,6 +6,9 @@
         "foregroundImage": "./assets/adaptive-icon.png"
       }
     },
+    "experiments": {
+      "typedRoutes": true
+    },
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true
@@ -13,7 +16,8 @@
     "name": "DecoPlan",
     "orientation": "portrait",
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-router"
     ],
     "slug": "DecoPlan",
     "userInterfaceStyle": "dark",

@@ -1,20 +1,22 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { useEditeur } from '../context/EditeurContext';
 import { Gas, Plan, Plongee, Segment, ZH16CTissues } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
+import { router } from 'expo-router';
+import { ROUTES } from '../navigation/types';
+import { usePedagogicalStore } from '../store/usePedagogicalStore';
 import { GFSliderPair, GFValues } from './GFSliderPair';
 import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
 import PlongeePicker from './PlongeePicker';
 import RuntimeResult from './RuntimeResult';
 
 export default function RuntimeScreen() {
-  const { ouvrirEditeur, setPedagogicalPlans } = useEditeur();
+  const { setPlans } = usePedagogicalStore();
   const { plongeeList } = usePlongeeStore();
 
   // ── Paramètres ─────────────────────────────────────────────────────────────
@@ -100,8 +102,8 @@ export default function RuntimeScreen() {
       <View style={styles.pickerWrapper}>
         <PlongeePicker
           plongees={plongeeList}
-          selectedPlongee={null}
-          onPlongeeSelect={handlePlongeeSelect}
+          selectedId={selectedPlongee?.id ?? null}
+          onSelect={handlePlongeeSelect}
         />
       </View>
 
@@ -140,8 +142,8 @@ export default function RuntimeScreen() {
                 currentGfHigh={gfValues.gfHigh}
                 variant="button"
                 onLaunch={(planA, planB) => {
-                  setPedagogicalPlans(planA, planB);
-                  ouvrirEditeur('pedagogical');
+                  setPlans(planA, planB);
+                  router.push(ROUTES.PEDAGOGICAL);
                 }}
               />
             )}

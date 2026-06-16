@@ -2,9 +2,8 @@
 // DecoPlan — GFSliderPair
 // Deux sliders couplés GF Low / GF High avec contrainte gfLow ≤ gfHigh.
 // ─────────────────────────────────────────────────────────────────────────────
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { StyleSheet, Text, View } from 'react-native';
 
 export interface GFValues {
   gfLow:  number;  // 0.10 – 0.85
@@ -20,8 +19,8 @@ export interface GFSliderPairProps {
 }
 
 const GF_LOW_MIN  = 0.10;
-const GF_LOW_MAX  = 0.85;
-const GF_HIGH_MIN = 0.50;
+const GF_LOW_MAX = 1.00;
+const GF_HIGH_MIN = 0.10;
 const GF_HIGH_MAX = 1.00;
 const STEP        = 0.05;
 

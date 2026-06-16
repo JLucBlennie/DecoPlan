@@ -1,34 +1,23 @@
-import React, { useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { useEditeur } from '../context/EditeurContext';
-import { Gas } from '../lib/dive';
+import { Gas } from '../lib/dive/gas';
 import { useGazStore } from '../store/useGazStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import CircleButton from './ui/CircleButton';
 
 type GazFormProps = {
-    /**
-     * Gaz à éditer. Toujours non-null ici : App.tsx n'affiche GazForm
-     * que si selectedGaz !== null.
-     */
-    gaz: Gas | null;
-    onClose: () => void;
+    gaz: Gas;
 };
 
-export default function GazForm({ gaz, onClose }: GazFormProps) {
-    const { fermerEditeur } = useEditeur();
-    const { updateGaz } = useGazStore();
+export default function GazForm({ gaz }: GazFormProps) {
+    const { gazList, updateGaz } = useGazStore();
 
     const [nom, setNom] = useState(gaz ? gaz.name : '');
     const [o2, setO2] = useState(gaz ? (gaz.fO2 * 100).toFixed(0) : '');
     const [he, setHe] = useState(gaz ? (gaz.fHe * 100).toFixed(0) : '');
     const [err, setErr] = useState('');
-
-    const closeEditeur = () => {
-        fermerEditeur();
-        onClose();
-    };
 
     const handleSubmit = () => {
         const fO2 = parseFloat(o2) / 100;
@@ -46,7 +35,7 @@ export default function GazForm({ gaz, onClose }: GazFormProps) {
          * Ne jamais passer fN2 ou une instance partielle ici.
          */
         updateGaz(gaz?.id || '', { name: nom.trim(), fO2, fHe });
-        closeEditeur();
+        router.back();
     };
 
     return (
@@ -98,7 +87,6 @@ export default function GazForm({ gaz, onClose }: GazFormProps) {
 
             {/* Actions */}
             <View style={styles.buttons}>
-                <CircleButton iconName="cancel" onPress={closeEditeur} position="Left" />
                 <CircleButton iconName="check" onPress={handleSubmit} position="Right" />
             </View>
         </View>

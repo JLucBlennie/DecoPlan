@@ -31,9 +31,6 @@ type GazStore = {
      * Gaz en cours d'édition dans GazForm.
      * `null` = aucun gaz sélectionné (état initial ou après fermeture du formulaire).
      */
-    selectedGaz: Gas | null;
-
-    setSelectedGaz: (gaz: Gas | null) => void;
     addGaz: (gaz: Gas) => Promise<void>;
     /**
      * Met à jour un gaz existant à partir de données partielles.
@@ -50,12 +47,6 @@ type GazStore = {
 
 export const useGazStore = create<GazStore>((set) => ({
     gazList: [],
-    selectedGaz: null,
-
-    // ── Sélection ──────────────────────────────────────────────────────────────
-    setSelectedGaz: (gaz) => {
-        set({ selectedGaz: gaz });
-    },
 
     // ── Ajout ─────────────────────────────────────────────────────────────────
     addGaz: async (gaz) => {

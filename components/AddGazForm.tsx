@@ -1,20 +1,15 @@
-import React, { useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { useEditeur } from '../context/EditeurContext';
 import { Gas } from '../lib/dive';
 import { useGazStore } from '../store/useGazStore';
 import CircleButton from './ui/CircleButton';
 
 export default function AddGazForm() {
-    const { fermerEditeur } = useEditeur();
     const { addGaz } = useGazStore();
     const [nom, setNom] = useState("");
     const [o2, setO2] = useState("21");
     const [he, setHe] = useState("0");
-
-    const closeEditeur = () => {
-        fermerEditeur();
-    };
 
     const handleSubmit = () => {
         if (!nom || !o2 || !he) {
@@ -22,7 +17,7 @@ export default function AddGazForm() {
             return;
         }
         addGaz(Gas.create(nom, parseFloat(o2) / 100, parseFloat(he) / 100));
-        closeEditeur();
+        router.back();
     };
 
     return (
@@ -58,7 +53,6 @@ export default function AddGazForm() {
                 />
             </View>
             <View style={styles.buttons}>
-                <CircleButton iconName="cancel" onPress={closeEditeur} position='Left' />
                 <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
             </View>
         </View>

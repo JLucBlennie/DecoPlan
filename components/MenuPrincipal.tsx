@@ -1,23 +1,24 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  StatusBar,
-} from 'react-native';
+import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import Entypo from '@expo/vector-icons/Entypo';
+import { router } from 'expo-router';
+import React from 'react';
+import {
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import appJson from '../app.json';
-import { useEditeur } from '../context/EditeurContext';
-import { ocean, spacing, radius, fontSize } from '../styles/theme';
+import { ROUTES } from '../navigation/types';
+import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type MenuItem = {
-  key: 'gaz' | 'plongee' | 'runtime' | 'about';
+  key: any;
   label: string;
   sublabel: string;
   icon: React.ReactNode;
@@ -36,7 +37,7 @@ const AboutIcon   = () => <Entypo name="help" size={18} color={ocean.text.muted}
 
 const MENU_ITEMS: MenuItem[] = [
   {
-    key: 'gaz',
+    key: ROUTES.GESTION_GAZ,
     label: 'Gestion des gaz',
     sublabel: 'Nitrox, Trimix, Air…',
     icon: <GazIcon />,
@@ -44,7 +45,7 @@ const MENU_ITEMS: MenuItem[] = [
     variant: 'default',
   },
   {
-    key: 'plongee',
+    key: ROUTES.GESTION_PLONGEE,
     label: 'Gestion des plongées',
     sublabel: 'Profils, segments, gaz fond/déco',
     icon: <DiveIcon />,
@@ -52,7 +53,7 @@ const MENU_ITEMS: MenuItem[] = [
     variant: 'default',
   },
   {
-    key: 'runtime',
+    key: ROUTES.RUNTIME,
     label: 'Calculer un runtime',
     sublabel: 'Bühlmann ZHL-16C · Gradient Factors',
     icon: <RuntimeIcon />,
@@ -114,7 +115,6 @@ function MenuRow({ item, onPress }: MenuRowProps) {
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function MenuPrincipal() {
-  const { ouvrirEditeur } = useEditeur();
 
   return (
     <View style={styles.screen}>
@@ -139,7 +139,7 @@ export default function MenuPrincipal() {
           <MenuRow
             key={item.key}
             item={item}
-            onPress={() => ouvrirEditeur(item.key)}
+            onPress={() => router.push(item.key)}
           />
         ))}
       </View>
@@ -147,7 +147,7 @@ export default function MenuPrincipal() {
       {/* Bouton About discret en bas */}
       <Pressable
         style={({ pressed }) => [styles.aboutBtn, pressed && styles.rowPressed]}
-        onPress={() => ouvrirEditeur('about')}
+        onPress={() => router.push(ROUTES.ABOUT)}
         accessibilityRole="button"
         accessibilityLabel="À propos de l'application"
       >
