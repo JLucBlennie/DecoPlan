@@ -1,37 +1,58 @@
-import React, { useState } from "react";
-import { FlatList, Pressable, View, StyleSheet } from "react-native"
-import { Dive } from "../lib/dive/dive";
+import { router } from "expo-router";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { Gas } from "../lib/dive";
+import { ROUTES } from "../navigation/types";
+import { useGazStore } from "../store/useGazStore";
+import { mainStyles } from "../styles/mainStyles";
 import GazCard from "./GazCard";
+import ButtonLine from "./ui/ButtonLine";
 
-type Props = {
-    gaz: Dive.Gas[];
-    setShowOpenGaz: (showOpenGaz: boolean) => void;
-    setShowDeleteGaz: (showDeleteGaz: boolean) => void;
-    setGazName: (name: string) => void;
-};
+export default function GestionGaz() {
+    const { gazList, deleteGaz, resetGazList } = useGazStore();
 
-export default function GestionGaz({ gaz, setShowOpenGaz, setShowDeleteGaz, setGazName }: Props) {
+    const handleEditGaz = (gaz: Gas) => {
+        router.push({ pathname: ROUTES.EDIT_GAZ, params: { gazId: gaz.id } });
+    };
+
+    const handleAddGaz = () => {
+        router.push(ROUTES.ADD_GAZ);
+    }
 
     return (
-        <View style={styles.listcontainer}>
-            <FlatList
-                style={styles.flatlist}
-                data={gaz}
-                showsVerticalScrollIndicator={true}
-                renderItem={({ item }) =>
-                    <GazCard titre={item.name} pourcentO2={item.fO2 * 100} pourcentHe={item.fHe * 100} setShowOpenGaz={setShowOpenGaz} setShowDeleteGaz={setShowDeleteGaz} setGazName={setGazName} />
-                }
-                keyExtractor={(item, index) => index.toString()}
-            />
-        </View>);
+        <View style={mainStyles.editorContainer}>
+            <View style={mainStyles.editorContainer}>
+                <Text style={styles.title}>Liste des Gaz</Text>
+                <View style={styles.listcontainer}>
+                    <FlatList
+                        style={styles.flatlist}
+                        data={gazList}
+                        showsVerticalScrollIndicator={true}
+                        renderItem={({ item }) => <GazCard gaz={item} onPress={() => { handleEditGaz(item); }} onDelete={() => { deleteGaz(item.id); }} />}
+                        keyExtractor={(item) => item.id} />
+                </View>
+                <ButtonLine iconName={"add"} onPress={handleAddGaz} text={"Ajouter un Gaz..."} />
+                <ButtonLine iconName={"clear"} onPress={resetGazList} text={"Reset la liste des Gaz..."} />
+            </View>
+        </View >
+    );
 }
 
 const styles = StyleSheet.create({
     flatlist: {
         backgroundColor: 'transprent',
+        width: '100%',
+        alignSelf: 'stretch',
+        borderColor: 'cyan',
+        borderWidth: 2
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 16,
     },
     listcontainer: {
+        flex: 1,
         flexDirection: 'row',
         backgroundColor: 'transparent',
-    }
+    },
 });

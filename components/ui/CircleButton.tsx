@@ -13,9 +13,9 @@ type Props = {
 };
 
 export default function CircleButton({ iconName, onPress, position, size }: Props) {
-    const tailleBouton: number = (size === undefined ? 38 : size);
-    const tailleBorder: number = (size === undefined ? 84 : tailleBouton * 2.2);
-    const tailleBorderRaduis: number = (size === undefined ? 42 : tailleBorder / 2);
+    const tailleBouton: number = (size === undefined ? 32 : size);
+    const tailleBorder: number = tailleBouton * 2.2;
+    const tailleBorderRaduis: number = tailleBorder / 2;
 
     return (
         <View style={position === 'Right' ? { paddingLeft: 50 } : position === 'Left' ? { paddingRight: 50 } : {}}>
@@ -33,7 +33,7 @@ export default function CircleButton({ iconName, onPress, position, size }: Prop
                     alignItems: 'center',
                     borderRadius: tailleBorderRaduis,
                     backgroundColor: '#fff',
-                }} onPress={onPress}>
+                }} onPress={(e) => {e.stopPropagation(); onPress();}}>
                     {
                         iconName === "check" &&
                         <MaterialIcons name="check" size={tailleBouton} color="#25292e" />

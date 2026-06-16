@@ -1,29 +1,30 @@
 {
   "expo": {
-    "name": "DecoPlan",
-    "slug": "DecoPlan",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      }
     },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
+    "name": "DecoPlan",
+    "orientation": "portrait",
+    "plugins": [
+      "expo-status-bar",
+      "expo-router"
+    ],
+    "slug": "DecoPlan",
+    "userInterfaceStyle": "dark",
+    "version": "1.0.0",
     "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     }
   }
 }

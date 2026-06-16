@@ -1,52 +1,73 @@
-import { ImageBackground, Text, TextInput, View, StyleSheet, Linking } from 'react-native';
-import appJson from '../app.json';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import CircleButton from './ui/CircleButton';
-import { mainStyles } from '../App';
+import { StyleSheet, Text, View } from 'react-native';
+import appJson from '../app.json';
+import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
-type Props = {
-  close: () => void;
-};
-
-export default function AboutScreen({ close }: Props) {
+export default function AboutScreen() {
 
   return (
-    <View style={mainStyles.container}>
-      <View style={styles.aboutcontainerdesc}>
-        <View>
-          <View style={styles.circleButtonContainer}>
-            <View style={styles.circleButton}>
-              <MaterialCommunityIcons name="diving-scuba" size={38} color="#0428f1ff" />
-            </View>
-          </View>
+    <View style={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.logoWrap}>
+          <MaterialCommunityIcons name="diving-scuba" size={28} color={ocean.accent.blue} />
         </View>
-        <View style={styles.descContainer}>
-          <Text style={mainStyles.text}>Version de l'application</Text>
-          <Text style={mainStyles.text}>({appJson.expo.name}) by JLuc - V{appJson.expo.version}</Text>
-          <Text style={mainStyles.text}>({appJson.expo.name}) est basé sur les travaux de l'équipe de MV-Plan et de github.com/nyxtom/dive</Text>
-        </View>
-        <View style={styles.disclaimerContainer}>
-          <Text style={mainStyles.text}>{appJson.expo.name} est un outil pédagogique pour l'apprentissage des GF sur l'algorithme de Bühlmann ZHL16-C</Text>
-          <Text style={mainStyles.attentionText}>ATTENTION !!! Il ne faut pas considérer que les runtimes générés sont qualifés pour plonger</Text>
+        <View style={styles.headerTexts}>
+          <Text style={styles.appName}>{appJson.expo.name}</Text>
+          <Text style={styles.appVersion}>by JLuc · v{appJson.expo.version}</Text>
+          <Text style={styles.text}>({appJson.expo.name}) est basé sur les travaux de l'équipe de MV-Plan et de github.com/nyxtom/dive</Text>
         </View>
       </View>
-      <View style={styles.exitbuttoncontainer}>
-        <View style={styles.buttonContainer}>
-          <CircleButton onPress={close} iconName="back" position={'Right'} />
-        </View>
+      <View style={styles.disclaimer}>
+        <Text style={styles.disclaimerText}>{appJson.expo.name} est un outil pédagogique pour l'apprentissage des GF sur l'algorithme de Bühlmann ZHL16-C</Text>
+        <Text style={styles.disclaimerText}>ATTENTION !!! Il ne faut pas considérer que les runtimes générés sont qualifés pour plonger</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  aboutcontainerdesc: {
-    flex: 6 / 7,
-    flexDirection: 'column',
-    backgroundColor: 'transparent',
+  // Écran
+  screen: {
+    flex: 1,
+    backgroundColor: ocean.bg.deep,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    alignSelf: 'stretch',
+  },
+  // Header
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    padding: 5
+    gap: spacing.md,
+    marginBottom: spacing.xxl,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ocean.border.subtle,
+  },
+  logoWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    backgroundColor: ocean.soft.blue,
+    borderWidth: 1,
+    borderColor: ocean.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTexts: {
+    flex: 1,
+  },
+  appName: {
+    fontSize: fontSize.xl,
+    fontWeight: '600',
+    color: ocean.text.primary,
+    letterSpacing: 0.3,
+  },
+  appVersion: {
+    fontSize: fontSize.xs,
+    color: ocean.text.muted,
+    marginTop: 2,
   },
   circleButtonContainer: {
     width: 84,
@@ -54,7 +75,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: '#022353ff',
     borderRadius: 42,
-    padding: 3,
+    padding: 10,
   },
   circleButton: {
     flex: 1,
@@ -63,30 +84,33 @@ const styles = StyleSheet.create({
     borderRadius: 42,
     backgroundColor: '#fff',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
-    paddingLeft: 200
-  },
-  exitbuttoncontainer: {
-    flex: 1 / 7,
-    backgroundColor: 'transparent',
-    paddingBottom: 20,
-    width: '100%'
-  },
   descContainer: {
-    flex: 3 / 5,
     flexDirection: 'column',
     backgroundColor: 'transparent',
     alignItems: 'center',
-    padding: 10
+    padding: 10,
+    paddingBottom: 20
   },
-  disclaimerContainer: {
-    flex: 2 / 5,
-    flexDirection: 'column',
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10
-  }
+  // Disclaimer
+  disclaimer: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: ocean.soft.amber,
+    borderRadius: radius.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: ocean.accent.amber,
+    marginTop: spacing.xs,
+  },
+  disclaimerText: {
+    fontSize: fontSize.xs,
+    color: ocean.accent.amber,
+    textAlign: 'center',
+  },
+  text: {
+    fontSize: fontSize.xs,
+    color: ocean.text.muted,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    marginBottom: spacing.xs,
+  },
 });
