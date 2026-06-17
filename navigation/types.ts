@@ -16,16 +16,17 @@
  *   router.push({ pathname: ROUTES.EDIT_GAZ, params: { gazId: gaz.id } });
  */
 export const ROUTES = {
-  HOME:             '/'              as const,
-  GESTION_GAZ:      '/gestion-gaz'  as const,
-  ADD_GAZ:          '/add-gaz'      as const,
-  EDIT_GAZ:         '/edit-gaz'     as const,
-  GESTION_PLONGEE:  '/gestion-plongee' as const,
-  ADD_PLONGEE:      '/add-plongee'  as const,
-  EDIT_PLONGEE:     '/edit-plongee' as const,
-  RUNTIME:          '/runtime'      as const,
-  ABOUT:            '/about'        as const,
-  PEDAGOGICAL:      '/pedagogical'  as const,
+  HOME: '/' as const,
+  GESTION_GAZ: '/gestion-gaz' as const,
+  ADD_GAZ: '/add-gaz' as const,
+  EDIT_GAZ: '/edit-gaz' as const,
+  GESTION_PLONGEE: '/gestion-plongee' as const,
+  ADD_PLONGEE: '/add-plongee' as const,
+  EDIT_PLONGEE: '/edit-plongee' as const,
+  RUNTIME: '/runtime' as const,
+  PREFERENCES: '/preferences' as const,
+  ABOUT: '/about' as const,
+  PEDAGOGICAL: '/pedagogical' as const,
 } as const;
 
 export type AppRoute = typeof ROUTES[keyof typeof ROUTES];

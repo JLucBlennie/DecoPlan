@@ -7,15 +7,18 @@ import { useEffect } from 'react';
 
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 import { ocean } from '../styles/theme';
 
 export default function RootLayout() {
-  const { initializeGazList }     = useGazStore();
+  const { initializeGazList } = useGazStore();
   const { initializePlongeeList } = usePlongeeStore();
+  const { load: loadPreferences } = usePreferencesStore();
 
   useEffect(() => {
     initializeGazList();
     initializePlongeeList();
+    loadPreferences();           // ← ajouter cette ligne
   }, []);
 
   return (
@@ -23,40 +26,46 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
-          headerStyle:         { backgroundColor: ocean.bg.deep },
-          headerTintColor:     ocean.text.primary,
-          headerTitleStyle:    { fontWeight: '500', fontSize: 17 },
+          headerStyle: { backgroundColor: ocean.bg.deep },
+          headerTintColor: ocean.text.primary,
+          headerTitleStyle: { fontWeight: '500', fontSize: 17 },
           headerShadowVisible: false,
-          contentStyle:        { backgroundColor: ocean.bg.deep },
+          contentStyle: { backgroundColor: ocean.bg.deep },
         }}
       >
         {/* Accueil — pas de header (MenuPrincipal gère le sien) */}
-        <Stack.Screen name="index"            options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
 
         {/* Gaz */}
-        <Stack.Screen name="gestion-gaz"      options={{ title: 'Gaz' }} />
-        <Stack.Screen name="add-gaz"          options={{ ...modal, title: 'Nouveau gaz' }} />
-        <Stack.Screen name="edit-gaz"         options={{ ...modal, title: 'Modifier le gaz' }} />
+        <Stack.Screen name="gestion-gaz" options={{ title: 'Gaz' }} />
+        <Stack.Screen name="add-gaz" options={{ ...modal, title: 'Nouveau gaz' }} />
+        <Stack.Screen name="edit-gaz" options={{ ...modal, title: 'Modifier le gaz' }} />
 
         {/* Plongées */}
-        <Stack.Screen name="gestion-plongee"  options={{ title: 'Plongées' }} />
-        <Stack.Screen name="add-plongee"      options={{ ...modal, title: 'Nouvelle plongée' }} />
-        <Stack.Screen name="edit-plongee"     options={{ ...modal, title: 'Modifier la plongée' }} />
+        <Stack.Screen name="gestion-plongee" options={{ title: 'Plongées' }} />
+        <Stack.Screen name="add-plongee" options={{ ...modal, title: 'Nouvelle plongée' }} />
+        <Stack.Screen name="edit-plongee" options={{ ...modal, title: 'Modifier la plongée' }} />
 
         {/* Runtime */}
-        <Stack.Screen name="runtime"          options={{ title: 'Calcul déco' }} />
+        <Stack.Screen name="runtime" options={{ title: 'Calcul déco' }} />
 
         {/* À propos */}
-        <Stack.Screen name="about"            options={{ title: 'À propos' }} />
+        <Stack.Screen name="about" options={{ title: 'À propos' }} />
 
         {/* Mode pédagogique — plein écran, pas de header */}
         <Stack.Screen
           name="pedagogical"
           options={{
-            headerShown:  false,
+            headerShown: false,
             presentation: 'fullScreenModal',
-            animation:    'slide_from_bottom',
+            animation: 'slide_from_bottom',
           }}
+        />
+
+        {/* Préférences */}
+        <Stack.Screen
+          name="preferences"
+          options={{ ...modal, title: 'Préférences' }}
         />
       </Stack>
     </>
@@ -65,12 +74,12 @@ export default function RootLayout() {
 
 // Options partagées pour les modales formulaires
 const modal = {
-  presentation:        'modal' as const,
-  headerStyle:         { backgroundColor: ocean.bg.surface },
-  headerTintColor:     ocean.text.primary,
-  headerTitleStyle:    { fontWeight: '500' as const, fontSize: 17 },
+  presentation: 'modal' as const,
+  headerStyle: { backgroundColor: ocean.bg.surface },
+  headerTintColor: ocean.text.primary,
+  headerTitleStyle: { fontWeight: '500' as const, fontSize: 17 },
   headerShadowVisible: false,
-  contentStyle:        { backgroundColor: ocean.bg.surface },
+  contentStyle: { backgroundColor: ocean.bg.surface },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

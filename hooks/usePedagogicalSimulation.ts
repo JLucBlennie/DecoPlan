@@ -8,6 +8,7 @@ import {
   ZHL16C_N2,
 } from '../lib/dive/constants';
 import type { DivePlan, GasConso, PedagogicalSimulation, SimulationFrame } from '../lib/dive/types';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -79,11 +80,8 @@ function mValueGF(
 export function usePedagogicalSimulation(
   plan: DivePlan,
   dtMin: number = DEFAULT_DT_MIN,
-  /** RMV surface gaz de fond (L/min) */
-  rmvFond: number = 20,
-  /** RMV surface gaz de déco — typiquement plus faible car palier = effort réduit */
-  rmvDeco: number = 15,
 ): PedagogicalSimulation {
+  const { rmvFond, rmvDeco } = usePreferencesStore();
 
   return useMemo(() => {
     const lastSeg = plan.segments[plan.segments.length - 1];

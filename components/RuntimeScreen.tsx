@@ -10,6 +10,7 @@ import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import { router } from 'expo-router';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 import { GFSliderPair, GFValues } from './GFSliderPair';
 import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
 import PlongeePicker from './PlongeePicker';
@@ -20,8 +21,12 @@ export default function RuntimeScreen() {
   const { plongeeList } = usePlongeeStore();
 
   // ── Paramètres ─────────────────────────────────────────────────────────────
-  const [gfValues, setGfValues] = useState<GFValues>({ gfLow: 0.30, gfHigh: 0.85 });
   const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
+  const { gfLow: defaultGfLow, gfHigh: defaultGfHigh } = usePreferencesStore();
+  const [gfValues, setGfValues] = useState<GFValues>({
+    gfLow: defaultGfLow,
+    gfHigh: defaultGfHigh,
+  });
 
   // ── Résultats ──────────────────────────────────────────────────────────────
   const [decoPlan, setDecoPlan] = useState<Segment[]>([]);

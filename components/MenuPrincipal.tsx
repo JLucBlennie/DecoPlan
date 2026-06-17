@@ -28,10 +28,10 @@ type MenuItem = {
 
 // ─── Icônes ───────────────────────────────────────────────────────────────────
 
-const GazIcon     = () => <MaterialCommunityIcons name="diving-scuba-tank" size={22} color={ocean.accent.blue} />;
-const DiveIcon    = () => <MaterialIcons name="scuba-diving" size={22} color={ocean.accent.teal} />;
+const GazIcon = () => <MaterialCommunityIcons name="diving-scuba-tank" size={22} color={ocean.accent.blue} />;
+const DiveIcon = () => <MaterialIcons name="scuba-diving" size={22} color={ocean.accent.teal} />;
 const RuntimeIcon = () => <MaterialIcons name="play-circle-outline" size={22} color={ocean.accent.green} />;
-const AboutIcon   = () => <Entypo name="help" size={18} color={ocean.text.muted} />;
+const AboutIcon = () => <Entypo name="help" size={18} color={ocean.text.muted} />;
 
 // ─── Données du menu ──────────────────────────────────────────────────────────
 
@@ -60,6 +60,14 @@ const MENU_ITEMS: MenuItem[] = [
     iconBg: ocean.soft.green,
     variant: 'cta',
   },
+  {
+    key: ROUTES.PREFERENCES,
+    label: 'Préférences',
+    sublabel: 'Paramètres de l\'application',
+    icon: <MaterialIcons name="settings" size={22} color={ocean.accent.purple} />,
+    iconBg: ocean.soft.purple,
+    variant: 'default',
+  }
 ];
 
 // ─── Composant ligne de menu ─────────────────────────────────────────────────
