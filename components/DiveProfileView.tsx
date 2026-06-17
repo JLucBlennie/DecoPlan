@@ -25,9 +25,9 @@ export interface DiveProfileViewProps {
   style?: ViewStyle;
 }
 
-// Marges internes du graphique
-const PL = 38, PR = 8, PT = 10, PB = 24;
-const MAX_DEPTH_DISPLAY = 40; // axe Y en m
+// Marges internes du graphique 
+const PL = 38, PR = 8, PT = 10, PB = 50;
+const MAX_DEPTH_DISPLAY = 70; // axe Y en m : Il faut mettre la profndeur max de la plongée + 10m pour le confort visuel
 
 export function DiveProfileView({
   plan, simulation, currentStep, mn90Profile, label, style,
@@ -109,6 +109,7 @@ export function DiveProfileView({
             >{d}m</SvgText>
           </React.Fragment>
         ))}
+
 
         {/* Grille verticale (temps) */}
         {timeTicks.map(t => (

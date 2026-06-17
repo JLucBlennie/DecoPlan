@@ -2,7 +2,7 @@
 // DecoPlan — TankConfigRow
 // Une ligne de configuration de bloc par gaz.
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   StyleSheet,
   Text, TextInput, TouchableOpacity,
@@ -150,7 +150,8 @@ const styles = StyleSheet.create({
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
   },
   pressureInput: {
-    flex: 1, fontSize: 14, fontWeight: '500',
+    flex: 1, width: 50,
+    fontSize: 14, fontWeight: '500',
     color: '#E8E8E6', textAlign: 'center', padding: 0,
   },
   pressureUnit: { fontSize: 10, color: '#5F5E5A' },
