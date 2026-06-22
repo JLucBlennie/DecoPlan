@@ -19,6 +19,7 @@
       "expo-status-bar",
       "expo-router"
     ],
+    "scheme": "deco-plan",
     "slug": "DecoPlan",
     "userInterfaceStyle": "dark",
     "version": "1.0.0",
