@@ -39,7 +39,7 @@ export default function PreferencesScreen() {
                     label="GF Low"
                     hint="Conservatisme en profondeur (premier palier)"
                     value={gfLow}
-                    min={0.10} max={0.85} step={0.05}
+                    min={0.10} max={1.00} step={0.05}
                     format={v => `${Math.round(v * 100)} %`}
                     color={ocean.accent.blue}
                     onChange={v => {
@@ -51,7 +51,7 @@ export default function PreferencesScreen() {
                     label="GF High"
                     hint="Conservatisme en surface (dernier palier)"
                     value={gfHigh}
-                    min={0.50} max={1.00} step={0.05}
+                    min={0.10} max={1.00} step={0.05}
                     format={v => `${Math.round(v * 100)} %`}
                     color={ocean.accent.blue}
                     onChange={v => {
