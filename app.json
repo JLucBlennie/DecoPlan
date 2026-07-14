@@ -5,7 +5,8 @@
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
-      "screenOrientation": "user"
+      "screenOrientation": "user",
+      "package": "com.jlblennie.DecoPlan"
     },
     "experiments": {
       "typedRoutes": true
@@ -34,6 +35,12 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "268286f9-bb0e-477c-b9de-b1d675153af7"
+      }
     }
   }
 }
