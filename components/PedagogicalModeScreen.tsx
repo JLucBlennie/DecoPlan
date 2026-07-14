@@ -1,15 +1,17 @@
 // components/PedagogicalModeScreen.tsx
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  SafeAreaView, StatusBar, StyleSheet,
+  StatusBar, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { usePedagogicalSimulation } from '../hooks/usePedagogicalSimulation';
 import { DEFAULT_DT_MIN } from '../lib/dive/constants';
 import { getMN90Profile } from '../lib/dive/mn90';
 import type { MN90Profile, PedagogicalModeProps } from '../lib/dive/types';
 
+import { useAllowLandscape } from '../hooks/useScreenOrientation';
 import { CompartmentsPanel } from './CompartmentsPanel';
 import { DiveProfileView } from './DiveProfileView';
 import { DiveStatusPanel } from './DiveStatusPanel';
@@ -17,11 +19,23 @@ import { GasConsumptionPanel } from './GasConsumptionPanel';
 import { TimelineControls } from './TimelineControls';
 
 export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: PedagogicalModeProps) {
+  useAllowLandscape();
 
   // ── Simulations ───────────────────────────────────────────────────────────
+  // FIX 1 : hooks toujours appelés inconditionnellement.
+  // Quand il n'y a pas de plan de comparaison, on simule le plan A deux fois
+  // (coût négligeable car useMemo déduplique sur la même référence).
   const simA = usePedagogicalSimulation(plan);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const simB = comparisonPlan ? usePedagogicalSimulation(comparisonPlan) : null;
+  const simB = usePedagogicalSimulation(comparisonPlan ?? plan);
+
+  // FIX 2 : durée et nombre de pas couvrent les DEUX plans.
+  // Si le plan B est plus long (GF plus conservateurs = plus de déco),
+  // l'animation doit aller jusqu'au bout du plan B, pas s'arrêter à la fin du plan A.
+  const hasComparison = !!comparisonPlan;
+  const totalTimeMax = hasComparison
+    ? Math.max(simA.totalTimeMin, simB.totalTimeMin)
+    : simA.totalTimeMin;
+  const stepCountMax = Math.round(totalTimeMax / DEFAULT_DT_MIN);
 
   // ── Lecture ───────────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
@@ -35,11 +49,12 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
     const now = Date.now();
     const dtReal = (now - lastTickRef.current) / 1000;
     lastTickRef.current = now;
-    curTimeRef.current = Math.min(simA.totalTimeMin, curTimeRef.current + dtReal * speed);
-    const newStep = Math.min(simA.stepCount, Math.round(curTimeRef.current / DEFAULT_DT_MIN));
+    // FIX 2 (suite) : on avance jusqu'à la fin du plus long des deux plans
+    curTimeRef.current = Math.min(totalTimeMax, curTimeRef.current + dtReal * speed);
+    const newStep = Math.min(stepCountMax, Math.round(curTimeRef.current / DEFAULT_DT_MIN));
     setStep(newStep);
-    if (curTimeRef.current >= simA.totalTimeMin) setPlaying(false);
-  }, [speed, simA.totalTimeMin, simA.stepCount]);
+    if (curTimeRef.current >= totalTimeMax) setPlaying(false);
+  }, [speed, totalTimeMax, stepCountMax]);
 
   useEffect(() => {
     if (playing) {
@@ -52,24 +67,32 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
   }, [playing, tick]);
 
   const handlePlayPause = () => {
-    if (step >= simA.stepCount) { setStep(0); curTimeRef.current = 0; }
+    if (step >= stepCountMax) { setStep(0); curTimeRef.current = 0; }
     setPlaying(p => !p);
   };
   const handleReset = () => { setPlaying(false); setStep(0); curTimeRef.current = 0; };
-  const handleSeek = (s: number) => { setPlaying(false); setStep(s); curTimeRef.current = s * DEFAULT_DT_MIN; };
+  const handleSeek = (s: number) => {
+    setPlaying(false);
+    setStep(s);
+    curTimeRef.current = s * DEFAULT_DT_MIN;
+  };
 
   // ── Toggles ───────────────────────────────────────────────────────────────
   const [showComparison, setShowComparison] = useState(false);
   const [showMN90, setShowMN90] = useState(false);
 
-  // ── Données courantes ─────────────────────────────────────────────────────
-  const frameA = simA.frames[step];
-  const frameB = simB ? simB.frames[Math.min(step, simB.stepCount)] : undefined;
-  const comparing = showComparison && !!comparisonPlan && !!simB && !!frameB;
+  // ── Frames courantes ──────────────────────────────────────────────────────
+  // Chaque plan a son propre stepCount — on borne séparément pour éviter
+  // les accès hors tableau si les deux simulations n'ont pas la même longueur.
+  const frameA = simA.frames[Math.min(step, simA.stepCount)];
+  const frameB = simB.frames[Math.min(step, simB.stepCount)];
+
+  const comparing = showComparison && hasComparison;
   const mn90Profile: MN90Profile | undefined = showMN90 ? getMN90Profile(plan) : undefined;
 
-  // Labels GF pour la comparaison
-  const labelA = comparing ? `GF ${Math.round(plan.gfLow * 100)}/${Math.round(plan.gfHigh * 100)}` : undefined;
+  const labelA = comparing
+    ? `GF ${Math.round(plan.gfLow * 100)}/${Math.round(plan.gfHigh * 100)}`
+    : undefined;
   const labelB = comparing && comparisonPlan
     ? `GF ${Math.round(comparisonPlan.gfLow * 100)}/${Math.round(comparisonPlan.gfHigh * 100)}`
     : undefined;
@@ -91,17 +114,22 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
         </TouchableOpacity>
       </View>
 
-      {/* Timeline */}
+      {/* FIX 3 : TimelineControls reçoit la durée du plan le plus long */}
       <TimelineControls
-        step={step} totalSteps={simA.stepCount} totalTimeMin={simA.totalTimeMin}
-        playing={playing} speed={speed}
-        onPlayPause={handlePlayPause} onReset={handleReset}
-        onSeek={handleSeek} onSpeedChange={setSpeed}
+        step={step}
+        totalSteps={stepCountMax}
+        totalTimeMin={totalTimeMax}
+        playing={playing}
+        speed={speed}
+        onPlayPause={handlePlayPause}
+        onReset={handleReset}
+        onSeek={handleSeek}
+        onSpeedChange={setSpeed}
       />
 
       {/* Toggles */}
       <View style={styles.toggleRow}>
-        {comparisonPlan && (
+        {hasComparison && (
           <Chip label="Comparer" active={showComparison}
             onPress={() => setShowComparison(v => !v)} />
         )}
@@ -112,28 +140,24 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
       {/* ── Zone principale : profil 3/4 + compartiments 1/4 ────────────── */}
       <View style={styles.mainRow}>
 
-        {/* Profil — prend 3/4 de la largeur */}
         <DiveProfileView
           style={styles.profileArea}
           plan={plan}
           simulation={simA}
-          currentStep={step}
+          currentStep={Math.min(step, simA.stepCount)}
           mn90Profile={mn90Profile}
           label={labelA}
-          // En mode comparaison : overlay du 2e profil sur le même SVG
           comparisonPlan={comparing ? comparisonPlan : undefined}
-          comparisonSimulation={comparing ? simB! : undefined}
+          comparisonSimulation={comparing ? simB : undefined}
           comparisonLabel={labelB}
         />
 
-        {/* Compartiments — 1/4 de la largeur, compact */}
         <CompartmentsPanel
           style={styles.compartmentsArea}
           frame={frameA}
           numCompartments={16}
           compact
           label={labelA}
-          // En mode comparaison : double barre par compartiment
           comparisonFrame={comparing ? frameB : undefined}
           comparisonLabel={labelB}
         />
@@ -192,25 +216,23 @@ const styles = StyleSheet.create({
   chipTxt: { fontSize: 12, color: '#888780' },
   chipTxtActive: { color: '#85B7EB' },
 
-  // ── Zone principale ────────────────────────────────────────────────────────
   mainRow: {
-    flex: 1,                        // prend tout l'espace disponible
+    flex: 1,
     flexDirection: 'row',
     paddingHorizontal: 8,
     gap: 6,
-    minHeight: 0,                   // nécessaire pour que flex fonctionne dans ScrollView
+    minHeight: 0,
   },
-  profileArea: { flex: 3 },   // 3/4 de la largeur
-  compartmentsArea: { flex: 1 },   // 1/4 de la largeur
+  profileArea: { flex: 3 },
+  compartmentsArea: { flex: 1 },
 
-  // ── Bas de page ────────────────────────────────────────────────────────────
   bottomRow: {
     flexDirection: 'row',
     paddingHorizontal: 8,
     paddingBottom: 8,
     paddingTop: 6,
     gap: 6,
-    height: 170,                    // hauteur fixe — ne pousse pas le contenu principal
+    height: 300,
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(255,255,255,0.08)',
   },

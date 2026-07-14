@@ -4,13 +4,21 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/adaptive-icon.png"
-      }
+      },
+      "screenOrientation": "user"
     },
     "experiments": {
       "typedRoutes": true
     },
     "icon": "./assets/icon.png",
     "ios": {
+      "infoPlist": {
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
+      },
       "supportsTablet": true
     },
     "name": "DecoPlan",

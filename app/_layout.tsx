@@ -5,12 +5,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { useLockPortrait } from '../hooks/useScreenOrientation';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { ocean } from '../styles/theme';
 
 export default function RootLayout() {
+  useLockPortrait();   // portrait par défaut sur toute l'app
   const { initializeGazList } = useGazStore();
   const { initializePlongeeList } = usePlongeeStore();
   const { load: loadPreferences } = usePreferencesStore();

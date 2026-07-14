@@ -269,21 +269,54 @@ function buildProfileSegments(plan: Plan): ProfileSegment[] {
  *     Si maintainTissues était true dans l'appel original, les tissus ont été
  *     modifiés — passer un Plan fraîchement cloné si besoin.
  */
+/**
+ * Construit un plan de comparaison avec des GF différents sur le MÊME profil fond.
+ *
+ * CORRECTION du bug d'accumulation :
+ * calculateDecompression() AJOUTE ses segments à plan.segments sans les effacer.
+ * Si on l'appelle une 2e fois sans nettoyer, plan.segments contient :
+ *   fond + déco_A + déco_B
+ * et la déco B apparaît APRÈS la déco A sur le graphe au lieu de se superposer.
+ *
+ * La correction : on tronque plan.segments à bottomSegmentCount (le nombre de
+ * segments AVANT le 1er calculateDecompression) pour repartir d'un état propre.
+ *
+ * @param bottomSegmentCount  Nombre de segments dans plan.segments AVANT tout
+ *                            appel à calculateDecompression. À récupérer dans
+ *                            computeDive() avec plan.segments.length AVANT l'appel.
+ */
 export function buildComparisonPlan(
   plan: Plan,
   reference: DivePlan,
-  gfOptions: { gfLow: number; gfHigh: number; planName?: string },
+  gfOptions: { gfLow: number; gfHigh: number; planName?: string }
 ): DivePlan {
   const { gfLow, gfHigh, planName } = gfOptions;
 
-  // Recalcule la déco avec les nouveaux GF (ne modifie pas les tissus)
-  plan.calculateDecompression(
-    false,   // maintainTissues = false → snapshot/restore automatique
-    gfLow,
-    gfHigh,
+  // ── CORRECTION ──────────────────────────────────────────────────────────────
+  // Problème : quand calculateDecompression est appelé plusieurs fois sur le même
+  // objet Plan, il AJOUTE les segments déco au lieu de les remplacer.
+  // Résultat : plan.segments = [user segs + deco A + deco B]
+  //            → le plan B semble commencer là où le plan A se termine.
+  //
+  // Solution : identifier la fin des segments "fond" (avant la remontée déco)
+  // et tronquer plan.segments à cet index avant le 2e calcul.
+  // On cherche le premier segment qui remonte depuis la profondeur max.
+  const maxDepth = Math.max(
+    ...plan.segments.map(s => Math.max(s.startDepth, s.endDepth)),
   );
+  const decoStartIdx = plan.segments.findIndex(
+    s => s.startDepth >= maxDepth * 0.85 && s.endDepth < s.startDepth,
+  );
+  if (decoStartIdx > 0) {
+    // Supprimer les segments déco précédents — on ne garde que
+    // la descente et le temps de fond définis par l'utilisateur.
+    plan.segments = plan.segments.slice(0, decoStartIdx);
+  }
+  // ────────────────────────
 
-  // Récupère les options de tanks depuis le plan de référence
+  // ── Nouveau calcul avec les GF de comparaison ─────────────────────────────
+  plan.calculateDecompression(false, gfLow, gfHigh);
+
   const tanks: TankConfig[] = reference.gases.map(g => ({
     gasName: g.id,
     volumeLiters: g.tankVolumeLiters,
@@ -294,7 +327,8 @@ export function buildComparisonPlan(
     variant: reference.model,
     gfLow,
     gfHigh,
-    planName: planName ?? `${reference.name} — GF ${Math.round(gfLow * 100)}/${Math.round(gfHigh * 100)}`,
+    planName: planName
+      ?? `${reference.name} — GF ${Math.round(gfLow * 100)}/${Math.round(gfHigh * 100)}`,
     tanks,
   });
 }

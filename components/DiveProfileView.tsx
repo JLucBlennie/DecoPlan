@@ -30,7 +30,7 @@ export function DiveProfileView({
 }: DiveProfileViewProps) {
 
   const [svgW, setSvgW] = useState(300);
-  const svgH = 175;
+  const svgH = 300;
   const pw = svgW - PL - PR;
   const ph = svgH - PT - PB;
 
@@ -45,7 +45,7 @@ export function DiveProfileView({
   // Arrondi au 10m supérieur pour un axe propre
   const axisMax = Math.ceil(maxDepth / 10) * 10;
 
-  const totalTime = simulation.totalTimeMin;
+  const totalTime = Math.max(simulation.totalTimeMin, hasComparison ? comparisonSimulation!.totalTimeMin : 0);
   const tx = (t: number) => PL + (t / totalTime) * pw;
   const ty = (d: number) => PT + (d / axisMax) * ph;
 
@@ -151,7 +151,7 @@ export function DiveProfileView({
         {/* ── Plan B : courbe en overlay (teal pointillé) ──────────────── */}
         {polylineB && (
           <Polyline points={polylineB} fill="none"
-            stroke="#1D9E75" strokeWidth={1.5}
+            stroke="#1D9E75" strokeWidth={3}
             strokeDasharray="5,3" strokeLinejoin="round" />
         )}
 
