@@ -2,16 +2,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "legacy-peer-deps": true
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "legacy-peer-deps": true
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "legacy-peer-deps": true
+      "autoIncrement": true
     }
   },
   "cli": {
