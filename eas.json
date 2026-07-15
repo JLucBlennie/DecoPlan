@@ -1,19 +1,22 @@
 {
-  "cli": {
-    "version": ">= 18.3.0",
-    "appVersionSource": "remote"
-  },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "legacy-peer-deps": true
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "legacy-peer-deps": true
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "legacy-peer-deps": true
     }
+  },
+  "cli": {
+    "appVersionSource": "remote",
+    "version": ">= 18.3.0"
   },
   "submit": {
     "production": {}
