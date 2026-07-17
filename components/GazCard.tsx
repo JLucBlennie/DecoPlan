@@ -1,9 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gas } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type GazCardProps = {
   gaz: Gas;
@@ -11,20 +9,13 @@ type GazCardProps = {
   onDelete: () => void;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Détermine le type de gaz et renvoie label + couleurs associées */
-function gazType(gaz: Gas): { label: string; color: string; bg: string } {
-  const o2 = Math.round(gaz.fO2 * 100);
-  const he = Math.round(gaz.fHe * 100);
-
-  if (he > 0) return { label: 'TRIMIX', color: ocean.accent.purple, bg: ocean.soft.purple };
-  if (o2 === 21) return { label: 'AIR', color: ocean.accent.blue, bg: ocean.soft.blue };
-  if (o2 > 21) return { label: 'NITROX', color: ocean.accent.teal, bg: ocean.soft.teal };
-  return { label: 'GAZ', color: ocean.text.secondary, bg: ocean.bg.raised };
+function gazTypeStyle(gaz: Gas): { color: string; bg: string } {
+  if (gaz.isTrimix) return { color: ocean.accent.purple, bg: ocean.soft.purple };
+  if (gaz.isAir) return { color: ocean.accent.blue, bg: ocean.soft.blue };
+  if (gaz.isNitrox) return { color: ocean.accent.teal, bg: ocean.soft.teal };
+  return { color: ocean.text.secondary, bg: ocean.bg.raised };
 }
 
-/** Formate la MOD à partir de la fonction déjà présente sur Dive.Gas */
 function formatMod(gaz: Gas): string {
   try {
     const mod = Math.round(gaz.modInMeters(1.6, false));
@@ -34,119 +25,89 @@ function formatMod(gaz: Gas): string {
   }
 }
 
-// ─── Composant ────────────────────────────────────────────────────────────────
-
 export default function GazCard({ gaz, onPress, onDelete }: GazCardProps) {
-  const o2 = Math.round(gaz.fO2 * 100);
-  const he = Math.round(gaz.fHe * 100);
   const mod = formatMod(gaz);
-  const { label, color, bg } = gazType(gaz);
+  const { color, bg } = gazTypeStyle(gaz);
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={styles.cardBody}>
+        <View style={styles.nameRow}>
+          <Text style={styles.cardName} numberOfLines={1}>{gaz.name}</Text>
+          <View style={[styles.badge, { backgroundColor: bg }]}>
+            <Text style={[styles.badgeText, { color }]}>{gaz.shortLabel}</Text>
+          </View>
+        </View>
 
-      {/* Badge type de gaz */}
-      <View style={[styles.badge, { backgroundColor: bg }]}>
-        <Text style={[styles.badgeText, { color }]}>{label}</Text>
+        <View style={styles.cardMeta}>
+          <Text style={styles.metaValue}>O₂ {gaz.o2Percent}%</Text>
+          {gaz.isTrimix && (
+            <>
+              <View style={styles.metaDot} />
+              <Text style={styles.metaValue}>He {gaz.hePercent}%</Text>
+            </>
+          )}
+          {mod !== '' && (
+            <>
+              <View style={styles.metaDot} />
+              <View style={styles.metaChip}>
+                <MaterialIcons name="arrow-downward" size={11} color={ocean.text.muted} />
+                <Text style={styles.metaValue}>{mod}</Text>
+              </View>
+            </>
+          )}
+        </View>
       </View>
 
-      {/* Infos principales */}
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{gaz.name}</Text>
-        <Text style={styles.sub}>
-          O₂ {o2}%{he > 0 ? ` · He ${he}%` : ''}{mod ? ` · ${mod}` : ''}
-        </Text>
-      </View>
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <Pressable
-          style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.actionBtn}
           onPress={onPress}
-          accessibilityRole="button"
-          accessibilityLabel={`Modifier ${gaz.name}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <MaterialIcons name="edit" size={18} color={ocean.accent.blue} />
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.actionBtn, styles.actionBtnDelete, pressed && styles.actionBtnPressed]}
+          <MaterialIcons name="edit" size={18} color={ocean.text.secondary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnDelete]}
           onPress={onDelete}
-          accessibilityRole="button"
-          accessibilityLabel={`Supprimer ${gaz.name}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <MaterialIcons name="delete-outline" size={18} color={ocean.accent.red} />
-        </Pressable>
+          <MaterialIcons name="delete" size={18} color={ocean.accent.red} />
+        </TouchableOpacity>
       </View>
-
-    </View>
+    </TouchableOpacity>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: ocean.bg.surface,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ocean.border.subtle,
-    padding: spacing.md,
-    gap: spacing.md,
-    marginBottom: spacing.sm,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.md,
+    borderRadius: radius.md, backgroundColor: ocean.bg.surface,
   },
+  cardBody: { flex: 1, gap: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  cardName: { fontSize: fontSize.md, fontWeight: '500', color: ocean.text.primary, flexShrink: 1 },
 
-  // Badge type
   badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs, paddingVertical: 2,
     borderRadius: radius.sm,
-    minWidth: 56,
-    alignItems: 'center',
   },
-  badgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-    letterSpacing: 0.05,
-  },
+  badgeText: { fontSize: fontSize.xs, fontWeight: '600', letterSpacing: 0.05 },
 
-  // Infos
-  info: {
-    flex: 1,
-    gap: 2,
-  },
-  name: {
-    fontSize: fontSize.md,
-    fontWeight: '500',
-    color: ocean.text.primary,
-  },
-  sub: {
-    fontSize: fontSize.xs,
-    color: ocean.text.secondary,
-  },
+  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
+  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  metaValue: { fontSize: fontSize.xs, color: ocean.text.secondary },
+  metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: ocean.border.subtle },
 
-  // Boutons d'action
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
+  cardActions: { flexDirection: 'row', gap: spacing.xs, marginLeft: spacing.sm },
   actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.sm,
-    backgroundColor: ocean.bg.raised,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ocean.border.subtle,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 34, height: 34, borderRadius: radius.sm,
+    backgroundColor: ocean.bg.raised, alignItems: 'center', justifyContent: 'center',
   },
-  actionBtnDelete: {
-    borderColor: ocean.soft.red,
-    backgroundColor: ocean.soft.red,
-  },
-  actionBtnPressed: {
-    opacity: 0.7,
-  },
+  actionBtnDelete: { backgroundColor: ocean.soft.red },
 });

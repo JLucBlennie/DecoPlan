@@ -5,14 +5,17 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
+  Image,
   Pressable,
   StatusBar,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import appJson from '../app.json';
 import { ROUTES } from '../navigation/types';
+import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -125,13 +128,14 @@ function MenuRow({ item, onPress }: MenuRowProps) {
 export default function MenuPrincipal() {
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
+      <View style={sharedStyles.screenContent}>
       <StatusBar barStyle="light-content" backgroundColor={ocean.bg.deep} />
 
       {/* En-tête */}
       <View style={styles.header}>
         <View style={styles.logoWrap}>
-          <MaterialCommunityIcons name="diving-scuba" size={28} color={ocean.accent.blue} />
+            <Image source={require('../assets/icon.png')} style={styles.logo} />
         </View>
         <View style={styles.headerTexts}>
           <Text style={styles.appName}>{appJson.expo.name}</Text>
@@ -168,8 +172,9 @@ export default function MenuPrincipal() {
         <Text style={styles.disclaimerText}>
           Outil pédagogique — ne pas utiliser pour plonger
         </Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -307,5 +312,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: ocean.accent.amber,
     textAlign: 'center',
+  },
+  logo: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
   },
 });

@@ -5,6 +5,7 @@ import {
   FlatList, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { calculProfondeurMax, calculTemps, Plongee } from '../lib/dive';
 import { ROUTES } from '../navigation/types';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -21,10 +22,10 @@ export default function GestionPlongee() {
 
   // ── Rendu d'une carte ─────────────────────────────────────────────────────
   const renderItem = ({ item }: { item: Plongee }) => {
-    const depth    = calculProfondeurMax(item);
+    const depth = calculProfondeurMax(item);
     const duration = calculTemps(item);
-    const nbSegs   = item.segments.length;
-    const hasGaz   = item.gazFond.length > 0;
+    const nbSegs = item.segments.length;
+    const hasGaz = item.gazFond.length > 0;
 
     return (
       <TouchableOpacity
@@ -90,46 +91,48 @@ export default function GestionPlongee() {
   );
 
   return (
-    <View style={sharedStyles.screenContainer}>
+    <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
+      <View style={sharedStyles.screenContent}>
 
-      <View style={styles.header}>
-        <Text style={sharedStyles.screenTitle}>Plongées</Text>
-        {plongeeList.length > 0 && (
-          <View style={styles.countBadge}>
-            <Text style={styles.countBadgeTxt}>{plongeeList.length}</Text>
-          </View>
-        )}
-      </View>
+        <View style={styles.header}>
+          <Text style={sharedStyles.screenTitle}>Plongées</Text>
+          {plongeeList.length > 0 && (
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeTxt}>{plongeeList.length}</Text>
+            </View>
+          )}
+        </View>
 
-      <FlatList
-        style={styles.list}
-        data={plongeeList}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ItemSeparatorComponent={Separator}
-        ListEmptyComponent={EmptyState}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={plongeeList.length === 0 ? styles.listEmpty : undefined}
-      />
+        <FlatList
+          style={styles.list}
+          data={plongeeList}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ItemSeparatorComponent={Separator}
+          ListEmptyComponent={EmptyState}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={plongeeList.length === 0 ? styles.listEmpty : undefined}
+        />
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.footerBtnPrimary}
-          onPress={() => router.push(ROUTES.ADD_PLONGEE)}
-        >
-          <MaterialIcons name="add" size={18} color={ocean.bg.deep} />
-          <Text style={styles.footerBtnPrimaryTxt}>Ajouter une plongée</Text>
-        </TouchableOpacity>
-
-        {plongeeList.length > 0 && (
-          <TouchableOpacity style={styles.footerBtnSecondary} onPress={resetPlongeeList}>
-            <MaterialIcons name="clear" size={16} color={ocean.accent.red} />
-            <Text style={styles.footerBtnSecondaryTxt}>Réinitialiser la liste</Text>
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.footerBtnPrimary}
+            onPress={() => router.push(ROUTES.ADD_PLONGEE)}
+          >
+            <MaterialIcons name="add" size={18} color={ocean.bg.deep} />
+            <Text style={styles.footerBtnPrimaryTxt}>Ajouter une plongée</Text>
           </TouchableOpacity>
-        )}
-      </View>
 
-    </View>
+          {plongeeList.length > 0 && (
+            <TouchableOpacity style={styles.footerBtnSecondary} onPress={resetPlongeeList}>
+              <MaterialIcons name="clear" size={16} color={ocean.accent.red} />
+              <Text style={styles.footerBtnSecondaryTxt}>Réinitialiser la liste</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+      </View>
+    </SafeAreaView>
   );
 }
 

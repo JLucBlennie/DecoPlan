@@ -12,7 +12,6 @@ import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
-import CircleButton from './ui/CircleButton';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 // `plongee` est injecté par le screen edit-plongee.tsx qui fait le lookup
@@ -166,11 +165,13 @@ export default function PlongeeForm({ plongee }: PlongeeFormProps) {
       />
 
       {/* Bouton valider */}
-      <View style={styles.buttons}>
-        <CircleButton iconName="check" onPress={handleSubmit} position="Right" />
-      </View>
+      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
+        <MaterialIcons name="check" size={18} color={ocean.bg.deep} />
+        <Text style={styles.submitBtnTxt}>Enregistrer</Text>
+      </TouchableOpacity>
 
     </ScrollView>
+
   );
 }
 
@@ -228,9 +229,11 @@ const styles = StyleSheet.create({
   gazNameSelected: { color: ocean.text.primary, fontWeight: '500' },
   gazCompo: { fontSize: fontSize.xs, color: ocean.text.muted, marginTop: 1 },
 
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  submitBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.sm, backgroundColor: ocean.accent.green,
+    borderRadius: radius.md, paddingVertical: spacing.md,
     marginTop: spacing.md,
   },
+  submitBtnTxt: { fontSize: fontSize.md, fontWeight: '600', color: ocean.bg.deep },
 });

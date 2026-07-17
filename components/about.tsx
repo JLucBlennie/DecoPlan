@@ -1,5 +1,4 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import appJson from '../app.json';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
@@ -9,7 +8,7 @@ export default function AboutScreen() {
     <View style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.logoWrap}>
-          <MaterialCommunityIcons name="diving-scuba" size={28} color={ocean.accent.blue} />
+          <Image source={require('../assets/icon.png')} style={styles.logo} />
         </View>
         <View style={styles.headerTexts}>
           <Text style={styles.appName}>{appJson.expo.name}</Text>
@@ -112,5 +111,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.1,
     marginBottom: spacing.xs,
+  },
+  logo: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
   },
 });

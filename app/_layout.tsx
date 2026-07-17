@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useLockPortrait } from '../hooks/useScreenOrientation';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -24,7 +25,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
@@ -70,7 +71,7 @@ export default function RootLayout() {
           options={{ ...modal, title: 'Préférences' }}
         />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }
 

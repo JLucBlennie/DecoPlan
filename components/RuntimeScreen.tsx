@@ -8,6 +8,7 @@ import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
@@ -98,6 +99,7 @@ export default function RuntimeScreen() {
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
+    <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
     <View style={sharedStyles.screenContainer}>
 
       <Text style={sharedStyles.screenTitle}>Calcul décompression</Text>
@@ -158,7 +160,8 @@ export default function RuntimeScreen() {
         </View>
       )}
 
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 

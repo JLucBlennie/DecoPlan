@@ -1,91 +1,131 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Gas } from '../lib/dive';
 import { useGazStore } from '../store/useGazStore';
-import CircleButton from './ui/CircleButton';
+import { sharedStyles } from '../styles/sharedStyles';
+import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 export default function AddGazForm() {
     const { addGaz } = useGazStore();
-    const [nom, setNom] = useState("");
-    const [o2, setO2] = useState("21");
-    const [he, setHe] = useState("0");
+
+    const [nom, setNom] = useState('');
+    const [o2, setO2] = useState('21');
+    const [he, setHe] = useState('0');
+    const [err, setErr] = useState('');
 
     const handleSubmit = () => {
-        if (!nom || !o2 || !he) {
-            alert("Veuillez remplir tous les champs.");
-            return;
-        }
-        addGaz(Gas.create(nom, parseFloat(o2) / 100, parseFloat(he) / 100));
+        const fO2 = parseFloat(o2) / 100;
+        const fHe = parseFloat(he) / 100;
+
+        if (!nom.trim()) { setErr('Le nom est obligatoire.'); return; }
+        if (isNaN(fO2) || fO2 <= 0 || fO2 > 1) { setErr('O₂ doit être entre 1 et 100 %.'); return; }
+        if (isNaN(fHe) || fHe < 0 || fHe > 1) { setErr('He doit être entre 0 et 100 %.'); return; }
+        if (fO2 + fHe > 1) { setErr('O₂ + He ne peut pas dépasser 100 %.'); return; }
+
+        setErr('');
+        addGaz(Gas.create(nom.trim(), fO2, fHe));
         router.back();
     };
 
     return (
-        <View style={styles.form}>
-            <Text style={styles.title}>Modifier le Gaz</Text>
-            <View style={styles.textInput}>
-                <Text style={styles.labelInput}>Nom :</Text>
+        <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+        >
+            <Text style={sharedStyles.screenTitle}>Ajouter un gaz</Text>
+
+            {/* Nom */}
+            <Text style={sharedStyles.sectionLabel}>Nom</Text>
                 <TextInput
-                    placeholder="Nom"
+                style={styles.input}
+                placeholder="Ex : Tx21/35"
+                placeholderTextColor={ocean.text.muted}
                     value={nom}
                     onChangeText={setNom}
-                    style={styles.input}
+                autoCapitalize="none"
                 />
-            </View>
-            <View style={styles.textInput}>
-                <Text style={styles.labelInput}>O2 (%) :</Text>
+
+            {/* O₂ */}
+            <Text style={sharedStyles.sectionLabel}>O₂ (%)</Text>
                 <TextInput
-                    placeholder="O2 (%)"
+                style={styles.input}
+                placeholder="Ex : 21"
+                placeholderTextColor={ocean.text.muted}
                     value={o2}
                     onChangeText={setO2}
-                    keyboardType="numeric"
-                    style={styles.input}
+                keyboardType="numeric"
                 />
-            </View>
-            <View style={styles.textInput}>
-                <Text style={styles.labelInput}>He (%) :</Text>
+
+            {/* He */}
+            <Text style={sharedStyles.sectionLabel}>He (%)</Text>
                 <TextInput
-                    placeholder="He (%)"
+                style={styles.input}
+                placeholder="Ex : 35  (0 pour Nitrox ou Air)"
+                placeholderTextColor={ocean.text.muted}
                     value={he}
                     onChangeText={setHe}
-                    keyboardType="numeric"
-                    style={styles.input}
+                keyboardType="numeric"
                 />
-            </View>
-            <View style={styles.buttons}>
-                <CircleButton iconName="check" onPress={handleSubmit} position='Right' />
-            </View>
-        </View>
+
+            {/* fN2 calculé en lecture seule */}
+            {!isNaN(parseFloat(o2)) && !isNaN(parseFloat(he)) && (
+                <Text style={styles.n2Preview}>
+                    N₂ calculé : {Math.max(0, 100 - parseFloat(o2) - parseFloat(he)).toFixed(0)} %
+                </Text>
+            )}
+
+            {/* Erreur */}
+            {err !== '' && <Text style={styles.errorTxt}>{err}</Text>}
+
+            {/* Actions */}
+            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
+                <MaterialIcons name="add" size={18} color={ocean.bg.deep} />
+                <Text style={styles.submitBtnTxt}>Ajouter le gaz</Text>
+            </TouchableOpacity>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-    form: {
-        padding: 16
+    scroll: { flex: 1 },
+    scrollContent: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xxl },
+    input: {
+        alignSelf: 'stretch',
+        backgroundColor: ocean.bg.surface,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: ocean.border.subtle,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        fontSize: fontSize.md,
+        color: ocean.text.primary,
+        marginBottom: spacing.sm,
     },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 16
+    n2Preview: {
+        alignSelf: 'flex-start',
+        fontSize: fontSize.xs,
+        color: ocean.text.muted,
+        marginBottom: spacing.sm,
+    },
+    errorTxt: {
+        alignSelf: 'flex-start',
+        fontSize: fontSize.sm,
+        color: ocean.accent.red,
+        marginBottom: spacing.sm,
     },
     buttons: {
         flexDirection: 'row',
-        justifyContent: 'space-around'
+        justifyContent: 'flex-end',
+        marginTop: spacing.md,
     },
-    input: {
-        flex: 3 / 4,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 8,
-        marginBottom: 8
+    submitBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: spacing.sm, backgroundColor: ocean.accent.green,
+        borderRadius: radius.md, paddingVertical: spacing.md,
+        marginTop: spacing.md,
     },
-    textInput: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    labelInput: {
-        flex: 1 / 4,
-        padding: 8,
-        marginBottom: 8
-    }
-});
+    submitBtnTxt: { fontSize: fontSize.md, fontWeight: '600', color: ocean.bg.deep },
+})

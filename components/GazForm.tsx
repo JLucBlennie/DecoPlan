@@ -1,18 +1,18 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Gas } from '../lib/dive/gas';
 import { useGazStore } from '../store/useGazStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
-import CircleButton from './ui/CircleButton';
 
 type GazFormProps = {
     gaz: Gas;
 };
 
 export default function GazForm({ gaz }: GazFormProps) {
-    const { gazList, updateGaz } = useGazStore();
+    const { updateGaz } = useGazStore();
 
     const [nom, setNom] = useState(gaz ? gaz.name : '');
     const [o2, setO2] = useState(gaz ? (gaz.fO2 * 100).toFixed(0) : '');
@@ -39,7 +39,11 @@ export default function GazForm({ gaz }: GazFormProps) {
     };
 
     return (
-        <View style={sharedStyles.screenContainer}>
+        <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+        >
             <Text style={sharedStyles.screenTitle}>Modifier le gaz</Text>
 
             {/* Nom */}
@@ -86,14 +90,17 @@ export default function GazForm({ gaz }: GazFormProps) {
             {err !== '' && <Text style={styles.errorTxt}>{err}</Text>}
 
             {/* Actions */}
-            <View style={styles.buttons}>
-                <CircleButton iconName="check" onPress={handleSubmit} position="Right" />
-            </View>
-        </View>
+            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
+                <MaterialIcons name="check" size={18} color={ocean.bg.deep} />
+                <Text style={styles.submitBtnTxt}>Enregistrer</Text>
+            </TouchableOpacity>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    scroll: { flex: 1 },
+    scrollContent: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xxl },
     input: {
         alignSelf: 'stretch',
         backgroundColor: ocean.bg.surface,
@@ -120,8 +127,14 @@ const styles = StyleSheet.create({
     },
     buttons: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignSelf: 'stretch',
-        marginTop: spacing.lg,
+        justifyContent: 'flex-end',
+        marginTop: spacing.md,
     },
+    submitBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: spacing.sm, backgroundColor: ocean.accent.green,
+        borderRadius: radius.md, paddingVertical: spacing.md,
+        marginTop: spacing.md,
+    },
+    submitBtnTxt: { fontSize: fontSize.md, fontWeight: '600', color: ocean.bg.deep },
 });

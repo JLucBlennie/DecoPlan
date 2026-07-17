@@ -10,7 +10,7 @@
  */
 
 import { Platform, StyleSheet } from 'react-native';
-import { ocean, spacing, radius, fontSize } from './theme';
+import { fontSize, ocean, radius, spacing } from './theme';
 
 export const sharedStyles = StyleSheet.create({
 
@@ -45,7 +45,11 @@ export const sharedStyles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.lg,
   },
-
+  screenContent: {
+    width: '100%',
+    maxWidth: 600,
+    flex: 1,
+  },
   // ── Typographie ───────────────────────────────────────────────────────────
 
   /**
