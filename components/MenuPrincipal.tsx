@@ -128,7 +128,7 @@ function MenuRow({ item, onPress }: MenuRowProps) {
 export default function MenuPrincipal() {
 
   return (
-    <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
+    <SafeAreaView style={sharedStyles.screenContainer} edges={['top','bottom']}>
       <View style={sharedStyles.screenContent}>
       <StatusBar barStyle="light-content" backgroundColor={ocean.bg.deep} />
 
