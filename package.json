@@ -27,6 +27,7 @@
     "@types/react": "~19.2.14",
     "@types/react-native": "^0.72.8",
     "baseline-browser-mapping": "^2.10.33",
+    "patch-package": "^8.0.1",
     "react": "19.2.3",
     "typescript": "~6.0.3"
   },
@@ -37,7 +38,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "start": "expo start",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "node scripts/fix-metro-watcher.js"
   },
   "version": "1.1.0"
 }
