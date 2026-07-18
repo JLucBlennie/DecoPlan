@@ -1,15 +1,15 @@
 {
   "dependencies": {
-    "@expo/metro-runtime": "~56.0.15",
+    "@expo/metro-runtime": "~56.0.17",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/slider": "5.2.0",
     "@react-native-picker/picker": "2.11.4",
     "@react-navigation/native": "^7.3.1",
-    "expo": "~56.0.15",
+    "expo": "~56.0.16",
     "expo-constants": "~56.0.18",
     "expo-linking": "~56.0.15",
-    "expo-router": "~56.2.14",
+    "expo-router": "~56.2.15",
     "expo-screen-orientation": "~56.0.5",
     "expo-status-bar": "~56.0.4",
     "react-dom": "19.2.3",
