@@ -15,8 +15,10 @@ export interface Preferences {
     rmvDeco: number;
     /** Vitesse de descente (m/min) */
     descentRateMMin: number;
-    /** Vitesse de remontée (m/min) — norme FFESSM : 9–15 m/min */
+    /** Vitesse de remontée du fond jusqu'au 1er palier (m/min) — norme FFESSM : 9–15 m/min */
     ascentRateMMin: number;
+    /** Vitesse de remontée entre paliers, et du dernier palier à la surface (m/min) — plus lente, typiquement 6 m/min */
+    ascentRateBetweenStopsMMin: number;
 }
 
 type PreferencesStore = Preferences & {
@@ -35,6 +37,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
     rmvDeco: 15,
     descentRateMMin: 20,
     ascentRateMMin: 10,
+    ascentRateBetweenStopsMMin: 6,
 };
 
 const STORAGE_KEY = 'decoplan_preferences';
@@ -70,6 +73,7 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
             rmvDeco: next.rmvDeco,
             descentRateMMin: next.descentRateMMin,
             ascentRateMMin: next.ascentRateMMin,
+            ascentRateBetweenStopsMMin: next.ascentRateBetweenStopsMMin,
         }));
     },
 

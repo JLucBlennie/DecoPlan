@@ -21,6 +21,7 @@ import {
 import Svg, { Defs, Line, LinearGradient, Path, Polyline, Stop, Text as SvgText } from 'react-native-svg';
 
 import { Gas, Segment } from '../lib/dive';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,6 +80,12 @@ export default function PlongeeProfileGraph({
     setEditingIndex(null);
   };
 
+  // Profondeur du palier précédent (0 si c'est le premier) — nécessaire au
+  // formulaire pour prévisualiser la transition qui sera auto-générée.
+  const previousDepth = editingIndex !== null
+    ? (editingIndex > 0 ? segments[editingIndex - 1].endDepth : 0)
+    : (segments.length > 0 ? segments[segments.length - 1].endDepth : 0);
+
   return (
     <View style={styles.root}>
 
@@ -100,6 +107,7 @@ export default function PlongeeProfileGraph({
         segment={editingSegment}
         gazFondList={gazFondList}
         isAdding={editingIndex === null}
+        previousDepth={previousDepth}
         onSave={handleSave}
         onClose={handleClose}
       />
@@ -119,6 +127,8 @@ const PW = SVG_W - PAD.l - PAD.r;
 const PH = SVG_H - PAD.t - PAD.b;
 
 function DiveProfileSvg({ segments }: { segments: Segment[] }) {
+  const { descentRateMMin, ascentRateMMin } = usePreferencesStore();
+
   if (segments.length === 0) {
     return (
       <View style={styles.svgEmpty}>
@@ -128,31 +138,49 @@ function DiveProfileSvg({ segments }: { segments: Segment[] }) {
     );
   }
 
-  const maxDepth = Math.max(...segments.flatMap(s => [s.startDepth, s.endDepth]), 10);
-  const totalTime = segments.reduce((s, seg) => s + seg.time, 0) || 1;
+  // Chaque segment est un palier (profondeur + temps total, transition
+  // comprise) — on reconstitue ici les mêmes transitions que computeDive()
+  // pour que l'aperçu corresponde au profil réellement calculé.
+  const points: { time: number; depth: number }[] = [{ time: 0, depth: 0 }];
+  let currentDepth = 0;
+  let cursor = 0;
+  for (const seg of segments) {
+    const targetDepth = seg.endDepth;
+    const rate = targetDepth > currentDepth ? descentRateMMin : ascentRateMMin;
+    const transitionTime = targetDepth !== currentDepth
+      ? Math.abs(targetDepth - currentDepth) / rate
+      : 0;
+    const flatTime = Math.max(0, seg.time - transitionTime);
+
+    if (transitionTime > 0) {
+      cursor += transitionTime;
+      points.push({ time: cursor, depth: targetDepth });
+    }
+    if (flatTime > 0) {
+      cursor += flatTime;
+      points.push({ time: cursor, depth: targetDepth });
+    }
+    currentDepth = targetDepth;
+  }
+
+  const maxDepth = Math.max(...points.map(p => p.depth), 10);
+  const totalTime = cursor || 1;
 
   // Normalisation
   const tx = (t: number) => PAD.l + (t / totalTime) * PW;
   const ty = (d: number) => PAD.t + (d / (maxDepth * 1.1)) * PH;
 
-  // Construction des points du profil (depuis la surface)
-  const points: { x: number; y: number }[] = [{ x: tx(0), y: ty(0) }];
-  let cursor = 0;
-  for (const seg of segments) {
-    cursor += seg.time;
-    points.push({ x: tx(cursor), y: ty(seg.endDepth) });
-  }
-  // Remontée finale à la surface si le dernier segment ne l'est pas
-  if (segments[segments.length - 1]?.endDepth !== 0) {
-    points.push({ x: tx(totalTime), y: ty(0) });
+  // Remontée finale à la surface si le dernier point n'y est pas déjà
+  if (currentDepth !== 0) {
+    points.push({ time: cursor, depth: 0 });
   }
 
-  const polyPoints = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const polyPoints = points.map(p => `${tx(p.time).toFixed(1)},${ty(p.depth).toFixed(1)}`).join(' ');
 
   // Chemin de remplissage (ferme sous la courbe)
   const fillPath = [
     `M ${tx(0).toFixed(1)} ${ty(0).toFixed(1)}`,
-    ...points.slice(1).map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`),
+    ...points.slice(1).map(p => `L ${tx(p.time).toFixed(1)} ${ty(p.depth).toFixed(1)}`),
     `L ${tx(totalTime).toFixed(1)} ${ty(0).toFixed(1)}`,
     'Z',
   ].join(' ');
@@ -247,11 +275,7 @@ function SegmentList({ segments, gazFondList, onEdit, onDelete, onAdd }: Segment
   const gazName = (name: string) =>
     gazFondList.find(g => g.name === name)?.name ?? name;
 
-  const segmentLabel = (seg: Segment) => {
-    if (seg.startDepth === seg.endDepth) return `Palier ${seg.startDepth} m`;
-    if (seg.endDepth > seg.startDepth) return `Descente → ${seg.endDepth} m`;
-    return `Remontée → ${seg.endDepth} m`;
-  };
+  const segmentLabel = (seg: Segment) => `Palier ${seg.endDepth} m`;
 
   return (
     <View style={styles.listContainer}>
@@ -292,12 +316,6 @@ function SegmentList({ segments, gazFondList, onEdit, onDelete, onAdd }: Segment
                   <Text style={styles.segMetaTxt}>{gazName(seg.gasName)}</Text>
                 </>
               )}
-              {seg.startDepth !== seg.endDepth && (
-                <>
-                  <Text style={styles.segMetaDot}>·</Text>
-                  <Text style={styles.segMetaTxt}>{seg.startDepth}→{seg.endDepth} m</Text>
-                </>
-              )}
             </View>
           </View>
 
@@ -326,9 +344,7 @@ function SegmentList({ segments, gazFondList, onEdit, onDelete, onAdd }: Segment
   );
 }
 
-function segTypeColor(seg: Segment) {
-  if (seg.endDepth > seg.startDepth) return { backgroundColor: ocean.accent.blue };
-  if (seg.endDepth < seg.startDepth) return { backgroundColor: ocean.accent.teal };
+function segTypeColor(_seg: Segment) {
   return { backgroundColor: ocean.accent.amber };   // palier
 }
 
@@ -341,13 +357,15 @@ type SheetProps = {
   segment: Segment | null;   // null = mode ajout
   gazFondList: Gas[];
   isAdding: boolean;
+  /** Profondeur du palier précédent (0 si c'est le premier), pour prévisualiser la transition. */
+  previousDepth: number;
   onSave: (seg: Segment) => void;
   onClose: () => void;
 };
 
-function SegmentFormSheet({ visible, segment, gazFondList, isAdding, onSave, onClose }: SheetProps) {
-  const [startDepth, setStartDepth] = useState('');
-  const [endDepth, setEndDepth] = useState('');
+function SegmentFormSheet({ visible, segment, gazFondList, isAdding, previousDepth, onSave, onClose }: SheetProps) {
+  const { descentRateMMin, ascentRateMMin } = usePreferencesStore();
+  const [depth, setDepth] = useState('');
   const [time, setTime] = useState('');
   const [gasName, setGasName] = useState('');
   const [error, setError] = useState('');
@@ -355,8 +373,7 @@ function SegmentFormSheet({ visible, segment, gazFondList, isAdding, onSave, onC
   // Remplissage à l'ouverture
   React.useEffect(() => {
     if (visible) {
-      setStartDepth(segment ? String(segment.startDepth) : '');
-      setEndDepth(segment ? String(segment.endDepth) : '');
+      setDepth(segment ? String(segment.endDepth) : '');
       setTime(segment ? String(segment.time) : '');
       setGasName(segment ? segment.gasName : gazFondList[0]?.name ?? '');
       setError('');
@@ -364,18 +381,16 @@ function SegmentFormSheet({ visible, segment, gazFondList, isAdding, onSave, onC
   }, [visible, segment]);
 
   const handleSave = () => {
-    const sd = parseFloat(startDepth);
-    const ed = parseFloat(endDepth);
+    const d = parseFloat(depth);
     const t = parseFloat(time);
 
-    if (isNaN(sd) || sd < 0) { setError('Profondeur de début invalide.'); return; }
-    if (isNaN(ed) || ed < 0) { setError('Profondeur de fin invalide.'); return; }
+    if (isNaN(d) || d < 0) { setError('Profondeur invalide.'); return; }
     if (isNaN(t) || t <= 0) { setError('Durée invalide (> 0 min).'); return; }
     if (!gasName && gazFondList.length > 0) { setError('Sélectionnez un gaz.'); return; }
 
     setError('');
     Keyboard.dismiss();
-    onSave({ startDepth: sd, endDepth: ed, time: t, gasName });
+    onSave({ startDepth: d, endDepth: d, time: t, gasName });
   };
 
   return (
@@ -412,38 +427,18 @@ function SegmentFormSheet({ visible, segment, gazFondList, isAdding, onSave, onC
             keyboardShouldPersistTaps="handled"
           >
 
-            {/* Ligne profondeurs */}
-            <View style={styles.sheetRow}>
-              <View style={styles.sheetField}>
-                <Text style={styles.sheetLabel}>Prof. début (m)</Text>
-                <TextInput
-                  style={styles.sheetInput}
-                  value={startDepth}
-                  onChangeText={setStartDepth}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={ocean.text.muted}
-                  selectTextOnFocus
-                />
-              </View>
-              <MaterialIcons
-                name="arrow-forward"
-                size={16}
-                color={ocean.text.muted}
-                style={{ marginTop: 24 }}
+            {/* Profondeur */}
+            <View style={styles.sheetField}>
+              <Text style={styles.sheetLabel}>Profondeur (m)</Text>
+              <TextInput
+                style={styles.sheetInput}
+                value={depth}
+                onChangeText={setDepth}
+                keyboardType="numeric"
+                placeholder="30"
+                placeholderTextColor={ocean.text.muted}
+                selectTextOnFocus
               />
-              <View style={styles.sheetField}>
-                <Text style={styles.sheetLabel}>Prof. fin (m)</Text>
-                <TextInput
-                  style={styles.sheetInput}
-                  value={endDepth}
-                  onChangeText={setEndDepth}
-                  keyboardType="numeric"
-                  placeholder="30"
-                  placeholderTextColor={ocean.text.muted}
-                  selectTextOnFocus
-                />
-              </View>
             </View>
 
             {/* Durée */}
@@ -480,13 +475,24 @@ function SegmentFormSheet({ visible, segment, gazFondList, isAdding, onSave, onC
               </View>
             )}
 
-            {/* Aperçu du type de segment */}
-            {!isNaN(parseFloat(startDepth)) && !isNaN(parseFloat(endDepth)) && (
+            {/* Aperçu du découpage transition + palier (comme calculé à la validation) */}
+            {!isNaN(parseFloat(depth)) && !isNaN(parseFloat(time)) && parseFloat(time) > 0 && (
               <View style={styles.segPreview}>
                 <Text style={styles.segPreviewTxt}>
-                  {parseFloat(endDepth) > parseFloat(startDepth) ? '↓ Descente'
-                    : parseFloat(endDepth) < parseFloat(startDepth) ? '↑ Remontée'
-                      : '— Palier'}
+                  {(() => {
+                    const d = parseFloat(depth);
+                    const t = parseFloat(time);
+                    const isDescending = d > previousDepth;
+                    const rate = isDescending ? descentRateMMin : ascentRateMMin;
+                    const transitionTime = d !== previousDepth
+                      ? Math.abs(d - previousDepth) / rate
+                      : 0;
+                    const flatTime = Math.max(0, t - transitionTime);
+                    if (transitionTime === 0) return `— Palier ${flatTime.toFixed(1)} min à ${d} m`;
+                    const verbe = isDescending ? 'Descente' : 'Remontée';
+                    const arrow = isDescending ? '↓' : '↑';
+                    return `${arrow} ${verbe} ${previousDepth}→${d} m (${transitionTime.toFixed(1)} min) puis palier ${flatTime.toFixed(1)} min`;
+                  })()}
                 </Text>
               </View>
             )}

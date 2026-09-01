@@ -10,6 +10,7 @@ import { usePedagogicalSimulation } from '../hooks/usePedagogicalSimulation';
 import { DEFAULT_DT_MIN } from '../lib/dive/constants';
 import { getMN90Profile } from '../lib/dive/mn90';
 import type { MN90Profile, PedagogicalModeProps } from '../lib/dive/types';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 
 import { useAllowLandscape } from '../hooks/useScreenOrientation';
 import { CompartmentsPanel } from './CompartmentsPanel';
@@ -88,7 +89,10 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
   const frameB = simB.frames[Math.min(step, simB.stepCount)];
 
   const comparing = showComparison && hasComparison;
-  const mn90Profile: MN90Profile | undefined = showMN90 ? getMN90Profile(plan) : undefined;
+  const { descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin } = usePreferencesStore();
+  const mn90Profile: MN90Profile | undefined = showMN90
+    ? getMN90Profile(plan, ascentRateMMin, ascentRateBetweenStopsMMin)
+    : undefined;
 
   const labelA = comparing
     ? `GF ${Math.round(plan.gfLow * 100)}/${Math.round(plan.gfHigh * 100)}`
@@ -135,6 +139,14 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
         )}
         <Chip label="MN90" active={showMN90}
           onPress={() => setShowMN90(v => !v)} />
+        {showMN90 && mn90Profile && (
+          <Text style={styles.mn90Params}>
+            {mn90Profile.maxDepthM}m / {mn90Profile.bottomTimeMin}min
+          </Text>
+        )}
+        {showMN90 && !mn90Profile && (
+          <Text style={styles.mn90Params}>hors table MN90</Text>
+        )}
       </View>
 
       {/* ── Zone principale : profil 3/4 + compartiments 1/4 ────────────── */}
@@ -146,6 +158,8 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
           simulation={simA}
           currentStep={Math.min(step, simA.stepCount)}
           mn90Profile={mn90Profile}
+          ascentRateMMin={ascentRateMMin}
+          ascentRateBetweenStopsMMin={ascentRateBetweenStopsMMin}
           label={labelA}
           comparisonPlan={comparing ? comparisonPlan : undefined}
           comparisonSimulation={comparing ? simB : undefined}
@@ -215,6 +229,9 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: 'rgba(55,138,221,0.2)', borderColor: '#378ADD' },
   chipTxt: { fontSize: 12, color: '#888780' },
   chipTxtActive: { color: '#85B7EB' },
+  mn90Params: {
+    fontSize: 11, color: '#85B7EB', alignSelf: 'center', marginLeft: 2,
+  },
 
   mainRow: {
     flex: 1,

@@ -13,6 +13,10 @@ export interface DiveProfileViewProps {
   simulation: PedagogicalSimulation;
   currentStep: number;
   mn90Profile?: MN90Profile;
+  /** Vitesse de remontée fond→1er palier (m/min), pour tracer la remontée du profil MN90. Défaut : 10. */
+  ascentRateMMin?: number;
+  /** Vitesse de remontée entre paliers et jusqu'à la surface (m/min). Défaut : 6. */
+  ascentRateBetweenStopsMMin?: number;
   label?: string;
   style?: ViewStyle;
   // ── Comparaison : overlay du 2e profil sur le même SVG ────────────────────
@@ -25,7 +29,7 @@ const PL = 38, PR = 8, PT = 10, PB = 28;
 
 export function DiveProfileView({
   plan, simulation, currentStep,
-  mn90Profile, label, style,
+  mn90Profile, ascentRateMMin = 10, ascentRateBetweenStopsMMin = 6, label, style,
   comparisonPlan, comparisonSimulation, comparisonLabel,
 }: DiveProfileViewProps) {
 
@@ -45,7 +49,24 @@ export function DiveProfileView({
   // Arrondi au 10m supérieur pour un axe propre
   const axisMax = Math.ceil(maxDepth / 10) * 10;
 
-  const totalTime = Math.max(simulation.totalTimeMin, hasComparison ? comparisonSimulation!.totalTimeMin : 0);
+  // MN90 — points en unités réelles (temps/profondeur), calculés avant
+  // totalTime car le profil MN90 peut durer plus longtemps que le plan
+  // simulé (vitesses de remontée plus lentes) et doit pouvoir étendre l'axe.
+  const mn90BottomTime = mn90Profile
+    ? (simulation.frames.find(f => f.depthM >= mn90Profile.maxDepthM)?.timeMin ?? 2)
+    : 0;
+  const mn90Segments = mn90Profile
+    ? buildMN90Segments(mn90Profile, mn90BottomTime, ascentRateMMin, ascentRateBetweenStopsMMin)
+    : null;
+  const mn90EndTime = mn90Segments ? mn90Segments[mn90Segments.length - 1].time : 0;
+
+  // L'axe temps couvre le plan A, le plan B (comparaison) et le profil MN90
+  // — le plus long des trois, pour ne jamais couper la fin d'un tracé.
+  const totalTime = Math.max(
+    simulation.totalTimeMin,
+    hasComparison ? comparisonSimulation!.totalTimeMin : 0,
+    mn90EndTime,
+  );
   const tx = (t: number) => PL + (t / totalTime) * pw;
   const ty = (d: number) => PT + (d / axisMax) * ph;
 
@@ -80,9 +101,9 @@ export function DiveProfileView({
   const cursorX = tx(frameA?.timeMin ?? 0);
   const cursorY = ty(frameA?.depthM ?? 0);
 
-  // MN90
-  const mn90Points = mn90Profile
-    ? buildMN90Polyline(mn90Profile, totalTime, tx, ty, simulation)
+  // MN90 — mappage des points réels (temps/profondeur) vers l'écran
+  const mn90Points = mn90Segments
+    ? mn90Segments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
     : null;
 
   // Grilles
@@ -213,24 +234,48 @@ function buildTimeTicks(totalTime: number): number[] {
   return ticks;
 }
 
-function buildMN90Polyline(
-  mn90: MN90Profile, totalTime: number,
-  tx: (t: number) => number, ty: (d: number) => number,
-  sim: PedagogicalSimulation,
-): string {
-  const points: string[] = [];
-  const bottomTime = sim.frames.find(f => f.depthM >= mn90.maxDepthM)?.timeMin ?? 2;
-  points.push(`${tx(0)},${ty(0)}`);
-  points.push(`${tx(bottomTime)},${ty(mn90.maxDepthM)}`);
-  points.push(`${tx(mn90.bottomTimeMin + bottomTime)},${ty(mn90.maxDepthM)}`);
-  let t = mn90.bottomTimeMin + bottomTime;
+/** Un point du profil MN90 en unités réelles (minutes, mètres) — non mappé à l'écran. */
+interface Mn90Point {
+  time: number;
+  depth: number;
+}
+
+function buildMN90Segments(
+  mn90: MN90Profile,
+  bottomTime: number,
+  ascentRateMMin: number,
+  ascentRateBetweenStopsMMin: number,
+): Mn90Point[] {
+  const points: Mn90Point[] = [];
+  points.push({ time: 0, depth: 0 });
+  points.push({ time: bottomTime, depth: mn90.maxDepthM });
+
+  // mn90.bottomTimeMin est le "temps de plongée" MN90 (issu de la table),
+  // DESCENTE COMPRISE (convention MN90) — le palier de fond dure donc
+  // jusqu'à mn90.bottomTimeMin, pas bottomTime + mn90.bottomTimeMin (ce qui
+  // compterait la descente deux fois).
+  let t = mn90.bottomTimeMin;
+  points.push({ time: t, depth: mn90.maxDepthM });
+
+  // Remontée : fond → 1er palier à ascentRateMMin, puis entre paliers et
+  // jusqu'à la surface à ascentRateBetweenStopsMMin (plus lente) — plus de
+  // saut instantané, chaque changement de profondeur prend le temps réel.
+  let currentDepth = mn90.maxDepthM;
+  let isFirstLeg = true;
   for (const stop of mn90.stops) {
-    points.push(`${tx(t)},${ty(stop.depthM)}`);
+    const rate = isFirstLeg ? ascentRateMMin : ascentRateBetweenStopsMMin;
+    t += (currentDepth - stop.depthM) / rate;
+    points.push({ time: t, depth: stop.depthM });
     t += stop.durationMin;
-    points.push(`${tx(t)},${ty(stop.depthM)}`);
+    points.push({ time: t, depth: stop.depthM });
+    currentDepth = stop.depthM;
+    isFirstLeg = false;
   }
-  points.push(`${tx(t)},${ty(0)}`);
-  return points.join(' ');
+  const finalRate = isFirstLeg ? ascentRateMMin : ascentRateBetweenStopsMMin;
+  t += currentDepth / finalRate;
+  points.push({ time: t, depth: 0 });
+
+  return points;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────

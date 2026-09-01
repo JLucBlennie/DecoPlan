@@ -312,12 +312,14 @@ export class Plan {
     maxppO2:         number   = 1.6,
     maxEND:          number   = 30,
     fromDepth?:      number,
-    /** Vitesse de remontée entre paliers en m/min (défaut : 9 m/min, norme FFESSM/PADI). */
+    /** Vitesse de remontée du fond vers le 1er palier, en m/min (défaut : 9 m/min, norme FFESSM/PADI). */
     ascentRateMpm:   number   = 9,
     /** Résolution temporelle en minutes (défaut : 1 min ; 1/6 ≈ 10 s, 0.5 = 30 s). */
     timeStepMin:     number   = 1,
     /** Active les logs de debug dans la console. */
     debug:           boolean  = false,
+    /** Vitesse de remontée entre paliers, et du dernier palier à la surface, en m/min (défaut : 6 m/min, plus lente que la remontée initiale). */
+    ascentRateBetweenStopsMpm: number = 6,
   ): Segment[] {
     let currentGasName: string;
 
@@ -364,7 +366,7 @@ export class Plan {
       console.log(`Pente GF : ${gfChangePerMeter.toFixed(4)} GF/m`);
     }
 
-    // Remontée du fond vers le 1er palier
+    // Remontée du fond vers le 1er palier — vitesse "générale" (ascentRateMpm)
     currentGasName = this.addDecoDepthChange(
       fromDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateMpm, debug,
     );
@@ -395,9 +397,9 @@ export class Plan {
         );
       }
 
-      // Remontée vers le palier suivant
+      // Remontée vers le palier suivant (ou la surface) — vitesse plus lente entre paliers
       currentGasName = this.addDecoDepthChange(
-        currentDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateMpm, debug,
+        currentDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateBetweenStopsMpm, debug,
       );
     }
 

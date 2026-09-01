@@ -13,7 +13,7 @@ import { fontSize, ocean, radius, spacing } from '../styles/theme';
 export default function PreferencesScreen() {
     const {
         gfLow, gfHigh, rmvFond, rmvDeco,
-        descentRateMMin, ascentRateMMin,
+        descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
         update, reset,
     } = usePreferencesStore();
 
@@ -102,7 +102,7 @@ export default function PreferencesScreen() {
 
             {/* ── Vitesses ─────────────────────────────────────────────────── */}
             <Section title="Vitesses de déplacement"
-                subtitle="Norme FFESSM : descente 20 m/min, remontée 9–15 m/min">
+                subtitle="Norme FFESSM : descente 20 m/min, remontée 9–15 m/min, entre paliers 6 m/min">
 
                 <PrefSlider
                     label="Descente"
@@ -116,7 +116,7 @@ export default function PreferencesScreen() {
 
                 <PrefSlider
                     label="Remontée"
-                    hint="Vitesse de remontée entre les paliers"
+                    hint="Vitesse de remontée du fond jusqu'au 1er palier"
                     value={ascentRateMMin}
                     min={3} max={15} step={1}
                     format={v => `${v} m/min`}
@@ -127,6 +127,22 @@ export default function PreferencesScreen() {
                 {ascentRateMMin > 10 && (
                     <InfoRow icon="warning" color="#BA7517"
                         text="Attention : la norme FFESSM recommande ≤ 10 m/min en remontée."
+                    />
+                )}
+
+                <PrefSlider
+                    label="Remontée entre paliers"
+                    hint="Vitesse entre chaque palier, et du dernier palier à la surface — plus lente"
+                    value={ascentRateBetweenStopsMMin}
+                    min={1} max={10} step={1}
+                    format={v => `${v} m/min`}
+                    color="#BA7517"
+                    onChange={v => update({ ascentRateBetweenStopsMMin: v })}
+                />
+
+                {ascentRateBetweenStopsMMin > 6 && (
+                    <InfoRow icon="warning" color="#BA7517"
+                        text="Attention : la norme FFESSM recommande ≤ 6 m/min entre les paliers."
                     />
                 )}
             </Section>
@@ -140,6 +156,7 @@ export default function PreferencesScreen() {
                     <SummaryCell label="RMV déco" value={`${rmvDeco} L/min`} />
                     <SummaryCell label="Descente" value={`${descentRateMMin} m/min`} />
                     <SummaryCell label="Remontée" value={`${ascentRateMMin} m/min`} />
+                    <SummaryCell label="Entre paliers" value={`${ascentRateBetweenStopsMMin} m/min`} />
                 </View>
             </Section>
 

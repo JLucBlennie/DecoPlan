@@ -288,9 +288,17 @@ function buildProfileSegments(plan: Plan): ProfileSegment[] {
 export function buildComparisonPlan(
   plan: Plan,
   reference: DivePlan,
-  gfOptions: { gfLow: number; gfHigh: number; planName?: string }
+  gfOptions: {
+    gfLow: number;
+    gfHigh: number;
+    planName?: string;
+    /** Vitesse de remontée fond→1er palier (m/min). Défaut : 9 (défaut de calculateDecompression). */
+    ascentRateMMin?: number;
+    /** Vitesse de remontée entre paliers et jusqu'à la surface (m/min). Défaut : 6 (défaut de calculateDecompression). */
+    ascentRateBetweenStopsMMin?: number;
+  }
 ): DivePlan {
-  const { gfLow, gfHigh, planName } = gfOptions;
+  const { gfLow, gfHigh, planName, ascentRateMMin = 9, ascentRateBetweenStopsMMin = 6 } = gfOptions;
 
   // ── CORRECTION ──────────────────────────────────────────────────────────────
   // Problème : quand calculateDecompression est appelé plusieurs fois sur le même
@@ -315,7 +323,10 @@ export function buildComparisonPlan(
   // ────────────────────────
 
   // ── Nouveau calcul avec les GF de comparaison ─────────────────────────────
-  plan.calculateDecompression(false, gfLow, gfHigh);
+  plan.calculateDecompression(
+    false, gfLow, gfHigh, 1.6, 30, undefined,
+    ascentRateMMin, 1, false, ascentRateBetweenStopsMMin,
+  );
 
   const tanks: TankConfig[] = reference.gases.map(g => ({
     gasName: g.id,

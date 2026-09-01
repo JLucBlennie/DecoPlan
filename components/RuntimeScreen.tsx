@@ -23,7 +23,10 @@ export default function RuntimeScreen() {
 
   // ── Paramètres ─────────────────────────────────────────────────────────────
   const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
-  const { gfLow: defaultGfLow, gfHigh: defaultGfHigh } = usePreferencesStore();
+  const {
+    gfLow: defaultGfLow, gfHigh: defaultGfHigh,
+    descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+  } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
     gfHigh: defaultGfHigh,
@@ -43,6 +46,9 @@ export default function RuntimeScreen() {
     plongee: Plongee,
     gfLow: number,
     gfHigh: number,
+    descentRateMMin: number,
+    ascentRateMMin: number,
+    ascentRateBetweenStopsMMin: number,
   ): { segments: Segment[]; plan: Plan } {
     const deco = new Plan(ZH16CTissues);
 
@@ -53,24 +59,35 @@ export default function RuntimeScreen() {
       deco.addDecoGas(gaz);
     }
 
-    let isFirstSegment = true;
-    for (const segment of plongee.segments) {
-      if (isFirstSegment && segment.startDepth === segment.endDepth) {
-        deco.addDepthChange(0, segment.endDepth, segment.gasName, segment.endDepth / 20);
-      } else if (segment.startDepth < segment.endDepth) {
-        deco.addDepthChange(
-          segment.startDepth, segment.endDepth,
-          segment.gasName,
-          (segment.endDepth - segment.startDepth) / 20,
-        );
-      } else if (segment.startDepth === segment.endDepth) {
-        deco.addFlat(segment.startDepth, segment.gasName, segment.time);
+    // Chaque entrée de plongee.segments est un "palier" : profondeur cible
+    // (endDepth) + temps total à ce palier, TRANSITION COMPRISE (convention
+    // MN90 — cohérent avec le temps de plongée). On insère automatiquement
+    // le segment de transition depuis la profondeur précédente (descente ou
+    // remontée selon le sens), puis le palier pour le temps restant.
+    let currentDepth = 0;
+    for (const stop of plongee.segments) {
+      const targetDepth = stop.endDepth;
+      const isDescending = targetDepth > currentDepth;
+      const rate = isDescending ? descentRateMMin : ascentRateMMin;
+      const transitionTime = targetDepth !== currentDepth
+        ? Math.abs(targetDepth - currentDepth) / rate
+        : 0;
+      const flatTime = Math.max(0, stop.time - transitionTime);
+
+      if (transitionTime > 0) {
+        deco.addDepthChange(currentDepth, targetDepth, stop.gasName, transitionTime);
       }
-      isFirstSegment = false;
+      if (flatTime > 0) {
+        deco.addFlat(targetDepth, stop.gasName, flatTime);
+      }
+      currentDepth = targetDepth;
     }
 
+    // Vitesse de remontée fond→1er palier — norme FFESSM par défaut 10 m/min,
+    // puis vitesse plus lente entre paliers — norme FFESSM par défaut 6 m/min,
+    // réglables dans les préférences (usePreferencesStore).
     const decoSegments = deco.calculateDecompression(
-      false, gfLow, gfHigh, 1.6, 30, undefined,
+      false, gfLow, gfHigh, 1.6, 30, undefined, ascentRateMMin, 1, false, ascentRateBetweenStopsMMin,
     );
 
     return { segments: decoSegments, plan: deco };
@@ -84,6 +101,9 @@ export default function RuntimeScreen() {
       selectedPlongee,
       gfValues.gfLow,
       gfValues.gfHigh,
+      descentRateMMin,
+      ascentRateMMin,
+      ascentRateBetweenStopsMMin,
     );
 
     setDecoPlan([...selectedPlongee.segments, ...runtime]);

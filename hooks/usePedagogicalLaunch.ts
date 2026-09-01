@@ -12,6 +12,7 @@ import type { GFValues } from '../components/GFSliderPair';
 import type { Plan } from '../lib/dive/buhlmann';
 import type { DecoStopSummary, TankConfig } from '../lib/dive/buildDivePlan';
 import type { DecoModel, DivePlan } from '../lib/dive/types';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 
 import {
   buildComparisonPlan,
@@ -143,6 +144,8 @@ export function usePedagogicalLaunch(
   const open  = useCallback(() => setVisible(true),  []);
   const close = useCallback(() => setVisible(false), []);
 
+  const { ascentRateMMin, ascentRateBetweenStopsMMin } = usePreferencesStore();
+
   const launch = useCallback(() => {
     // Plan A : on utilise les GF du formulaire (potentiellement différents
     // des GF du calcul courant → recalcule la déco si nécessaire)
@@ -161,12 +164,14 @@ export function usePedagogicalLaunch(
         gfLow:    config.gfB.gfLow,
         gfHigh:   config.gfB.gfHigh,
         planName: `GF ${Math.round(config.gfB.gfLow * 100)}/${Math.round(config.gfB.gfHigh * 100)}`,
+        ascentRateMMin,
+        ascentRateBetweenStopsMMin,
       });
     }
 
     close();
     onLaunch(planA, planB);
-  }, [plan, config, close, onLaunch]);
+  }, [plan, config, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
   return {
     visible, open, close,
