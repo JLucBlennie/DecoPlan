@@ -1,13 +1,15 @@
 // hooks/useScreenOrientation.ts
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect } from 'react';
+import { lockPortrait, unlockOrientation } from '../utils/orientation';
 
 /** Verrouille l'écran en portrait et restaure au démontage */
 export function useLockPortrait() {
     useEffect(() => {
-        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+
+
+        lockPortrait();  // verrouille le portrait
         return () => {
-            ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+            lockPortrait();  // on restaure le portrait au démontage
         };
     }, []);
 }
@@ -15,9 +17,9 @@ export function useLockPortrait() {
 /** Autorise portrait + paysage et restaure le portrait au démontage */
 export function useAllowLandscape() {
     useEffect(() => {
-        ScreenOrientation.unlockAsync();   // suit la rotation physique du device
+        unlockOrientation();   // suit la rotation physique du device
         return () => {
-            ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+            lockPortrait();  // on restaure le portrait au démontage
         };
     }, []);
 }
