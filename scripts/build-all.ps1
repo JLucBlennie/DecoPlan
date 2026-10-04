@@ -69,6 +69,10 @@ if ($Windows) {
     Get-ChildItem $bundleDir -Recurse -Include *.exe, *.msi |
         Where-Object { $_.FullName -match '\\(nsis|msi)\\' } |
         Copy-Item -Destination $dest -Force
+    $exe = Join-Path $targetDir 'release\decoplan.exe'   # nom défini par mainBinaryName
+    if (Test-Path $exe) {
+        Copy-Item $exe -Destination $dest -Force
+    }
     Write-Host "Installeurs Windows copiés dans $dest"
 }
 
@@ -89,6 +93,7 @@ npm run desktop:build
 mkdir -p "OUT_DIR"
 cp src-tauri/target/release/bundle/deb/*.deb "OUT_DIR"/
 cp src-tauri/target/release/bundle/appimage/*.AppImage "OUT_DIR"/
+cp src-tauri/target/release/decoplan "OUT_DIR"/
 '@
     $bashScript = $bashScript.Replace('PROJECT_DIR', $WslProjectDir).Replace('OUT_DIR', $wslOut) -replace "`r", ''
 
