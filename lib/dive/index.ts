@@ -47,6 +47,9 @@ export {
   collapseSegments, createSegment, getSegmentGas, isAscent, isDecoStop, isDescent, maxDepth, totalTime
 } from './segment';
 
+export { classifySegment } from './segmentKind';
+export type { SegmentKind } from './segmentKind';
+
 // Plongée
 export {
   addGazDeco, addGazFond, addSegment, calculProfondeurMax,
@@ -64,4 +67,7 @@ export {
   ZH16CTissues
 } from './buhlmann';
 export type { TissueCoefficient } from './buhlmann';
+
+// Scénarios WhatIf (runtimes alternatifs à côté du nominal)
+export * from './whatIf';
 

@@ -2,7 +2,10 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { Gas, Plan, Plongee, Segment, ZH16CTissues } from '../lib/dive';
+import {
+  computeRuntime, computeWhatIf, definitionFromPlongee,
+  Plan, Plongee, Segment, WhatIfResult,
+} from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
@@ -16,6 +19,15 @@ import { GFSliderPair, GFValues } from './GFSliderPair';
 import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
 import PlongeePicker from './PlongeePicker';
 import RuntimeResult from './RuntimeResult';
+import SegmentedToggle from './SegmentedToggle';
+import WhatIfColumns from './WhatIfColumns';
+
+type ResultView = 'detail' | 'whatIf';
+
+const RESULT_VIEWS: { value: ResultView; label: string }[] = [
+  { value: 'detail', label: 'Détail' },
+  { value: 'whatIf', label: 'Et si ?' },
+];
 
 export default function RuntimeScreen() {
   const { setPlans } = usePedagogicalStore();
@@ -35,79 +47,47 @@ export default function RuntimeScreen() {
   // ── Résultats ──────────────────────────────────────────────────────────────
   const [decoPlan, setDecoPlan] = useState<Segment[]>([]);
   const [decoObject, setDecoObject] = useState<Plan | null>(null);  // ← Plan conservé pour le mode péda
+  const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
+  const [whatIfError, setWhatIfError] = useState<string | null>(null);
+  const [resultView, setResultView] = useState<ResultView>('detail');
   const [showResult, setShowResult] = useState(false);
 
   // ── Calcul ─────────────────────────────────────────────────────────────────
   /**
-   * Retourne à la fois les segments de résultat ET le Plan complet.
-   * Le Plan est nécessaire pour buildDivePlanFromPlan() dans le mode pédagogique.
+   * Le runtime nominal et les scénarios « Et si ? » partent de la même
+   * définition de plongée (lib/dive/whatIf). Le Plan du nominal est conservé :
+   * il est nécessaire à buildDivePlanFromPlan() dans le mode pédagogique.
    */
-  function computeDive(
-    plongee: Plongee,
-    gfLow: number,
-    gfHigh: number,
-    descentRateMMin: number,
-    ascentRateMMin: number,
-    ascentRateBetweenStopsMMin: number,
-  ): { segments: Segment[]; plan: Plan } {
-    const deco = new Plan(ZH16CTissues);
-
-    for (const gaz of plongee.gazFond.map(Gas.fromJSON)) {
-      deco.addBottomGas(gaz);
-    }
-    for (const gaz of plongee.gazDeco.map(Gas.fromJSON)) {
-      deco.addDecoGas(gaz);
-    }
-
-    // Chaque entrée de plongee.segments est un "palier" : profondeur cible
-    // (endDepth) + temps total à ce palier, TRANSITION COMPRISE (convention
-    // MN90 — cohérent avec le temps de plongée). On insère automatiquement
-    // le segment de transition depuis la profondeur précédente (descente ou
-    // remontée selon le sens), puis le palier pour le temps restant.
-    let currentDepth = 0;
-    for (const stop of plongee.segments) {
-      const targetDepth = stop.endDepth;
-      const isDescending = targetDepth > currentDepth;
-      const rate = isDescending ? descentRateMMin : ascentRateMMin;
-      const transitionTime = targetDepth !== currentDepth
-        ? Math.abs(targetDepth - currentDepth) / rate
-        : 0;
-      const flatTime = Math.max(0, stop.time - transitionTime);
-
-      if (transitionTime > 0) {
-        deco.addDepthChange(currentDepth, targetDepth, stop.gasName, transitionTime);
-      }
-      if (flatTime > 0) {
-        deco.addFlat(targetDepth, stop.gasName, flatTime);
-      }
-      currentDepth = targetDepth;
-    }
-
-    // Vitesse de remontée fond→1er palier — norme FFESSM par défaut 10 m/min,
-    // puis vitesse plus lente entre paliers — norme FFESSM par défaut 6 m/min,
-    // réglables dans les préférences (usePreferencesStore).
-    const decoSegments = deco.calculateDecompression(
-      false, gfLow, gfHigh, 1.6, 30, undefined, ascentRateMMin, 1, false, ascentRateBetweenStopsMMin,
-    );
-
-    return { segments: decoSegments, plan: deco };
-  }
-
   function handleSubmit() {
     if (!selectedPlongee) return;
     setShowResult(false);
 
-    const { segments: runtime, plan } = computeDive(
-      selectedPlongee,
-      gfValues.gfLow,
-      gfValues.gfHigh,
+    // Chaque niveau de plongee.segments est un "palier" : profondeur cible + temps
+    // total à ce niveau, TRANSITION COMPRISE (convention MN90). La transition est
+    // insérée automatiquement (vitesses des préférences) — voir expandPlongeeSegments.
+    // Vitesse de remontée fond→1er palier (défaut FFESSM 10 m/min), puis plus lente
+    // entre paliers (défaut 6 m/min) : réglables dans usePreferencesStore.
+    const definition = definitionFromPlongee(selectedPlongee, {
+      gfLow: gfValues.gfLow,
+      gfHigh: gfValues.gfHigh,
       descentRateMMin,
       ascentRateMMin,
       ascentRateBetweenStopsMMin,
-    );
+    });
 
-    setDecoPlan([...selectedPlongee.segments, ...runtime]);
+    const { plan, decoSegments } = computeRuntime(definition);
+    setDecoPlan([...selectedPlongee.segments, ...decoSegments]);
     setDecoObject(plan);          // ← Plan stocké pour le mode pédagogique
+
+    // Un échec des scénarios ne doit pas masquer le runtime nominal.
+    try {
+      setWhatIf(computeWhatIf(definition));
+      setWhatIfError(null);
+    } catch (error) {
+      setWhatIf(null);
+      setWhatIfError(error instanceof Error ? error.message : String(error));
+    }
+
     setShowResult(true);
   }
 
@@ -176,7 +156,16 @@ export default function RuntimeScreen() {
             )}
           </View>
 
-          <RuntimeResult data={decoPlan} />
+          {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal */}
+          <SegmentedToggle value={resultView} options={RESULT_VIEWS} onChange={setResultView} />
+
+          {resultView === 'detail' && <RuntimeResult data={decoPlan} />}
+          {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} />}
+          {resultView === 'whatIf' && !whatIf && (
+            <Text style={styles.whatIfError}>
+              Scénarios indisponibles{whatIfError ? ` : ${whatIfError}` : '.'}
+            </Text>
+          )}
         </View>
       )}
 
@@ -241,5 +230,9 @@ const styles = StyleSheet.create({
     color: ocean.text.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  whatIfError: {
+    fontSize: fontSize.xs,
+    color: ocean.accent.red,
   },
 });

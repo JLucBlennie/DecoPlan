@@ -3,31 +3,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Segment } from '../lib/dive';
+import { classifySegment, Segment } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import { KIND_META } from './runtimeKindMeta';
 
 type Props = { data: Segment[] };
-
-// ── Classification d'un segment ───────────────────────────────────────────────
-
-type SegmentKind = 'descent' | 'bottom' | 'ascent' | 'deco';
-
-function classifySegment(seg: Segment, maxDepth: number): SegmentKind {
-    if (seg.endDepth > seg.startDepth) return 'descent';
-    if (seg.startDepth < seg.endDepth) return 'ascent';
-    if (seg.startDepth === seg.endDepth) {
-        if (seg.startDepth >= maxDepth * 0.85) return 'bottom';
-        return 'deco';
-    }
-    return 'ascent';
-}
-
-const KIND_META: Record<SegmentKind, { label: string; color: string; bg: string }> = {
-    descent: { label: 'Descente', color: ocean.accent.blue, bg: 'rgba(55,138,221,0.1)' },
-    bottom: { label: 'Fond', color: ocean.accent.teal, bg: 'rgba(29,158,117,0.08)' },
-    ascent: { label: 'Remontée', color: ocean.text.muted, bg: 'transparent' },
-    deco: { label: 'Palier', color: '#BA7517', bg: 'rgba(186,117,23,0.1)' },
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Composant

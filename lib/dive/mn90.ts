@@ -7,6 +7,35 @@ import { MN90_DEPTHS, MN90_TABLE, type Mn90Entry } from './mn90Table';
 /** Profondeurs de palier gérées par la table, de la plus profonde à la plus proche de la surface. */
 const STOP_DEPTHS = [15, 12, 9, 6, 3] as const;
 
+/** Les deux grandeurs qui entrent dans la table MN90 pour une plongée. */
+export interface MN90DiveParameters {
+  /** Profondeur maximale atteinte (m). */
+  maxDepthM: number;
+  /** Temps de plongée MN90 (min) : de la surface au début de la remontée, descente comprise. */
+  diveTimeMin: number;
+}
+
+/**
+ * Extrait de la simulation la profondeur et le temps de plongée MN90.
+ *
+ * Temps de plongée MN90 = temps écoulé depuis la surface (t=0) jusqu'à la
+ * fin du dernier segment de fond — descente comprise, conformément à la
+ * définition MN90. Les segments étant chronométrés avec la vraie vitesse
+ * de descente (usePreferencesStore.descentRateMMin), pas besoin de la
+ * repasser ici : elle est déjà intégrée dans endTimeMin.
+ */
+export function getMN90DiveParameters(plan: DivePlan): MN90DiveParameters {
+  const maxDepthM = Math.max(...plan.segments.map(s => Math.max(s.startDepthM, s.endDepthM)));
+
+  const bottomSegments = plan.segments
+    .filter(s => s.startDepthM === s.endDepthM && s.startDepthM >= maxDepthM * 0.9);
+  const diveTimeMin = bottomSegments.length > 0
+    ? bottomSegments[bottomSegments.length - 1].endTimeMin
+    : 0;
+
+  return { maxDepthM, diveTimeMin };
+}
+
 /**
  * Retourne le profil MN90 correspondant au plan de plongée fourni.
  *
@@ -30,24 +59,26 @@ export function getMN90Profile(
   ascentRateMMin: number,
   ascentRateBetweenStopsMMin: number,
 ): MN90Profile | undefined {
-  const maxDepth = Math.max(...plan.segments.map(s => Math.max(s.startDepthM, s.endDepthM)));
+  const { maxDepthM, diveTimeMin } = getMN90DiveParameters(plan);
+  return getMN90ProfileFor(maxDepthM, diveTimeMin, ascentRateMMin, ascentRateBetweenStopsMMin);
+}
 
-  // Temps de plongée MN90 = temps écoulé depuis la surface (t=0) jusqu'à la
-  // fin du dernier segment de fond — descente comprise, conformément à la
-  // définition MN90. Les segments étant chronométrés avec la vraie vitesse
-  // de descente (usePreferencesStore.descentRateMMin), pas besoin de la
-  // repasser ici : elle est déjà intégrée dans endTimeMin.
-  const bottomSegments = plan.segments
-    .filter(s => s.startDepthM === s.endDepthM && s.startDepthM >= maxDepth * 0.9);
-  const diveTimeMin = bottomSegments.length > 0
-    ? bottomSegments[bottomSegments.length - 1].endTimeMin
-    : 0;
-
-  const entry = lookupMn90Entry(maxDepth, diveTimeMin);
+/**
+ * Même lecture de table que getMN90Profile, à partir d'une profondeur et d'un
+ * temps de plongée directement (plongées successives : temps majoré, plongée
+ * unique issue de deux plongées consécutives…).
+ */
+export function getMN90ProfileFor(
+  depthM: number,
+  diveTimeMin: number,
+  ascentRateMMin: number,
+  ascentRateBetweenStopsMMin: number,
+): MN90Profile | undefined {
+  const entry = lookupMn90Entry(depthM, diveTimeMin);
   if (!entry || entry.gps === '*') return undefined;
 
   const stops: MN90Stop[] = STOP_DEPTHS
-    .map(depthM => ({ depthM, durationMin: entry.stops[String(depthM) as keyof Mn90Entry['stops']] }))
+    .map(stopDepthM => ({ depthM: stopDepthM, durationMin: entry.stops[String(stopDepthM) as keyof Mn90Entry['stops']] }))
     .filter(s => s.durationMin > 0);
 
   // Temps de trajet : fond→1er palier à ascentRateMMin, puis chaque
@@ -72,6 +103,7 @@ export function getMN90Profile(
     bottomTimeMin: entry.time,
     stops,
     totalAscentTimeMin,
+    gps: entry.gps,
   };
 }
 

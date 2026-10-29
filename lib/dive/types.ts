@@ -114,6 +114,7 @@ export interface MN90Profile {
   bottomTimeMin: number;
   stops: MN90Stop[];
   totalAscentTimeMin: number;
+  gps?: string;   // "A", "B", "C", "D",... ou "*" (hors table)
 }
 
 // ── Props composants ──────────────────────────────────────────────────────────
