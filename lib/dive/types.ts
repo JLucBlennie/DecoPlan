@@ -114,7 +114,8 @@ export interface MN90Profile {
   bottomTimeMin: number;
   stops: MN90Stop[];
   totalAscentTimeMin: number;
-  gps?: string;   // "A", "B", "C", "D",... ou "*" (hors table)
+  /** Groupe de plongée successive (A–P), renseigné par la lecture de table. */
+  gps?: string;
 }
 
 // ── Props composants ──────────────────────────────────────────────────────────

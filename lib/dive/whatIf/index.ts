@@ -4,6 +4,7 @@ export type { DiveSettings } from './definitionFromPlongee';
 export { deltaTrend, formatDeltaMinutes, formatMinutes } from './format';
 export type { DeltaTrend } from './format';
 export { computeRuntime, computeRuntimeSegments } from './runtime';
+export type { RuntimeOptions } from './runtime';
 export type { RuntimeComputation } from './runtime';
 export { toRuntimeRows } from './runtimeRows';
 export type { RuntimeRow } from './runtimeRows';

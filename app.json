@@ -32,12 +32,13 @@
     "orientation": "portrait",
     "plugins": [
       "expo-status-bar",
-      "expo-router"
+      "expo-router",
+      "expo-sharing"
     ],
     "scheme": "deco-plan",
     "slug": "DecoPlan",
     "userInterfaceStyle": "dark",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png",

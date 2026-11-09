@@ -34,6 +34,7 @@ type MenuItem = {
 const GazIcon = () => <MaterialCommunityIcons name="diving-scuba-tank" size={22} color={ocean.accent.blue} />;
 const DiveIcon = () => <MaterialIcons name="scuba-diving" size={22} color={ocean.accent.teal} />;
 const RuntimeIcon = () => <MaterialIcons name="play-circle-outline" size={22} color={ocean.accent.green} />;
+const PedagogicalIcon = () => <MaterialIcons name="school" size={22} color={ocean.accent.blue} />;
 const AboutIcon = () => <Entypo name="help" size={18} color={ocean.text.muted} />;
 
 // ─── Données du menu ──────────────────────────────────────────────────────────
@@ -62,6 +63,14 @@ const MENU_ITEMS: MenuItem[] = [
     icon: <RuntimeIcon />,
     iconBg: ocean.soft.green,
     variant: 'cta',
+  },
+  {
+    key: ROUTES.PEDAGOGICAL_SETUP,
+    label: 'Mode pédagogique',
+    sublabel: 'Tissus, comparaison de GF, successives',
+    icon: <PedagogicalIcon />,
+    iconBg: ocean.soft.blue,
+    variant: 'default',
   },
   {
     key: ROUTES.PREFERENCES,

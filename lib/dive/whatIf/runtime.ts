@@ -7,6 +7,8 @@
 
 import { Plan } from '../buhlmann';
 import type { Segment } from '../types';
+import type { TissueState } from '../successive/types';
+import { loadTissues } from '../successive/tissueState';
 import type { DiveDefinition } from './types';
 
 export interface RuntimeComputation {
@@ -16,8 +18,16 @@ export interface RuntimeComputation {
   decoSegments: Segment[];
 }
 
-export function computeRuntime(def: DiveDefinition): RuntimeComputation {
+export interface RuntimeOptions {
+  /** Tissus de départ (plongée successive). Par défaut : saturés en surface. */
+  initialTissues?: TissueState[];
+  /** Garde dans plan.tissues l'état à la sortie de l'eau (au lieu de celui en fin de fond). */
+  keepEndState?: boolean;
+}
+
+export function computeRuntime(def: DiveDefinition, options: RuntimeOptions = {}): RuntimeComputation {
   const plan = new Plan(def.tissueTable, def.absPressureBar, def.isFreshWater);
+  if (options.initialTissues) loadTissues(plan, options.initialTissues);
 
   def.bottomGases.forEach(gas => plan.addBottomGas(gas));
   def.decoGases.forEach(gas => plan.addDecoGas(gas));
@@ -27,7 +37,7 @@ export function computeRuntime(def: DiveDefinition): RuntimeComputation {
   }
 
   const decoSegments = plan.calculateDecompression(
-    false,
+    options.keepEndState === true,
     def.gfLow,
     def.gfHigh,
     def.maxDecoPpO2,

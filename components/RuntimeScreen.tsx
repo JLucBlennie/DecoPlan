@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
   computeRuntime, computeWhatIf, definitionFromPlongee,
-  Plan, Plongee, Segment, WhatIfResult,
+  Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
 } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
@@ -18,6 +18,7 @@ import { usePreferencesStore } from '../store/usePreferencesStore';
 import { GFSliderPair, GFValues } from './GFSliderPair';
 import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
 import PlongeePicker from './PlongeePicker';
+import PrintRunSheetButton from './PrintRunSheetButton';
 import RuntimeResult from './RuntimeResult';
 import SegmentedToggle from './SegmentedToggle';
 import WhatIfColumns from './WhatIfColumns';
@@ -50,6 +51,8 @@ export default function RuntimeScreen() {
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
   const [resultView, setResultView] = useState<ResultView>('detail');
+  // En-tête de la fiche imprimable : réglages utilisés au moment du calcul, pas ceux des curseurs.
+  const [sheetOptions, setSheetOptions] = useState<Omit<RunSheetOptions, 'pageWidthPx'> | null>(null);
   const [showResult, setShowResult] = useState(false);
 
   // ── Calcul ─────────────────────────────────────────────────────────────────
@@ -79,6 +82,13 @@ export default function RuntimeScreen() {
     setDecoPlan([...selectedPlongee.segments, ...decoSegments]);
     setDecoObject(plan);          // ← Plan stocké pour le mode pédagogique
 
+    setSheetOptions({
+      title: selectedPlongee.name,
+      subtitle: `GF ${Math.round(gfValues.gfLow * 100)}/${Math.round(gfValues.gfHigh * 100)}`
+        + ` · descente ${descentRateMMin} m/min · remontée ${ascentRateMMin} puis ${ascentRateBetweenStopsMMin} m/min`,
+      dateLabel: new Date().toLocaleDateString('fr-FR'),
+    });
+
     // Un échec des scénarios ne doit pas masquer le runtime nominal.
     try {
       setWhatIf(computeWhatIf(definition));
@@ -100,74 +110,82 @@ export default function RuntimeScreen() {
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
-    <View style={sharedStyles.screenContainer}>
+      <View style={sharedStyles.screenContainer}>
 
-      <Text style={sharedStyles.screenTitle}>Calcul décompression</Text>
+        {/* Le mode Successive choisit ses propres plongées : accessible sans calcul préalable */}
+        <View style={styles.titleRow}>
+          <Text style={sharedStyles.screenTitle}>Calcul décompression</Text>
+        </View>
 
-      {/* Sélection de la plongée */}
-      <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.sm }]}>Plongée</Text>
-      <View style={styles.pickerWrapper}>
-        <PlongeePicker
-          plongees={plongeeList}
-          selectedId={selectedPlongee?.id ?? null}
-          onSelect={handlePlongeeSelect}
-        />
-      </View>
+        {/* Sélection de la plongée */}
+        <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.sm }]}>Plongée</Text>
+        <View style={styles.pickerWrapper}>
+          <PlongeePicker
+            plongees={plongeeList}
+            selectedId={selectedPlongee?.id ?? null}
+            onSelect={handlePlongeeSelect}
+          />
+        </View>
 
-      {/* GF avec sliders */}
-      <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>Gradient Factors</Text>
-      <View style={styles.gfCard}>
-        <GFSliderPair
-          values={gfValues}
-          onChange={setGfValues}
-          accentColor={ocean.accent.blue}
-        />
-      </View>
+        {/* GF avec sliders */}
+        <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>Gradient Factors</Text>
+        <View style={styles.gfCard}>
+          <GFSliderPair
+            values={gfValues}
+            onChange={setGfValues}
+            accentColor={ocean.accent.blue}
+          />
+        </View>
 
-      {/* Bouton de calcul */}
-      <TouchableOpacity
-        style={[styles.calcBtn, !selectedPlongee && styles.calcBtnDisabled]}
-        onPress={handleSubmit}
-        disabled={!selectedPlongee}
-        activeOpacity={0.8}
-      >
-        <MaterialIcons name="calculate" size={20} color={ocean.bg.deep} />
-        <Text style={styles.calcBtnTxt}>Calculer</Text>
-      </TouchableOpacity>
+        {/* Bouton de calcul */}
+        <TouchableOpacity
+          style={[styles.calcBtn, !selectedPlongee && styles.calcBtnDisabled]}
+          onPress={handleSubmit}
+          disabled={!selectedPlongee}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="calculate" size={20} color={ocean.bg.deep} />
+          <Text style={styles.calcBtnTxt}>Calculer</Text>
+        </TouchableOpacity>
 
-      {/* Résultat + bouton pédagogique */}
-      {showResult && decoPlan.length > 0 && (
-        <View style={styles.resultArea}>
-          <View style={styles.resultHeader}>
-            <Text style={styles.resultTitle}>Résultat</Text>
-            {/* Bouton mode pédagogique — visible uniquement après calcul */}
-            {decoObject && selectedPlongee && (
-              <PedagogicalLaunchButton
-                plan={decoObject}
-                planName={selectedPlongee.name}
-                currentGfLow={gfValues.gfLow}
-                currentGfHigh={gfValues.gfHigh}
-                variant="button"
-                onLaunch={(planA, planB) => {
-                  setPlans(planA, planB);
-                  router.push(ROUTES.PEDAGOGICAL);
-                }}
-              />
+        {/* Résultat + bouton pédagogique */}
+        {showResult && decoPlan.length > 0 && (
+          <View style={styles.resultArea}>
+            <View style={styles.resultHeader}>
+              <Text style={styles.resultTitle}>Résultat</Text>
+              {/* Bouton mode pédagogique — visible uniquement après calcul */}
+              {decoObject && selectedPlongee && (
+                <PedagogicalLaunchButton
+                  plan={decoObject}
+                  planName={selectedPlongee.name}
+                  currentGfLow={gfValues.gfLow}
+                  currentGfHigh={gfValues.gfHigh}
+                  variant="button"
+                  onLaunch={(planA, planB) => {
+                    setPlans(planA, planB);
+                    router.push(ROUTES.PEDAGOGICAL);
+                  }}
+                />
+              )}
+            </View>
+
+            {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal, et fiche à imprimer */}
+            <View style={styles.toolbar}>
+              <View style={styles.toggle}>
+                <SegmentedToggle value={resultView} options={RESULT_VIEWS} onChange={setResultView} />
+              </View>
+              {whatIf && sheetOptions && <PrintRunSheetButton result={whatIf} options={sheetOptions} />}
+            </View>
+
+            {resultView === 'detail' && <RuntimeResult data={decoPlan} />}
+            {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} />}
+            {resultView === 'whatIf' && !whatIf && (
+              <Text style={styles.whatIfError}>
+                Scénarios indisponibles{whatIfError ? ` : ${whatIfError}` : '.'}
+              </Text>
             )}
           </View>
-
-          {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal */}
-          <SegmentedToggle value={resultView} options={RESULT_VIEWS} onChange={setResultView} />
-
-          {resultView === 'detail' && <RuntimeResult data={decoPlan} />}
-          {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} />}
-          {resultView === 'whatIf' && !whatIf && (
-            <Text style={styles.whatIfError}>
-              Scénarios indisponibles{whatIfError ? ` : ${whatIfError}` : '.'}
-            </Text>
-          )}
-        </View>
-      )}
+        )}
 
       </View>
     </SafeAreaView>
@@ -176,6 +194,11 @@ export default function RuntimeScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   pickerWrapper: {
     alignSelf: 'stretch',
     borderWidth: 1,
@@ -230,6 +253,14 @@ const styles = StyleSheet.create({
     color: ocean.text.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+  },
+  toggle: {
+    flex: 1,
   },
   whatIfError: {
     fontSize: fontSize.xs,

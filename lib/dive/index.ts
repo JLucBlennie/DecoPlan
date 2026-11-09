@@ -71,3 +71,11 @@ export type { TissueCoefficient } from './buhlmann';
 // Scénarios WhatIf (runtimes alternatifs à côté du nominal)
 export * from './whatIf';
 
+// Fiche imprimable des runtimes (à plastifier)
+export * from './printable';
+
+
+// Plongées successives : Bühlmann (tissus reportés) + comparaison MN90
+export * from './successive';
+export { getMN90SuccessiveProfile, getMN90SuccessiveProfileFromPlans } from './mn90Successive';
+export type { MN90DiveRelation, MN90SuccessiveDetail, MN90SuccessiveResult } from './mn90Successive';
