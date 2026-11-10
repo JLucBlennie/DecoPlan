@@ -58,7 +58,7 @@ export default function PedagogicalSetupScreen() {
 
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={sharedStyles.screenTitle}>Mode pédagogique</Text>
         <SegmentedToggle value={mode} options={MODES} onChange={setMode} />
         <Text style={styles.intro}>
@@ -122,6 +122,8 @@ export default function PedagogicalSetupScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Le conteneur d'écran centre ses enfants : sans stretch, le ScrollView se cale sur son contenu.
+  scroll: { alignSelf: 'stretch' },
   content: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xxl },
   intro: { fontSize: fontSize.sm, color: ocean.text.secondary },
   picker: {

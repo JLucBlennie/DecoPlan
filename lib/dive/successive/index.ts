@@ -5,3 +5,5 @@ export { applySurfaceInterval, captureTissues, loadTissues } from './tissueState
 export type {
   CompartmentDesaturation, ComputedDive, IntervalSweepPoint, SuccessiveDiveInput, SuccessiveResult, TissueState,
 } from './types';
+export { buhlmannPoints, endTimeMin, maxDepthM, mn90Points } from './profilePoints';
+export type { ProfilePoint } from './profilePoints';

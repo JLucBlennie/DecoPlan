@@ -12,6 +12,7 @@ import DesaturationPanel from './DesaturationPanel';
 import IntervalControl from './IntervalControl';
 import IntervalSweepChart from './IntervalSweepChart';
 import SuccessiveComparison from './SuccessiveComparison';
+import SuccessiveProfileChart from './SuccessiveProfileChart';
 
 const SWEEP_INTERVALS_MIN = [0, 15, 30, 60, 120, 180, 240, 360, 480, 720];
 const DEFAULT_INTERVAL_MIN = 60;
@@ -20,6 +21,7 @@ type Props = { first: Plongee; second: Plongee; settings: DiveSettings };
 
 export default function SuccessivePanel({ first, second, settings }: Props) {
   const [intervalMin, setIntervalMin] = useState(DEFAULT_INTERVAL_MIN);
+  const [showMn90, setShowMn90] = useState(false);
 
   // Le balayage ne dépend pas de l'intervalle choisi : il n'est recalculé que si les plongées ou réglages changent.
   const computed = useMemo(() => {
@@ -55,6 +57,12 @@ export default function SuccessivePanel({ first, second, settings }: Props) {
           {computed.notes.map(text => (
             <Text key={text} style={styles.note}>ℹ {text}</Text>
           ))}
+          <SuccessiveProfileChart
+            result={result}
+            settings={settings}
+            showMn90={showMn90}
+            onToggleMn90={() => setShowMn90(v => !v)}
+          />
           <SuccessiveComparison result={result} />
           <DesaturationPanel compartments={result.desaturation} />
           <IntervalSweepChart points={computed.sweep} currentIntervalMin={intervalMin} />
