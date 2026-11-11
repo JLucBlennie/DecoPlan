@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import appJson from '../app.json';
+import pkg from '../package.json';
 import { ROUTES } from '../navigation/types';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
@@ -148,7 +149,7 @@ export default function MenuPrincipal() {
         </View>
         <View style={styles.headerTexts}>
           <Text style={styles.appName}>{appJson.expo.name}</Text>
-          <Text style={styles.appVersion}>by JLuc · v{appJson.expo.version}</Text>
+          <Text style={styles.appVersion}>by JLuc · v{pkg.version}</Text>
         </View>
       </View>
 

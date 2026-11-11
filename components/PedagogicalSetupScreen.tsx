@@ -15,7 +15,7 @@ import { usePreferencesStore } from '../store/usePreferencesStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import { GFSliderPair, type GFValues } from './GFSliderPair';
-import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
+import PedagogicalConfigPanel from './pedagogical/PedagogicalConfigPanel';
 import PlongeePicker from './PlongeePicker';
 import SegmentedToggle from './SegmentedToggle';
 import SuccessivePanel from './successive/SuccessivePanel';
@@ -46,15 +46,19 @@ export default function PedagogicalSetupScreen() {
     gfLow: gf.gfLow, gfHigh: gf.gfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
   }), [gf, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
-  // Mode 1 plongée : le Plan calculé est ce que PedagogicalLaunchButton attend.
+  // Mode 1 plongée : les GF se règlent dans le panneau (réglage A / B) ; le Plan de départ
+  // est calculé avec les GF par défaut des préférences.
   const single = useMemo(() => {
     if (mode !== 'single' || !first) return null;
     try {
-      return { plan: computeRuntime(definitionFromPlongee(first, settings)).plan, error: null as string | null };
+      const base: DiveSettings = {
+        gfLow: defaultGfLow, gfHigh: defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+      };
+      return { plan: computeRuntime(definitionFromPlongee(first, base)).plan, error: null as string | null };
     } catch (e) {
       return { plan: null, error: e instanceof Error ? e.message : String(e) };
     }
-  }, [mode, first, settings]);
+  }, [mode, first, defaultGfLow, defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
@@ -81,10 +85,14 @@ export default function PedagogicalSetupScreen() {
           </>
         )}
 
-        <Text style={[sharedStyles.sectionLabel, styles.spaced]}>Gradient Factors</Text>
-        <View style={styles.gfCard}>
-          <GFSliderPair values={gf} onChange={setGf} accentColor={ocean.accent.blue} />
-        </View>
+        {mode === 'successive' && (
+          <>
+            <Text style={[sharedStyles.sectionLabel, styles.spaced]}>Gradient Factors</Text>
+            <View style={styles.gfCard}>
+              <GFSliderPair values={gf} onChange={setGf} accentColor={ocean.accent.blue} />
+            </View>
+          </>
+        )}
         <Text style={styles.caution}>
           ⚠ Des GF élevés raccourcissent les paliers mais réduisent la marge de sécurité : à montrer pour comprendre, pas pour plonger.
         </Text>
@@ -94,19 +102,17 @@ export default function PedagogicalSetupScreen() {
             {!first && <Text style={styles.hint}>Choisis une plongée pour lancer le mode pédagogique.</Text>}
             {single?.error && <Text style={styles.error}>Calcul impossible : {single.error}</Text>}
             {first && single?.plan && (
-              <View style={styles.launch}>
-                <PedagogicalLaunchButton
-                  plan={single.plan}
-                  planName={first.name}
-                  currentGfLow={gf.gfLow}
-                  currentGfHigh={gf.gfHigh}
-                  variant="button"
-                  onLaunch={(planA, planB) => {
-                    setPlans(planA, planB);
-                    router.push(ROUTES.PEDAGOGICAL);
-                  }}
-                />
-              </View>
+              <PedagogicalConfigPanel
+                key={first.id}
+                plan={single.plan}
+                planName={first.name}
+                currentGfLow={defaultGfLow}
+                currentGfHigh={defaultGfHigh}
+                onLaunch={(planA, planB) => {
+                  setPlans(planA, planB);
+                  router.push(ROUTES.PEDAGOGICAL);
+                }}
+              />
             )}
           </>
         )}
@@ -138,5 +144,4 @@ const styles = StyleSheet.create({
   caution: { fontSize: fontSize.xs, color: '#BA7517' },
   hint: { fontSize: fontSize.sm, color: ocean.text.muted, marginTop: spacing.md },
   error: { fontSize: fontSize.sm, color: ocean.accent.red, marginTop: spacing.md },
-  launch: { alignSelf: 'flex-start', marginTop: spacing.md },
 });
