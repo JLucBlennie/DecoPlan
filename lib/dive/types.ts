@@ -18,6 +18,11 @@ export interface Segment {
   endDepth: number;     // mètres
   gasName: string;      // référence au Gas.name utilisé
   time: number;         // minutes
+  /**
+   * Set point (bar de ppO₂ dans la boucle) si le segment est en circuit fermé.
+   * `undefined` = circuit ouvert (gasName = gaz respiré). En CCR, gasName = diluant.
+   */
+  setpointBar?: number;
 }
 
 export interface Plongee {

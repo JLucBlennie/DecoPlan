@@ -19,6 +19,12 @@ export interface Preferences {
     ascentRateMMin: number;
     /** Vitesse de remontée entre paliers, et du dernier palier à la surface (m/min) — plus lente, typiquement 6 m/min */
     ascentRateBetweenStopsMMin: number;
+    /** CCR : set point bas (bar de ppO₂) — surface et début de descente */
+    ccrSetpointLow: number;
+    /** CCR : set point haut (bar de ppO₂) — fond et déco */
+    ccrSetpointHigh: number;
+    /** CCR : profondeur (m) de passage du set point bas au haut en descente */
+    ccrSwitchDepthM: number;
 }
 
 type PreferencesStore = Preferences & {
@@ -38,6 +44,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
     descentRateMMin: 20,
     ascentRateMMin: 10,
     ascentRateBetweenStopsMMin: 6,
+    ccrSetpointLow: 0.7,
+    ccrSetpointHigh: 1.3,
+    ccrSwitchDepthM: 20,
 };
 
 const STORAGE_KEY = 'decoplan_preferences';
@@ -74,6 +83,9 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
             descentRateMMin: next.descentRateMMin,
             ascentRateMMin: next.ascentRateMMin,
             ascentRateBetweenStopsMMin: next.ascentRateBetweenStopsMMin,
+            ccrSetpointLow: next.ccrSetpointLow,
+            ccrSetpointHigh: next.ccrSetpointHigh,
+            ccrSwitchDepthM: next.ccrSwitchDepthM,
         }));
     },
 
