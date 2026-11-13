@@ -14,6 +14,7 @@ export default function PreferencesScreen() {
     const {
         gfLow, gfHigh, rmvFond, rmvDeco,
         descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+        ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
         update, reset,
     } = usePreferencesStore();
 
@@ -147,6 +148,57 @@ export default function PreferencesScreen() {
                 )}
             </Section>
 
+            {/* ── CCR ───────────────────────────────────────────────────────────── */}
+            <Section title="Recycleur (CCR)"
+                subtitle="Set points de ppO₂ et profondeur de bascule, utilisés pour les plongées en circuit fermé">
+
+                <PrefSlider
+                    label="Set point bas"
+                    hint="Surface et début de descente"
+                    value={ccrSetpointLow}
+                    min={0.4} max={1.0} step={0.05}
+                    format={v => `${v.toFixed(2)} bar`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({
+                        ccrSetpointLow: v,
+                        ccrSetpointHigh: Math.max(ccrSetpointHigh, v),
+                    })}
+                />
+
+                <PrefSlider
+                    label="Set point haut"
+                    hint="Fond et décompression"
+                    value={ccrSetpointHigh}
+                    min={1.0} max={1.6} step={0.05}
+                    format={v => `${v.toFixed(2)} bar`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({
+                        ccrSetpointHigh: v,
+                        ccrSetpointLow: Math.min(ccrSetpointLow, v),
+                    })}
+                />
+
+                <PrefSlider
+                    label="Bascule bas → haut"
+                    hint="Profondeur à laquelle on passe au set point haut en descente"
+                    value={ccrSwitchDepthM}
+                    min={3} max={30} step={1}
+                    format={v => `${v} m`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({ ccrSwitchDepthM: v })}
+                />
+
+                {ccrSetpointHigh > 1.4 && (
+                    <InfoRow icon="warning" color="#BA7517"
+                        text="Un set point haut au-delà de 1,4 bar augmente le risque d'hyperoxie (toxicité de l'O₂)."
+                    />
+                )}
+
+                <InfoRow icon="info-outline"
+                    text="Le bail-out est simulé en fin de phase fond, en circuit ouvert, avec les gaz de déco et le RMV déco."
+                />
+            </Section>
+
             {/* ── Résumé ────────────────────────────────────────────────────── */}
             <Section title="Résumé des réglages">
                 <View style={styles.summaryGrid}>
@@ -157,6 +209,8 @@ export default function PreferencesScreen() {
                     <SummaryCell label="Descente" value={`${descentRateMMin} m/min`} />
                     <SummaryCell label="Remontée" value={`${ascentRateMMin} m/min`} />
                     <SummaryCell label="Entre paliers" value={`${ascentRateBetweenStopsMMin} m/min`} />
+                    <SummaryCell label="SP bas / haut" value={`${ccrSetpointLow.toFixed(2)} / ${ccrSetpointHigh.toFixed(2)}`} />
+                    <SummaryCell label="Bascule SP" value={`${ccrSwitchDepthM} m`} />
                 </View>
             </Section>
 
