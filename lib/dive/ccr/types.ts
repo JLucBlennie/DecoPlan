@@ -24,3 +24,18 @@ export const DEFAULT_CCR_SETPOINTS = {
   setpointHighBar: 1.3,
   switchDepthM: 20,
 } as const;
+
+/** Bloc de bail-out supposé pour chaque gaz de déco (comparaison avec le volume consommé). */
+export interface BailoutTankDefault {
+  volumeL: number;
+  pressureBar: number;
+}
+
+/** CCR dans une DiveDefinition : configuration de boucle + hypothèses de bail-out. */
+export interface CcrDefinition {
+  config: CcrConfig;
+  /** RMV de bail-out (L/min) — préférence rmvDeco. */
+  bailoutRmvLMin: number;
+  /** Bloc supposé pour chaque gaz de bail-out. */
+  bailoutTank: BailoutTankDefault;
+}

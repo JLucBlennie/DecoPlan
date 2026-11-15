@@ -4,6 +4,7 @@
 
 import { isDecoStop, maxDepth, totalTime } from '../segment';
 import type { Segment } from '../types';
+import { bottomSegmentsOf } from './ccrBottom';
 import type { DiveDefinition, RuntimeDelta, RuntimeStop, RuntimeSummary } from './types';
 
 export function summarizeRuntime(def: DiveDefinition, segments: Segment[]): RuntimeSummary {
@@ -11,7 +12,7 @@ export function summarizeRuntime(def: DiveDefinition, segments: Segment[]): Runt
   const totalTimeMin = totalTime(segments);
 
   const stops: RuntimeStop[] = segments
-    .slice(def.bottomSegments.length)
+    .slice(bottomSegmentsOf(def).length)
     .filter(s => isDecoStop(s) && s.startDepth > 0)
     .map(s => ({ depthM: s.startDepth, durationMin: s.time, gasName: s.gasName }));
 

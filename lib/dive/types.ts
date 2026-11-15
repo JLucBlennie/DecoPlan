@@ -31,6 +31,8 @@ export interface Plongee {
   segments: Segment[];
   gazFond: GasData[];
   gazDeco: GasData[];
+  /** Nom du gaz diluant si la plongée est en recycleur (CCR). `undefined` = circuit ouvert. */
+  ccrDiluentName?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

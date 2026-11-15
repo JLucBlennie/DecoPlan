@@ -11,6 +11,7 @@ import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import CcrDiluentPicker, { validDiluent } from './CcrDiluentPicker';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -29,11 +30,12 @@ export default function PlongeeForm({ plongee }: PlongeeFormProps) {
   const [nom, setNom] = useState(plongee.name);
   const [gazFond, setGazFond] = useState<Gas[]>(plongee.gazFond.map(Gas.fromJSON));
   const [gazDeco, setGazDeco] = useState<Gas[]>(plongee.gazDeco.map(Gas.fromJSON));
+  const [ccrDiluentName, setCcrDiluentName] = useState<string | undefined>(plongee.ccrDiluentName);
   const [segments, setSegments] = useState<Segment[]>(plongee.segments);
 
   // ── Soumission ─────────────────────────────────────────────────────────────
   const handleSubmit = () => {
-    updatePlongee(plongee.id, { name: nom, gazFond, gazDeco, segments });
+    updatePlongee(plongee.id, { name: nom, gazFond, gazDeco, segments, ccrDiluentName: validDiluent(gazFond, ccrDiluentName) });
     router.back();   // ferme la modale — remplace navigation.goBack()
   };
 
@@ -153,6 +155,8 @@ export default function PlongeeForm({ plongee }: PlongeeFormProps) {
         </View>
 
       </View>
+
+      <CcrDiluentPicker gazFond={gazFond} diluentName={ccrDiluentName} onChange={setCcrDiluentName} />
 
       {/* Profil / segments */}
       <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>

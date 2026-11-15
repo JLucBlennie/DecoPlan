@@ -68,6 +68,22 @@ export default function WhatIfColumn({ runtime, width, isReference = false }: Pr
                 </View>
             ))}
 
+            {/* Consommation de bail-out */}
+            {runtime.gasUsage && runtime.gasUsage.length > 0 && (
+                <View style={styles.gasUsage}>
+                    {runtime.gasUsage.map(g => (
+                        <View key={g.gasName} style={styles.gasUsageRow}>
+                            <Text style={styles.gasUsageName} numberOfLines={1}>{g.gasName}</Text>
+                            <Text style={[styles.gasUsageValue, g.insufficient && styles.gasUsageAlert]}>
+                                {Math.round(g.litres)} L
+                                {g.barUsed !== undefined ? ` · ${Math.round(g.barUsed)} bar` : ''}
+                                {g.insufficient ? ' ⚠' : ''}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            )}
+
             {/* Phases */}
             <View style={styles.tableHeader}>
                 <Text style={[styles.hCell, styles.colDepth]}>Prof.</Text>
@@ -83,6 +99,11 @@ export default function WhatIfColumn({ runtime, width, isReference = false }: Pr
                             <Text style={styles.cellTxt}>{depthLabel(row)}</Text>
                             {row.gasSwitch && (
                                 <Text style={styles.gasTxt} numberOfLines={1}>{row.gasName}</Text>
+                            )}
+                            {row.setpointSwitch && row.setpointBar !== undefined && (
+                                <Text style={styles.gasTxt} numberOfLines={1}>
+                                    SP {row.setpointBar.toFixed(2)}
+                                </Text>
                             )}
                         </View>
                         <Text style={[styles.cellTxt, styles.colTime]}>
@@ -156,6 +177,12 @@ const styles = StyleSheet.create({
         marginHorizontal: spacing.sm, marginBottom: spacing.xs,
     },
     warningTxt: { fontSize: 9, color: '#BA7517', flex: 1 },
+
+    gasUsage: { paddingHorizontal: spacing.sm, paddingBottom: spacing.xs, gap: 2 },
+    gasUsageRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
+    gasUsageName: { fontSize: 10, color: ocean.accent.blue, flexShrink: 1 },
+    gasUsageValue: { fontSize: 10, color: ocean.text.primary },
+    gasUsageAlert: { color: '#BA7517', fontWeight: '600' },
 
     tableHeader: {
         flexDirection: 'row',

@@ -39,6 +39,7 @@ export default function RuntimeScreen() {
   const {
     gfLow: defaultGfLow, gfHigh: defaultGfHigh,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
   } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
@@ -76,6 +77,12 @@ export default function RuntimeScreen() {
       descentRateMMin,
       ascentRateMMin,
       ascentRateBetweenStopsMMin,
+      ccr: {
+        setpointLowBar: ccrSetpointLow,
+        setpointHighBar: ccrSetpointHigh,
+        switchDepthM: ccrSwitchDepthM,
+        bailoutRmvLMin: rmvDeco,
+      },
     });
 
     const { plan, decoSegments } = computeRuntime(definition);
@@ -85,6 +92,9 @@ export default function RuntimeScreen() {
     setSheetOptions({
       title: selectedPlongee.name,
       subtitle: `GF ${Math.round(gfValues.gfLow * 100)}/${Math.round(gfValues.gfHigh * 100)}`
+        + (selectedPlongee.ccrDiluentName
+          ? ` · CCR SP ${ccrSetpointLow.toFixed(2)}/${ccrSetpointHigh.toFixed(2)} (bascule ${ccrSwitchDepthM} m)`
+          : '')
         + ` · descente ${descentRateMMin} m/min · remontée ${ascentRateMMin} puis ${ascentRateBetweenStopsMMin} m/min`,
       dateLabel: new Date().toLocaleDateString('fr-FR'),
     });
@@ -154,7 +164,7 @@ export default function RuntimeScreen() {
             <View style={styles.resultHeader}>
               <Text style={styles.resultTitle}>Résultat</Text>
               {/* Bouton mode pédagogique — visible uniquement après calcul */}
-              {decoObject && selectedPlongee && (
+              {decoObject && selectedPlongee && !selectedPlongee.ccrDiluentName && (
                 <PedagogicalLaunchButton
                   plan={decoObject}
                   planName={selectedPlongee.name}

@@ -9,7 +9,9 @@ import { Plan } from '../buhlmann';
 import type { Segment } from '../types';
 import type { TissueState } from '../successive/types';
 import { loadTissues } from '../successive/tissueState';
+import { computeCcrRuntime } from '../ccr/ccrRuntime';
 import type { DiveDefinition } from './types';
+import { bottomSegmentsOf } from './ccrBottom';
 
 export interface RuntimeComputation {
   /** Plan complet (fond + déco), nécessaire au mode pédagogique. */
@@ -26,6 +28,11 @@ export interface RuntimeOptions {
 }
 
 export function computeRuntime(def: DiveDefinition, options: RuntimeOptions = {}): RuntimeComputation {
+  if (def.ccr) {
+    const { plan, decoSegments } = computeCcrRuntime(def, def.ccr.config, options);
+    return { plan, decoSegments };
+  }
+
   const plan = new Plan(def.tissueTable, def.absPressureBar, def.isFreshWater);
   if (options.initialTissues) loadTissues(plan, options.initialTissues);
 
@@ -55,5 +62,5 @@ export function computeRuntime(def: DiveDefinition, options: RuntimeOptions = {}
 /** Segments saisis + décompression calculée, dans l'ordre chronologique. */
 export function computeRuntimeSegments(def: DiveDefinition): Segment[] {
   const { decoSegments } = computeRuntime(def);
-  return [...def.bottomSegments.map(s => ({ ...s })), ...decoSegments];
+  return [...bottomSegmentsOf(def).map(s => ({ ...s })), ...decoSegments];
 }

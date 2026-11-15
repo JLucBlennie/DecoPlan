@@ -12,6 +12,7 @@ import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import CcrDiluentPicker, { validDiluent } from './CcrDiluentPicker';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
 
 export default function AddPlongeeForm() {
@@ -21,6 +22,7 @@ export default function AddPlongeeForm() {
   const [nom, setNom] = useState('');
   const [gazFond, setGazFond] = useState<Gas[]>([]);
   const [gazDeco, setGazDeco] = useState<Gas[]>([]);
+  const [ccrDiluentName, setCcrDiluentName] = useState<string | undefined>(undefined);
   const [segments, setSegments] = useState<Segment[]>([]);
 
   // id stable pour toute la durée du formulaire
@@ -28,7 +30,7 @@ export default function AddPlongeeForm() {
 
   // ── Soumission ─────────────────────────────────────────────────────────────
   const handleSubmit = () => {
-    addPlongee({ id: plongeeId, name: nom, gazFond, gazDeco, segments });
+    addPlongee({ id: plongeeId, name: nom, gazFond, gazDeco, segments, ccrDiluentName: validDiluent(gazFond, ccrDiluentName) });
     router.back();
   };
 
@@ -132,6 +134,8 @@ export default function AddPlongeeForm() {
         </View>
 
       </View>
+
+      <CcrDiluentPicker gazFond={gazFond} diluentName={ccrDiluentName} onChange={setCcrDiluentName} />
 
       {/* Profil */}
       <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>

@@ -7,6 +7,7 @@
 
 import { ZH16CTissues } from '../buhlmann';
 import { Gas } from '../gas';
+import type { CcrDefinition } from '../ccr/types';
 import type { Plongee } from '../types';
 import { expandPlongeeSegments } from './bottomSegmentsFromPlongee';
 import type { DiveDefinition } from './types';
@@ -20,6 +21,37 @@ export interface DiveSettings {
   ascentRateMMin: number;
   /** Vitesse entre paliers et jusqu'à la surface (m/min). */
   ascentRateBetweenStopsMMin: number;
+  /** Réglages CCR (préférences) : utilisés seulement si la plongée a un diluant. */
+  ccr?: CcrSettings;
+}
+
+/** Préférences CCR et hypothèses de bail-out. */
+export interface CcrSettings {
+  setpointLowBar: number;
+  setpointHighBar: number;
+  switchDepthM: number;
+  /** RMV de bail-out (L/min). */
+  bailoutRmvLMin: number;
+}
+
+/** Bloc supposé pour chaque gaz de bail-out (comme le mode pédagogique : 7 L / 200 bar). */
+const BAILOUT_TANK = { volumeL: 7, pressureBar: 200 };
+
+function ccrDefinitionOf(plongee: Plongee, settings: DiveSettings): CcrDefinition | undefined {
+  if (!plongee.ccrDiluentName) return undefined;
+  if (!settings.ccr) {
+    throw new Error('Les plongées en recycleur ne sont pas encore prises en charge dans ce mode.');
+  }
+  return {
+    config: {
+      diluentName: plongee.ccrDiluentName,
+      setpointLowBar: settings.ccr.setpointLowBar,
+      setpointHighBar: settings.ccr.setpointHighBar,
+      switchDepthM: settings.ccr.switchDepthM,
+    },
+    bailoutRmvLMin: settings.ccr.bailoutRmvLMin,
+    bailoutTank: BAILOUT_TANK,
+  };
 }
 
 /** Limites de PpO₂ (bar) : fond = avertissements WhatIf, déco = choix des gaz de déco. */
@@ -44,5 +76,6 @@ export function definitionFromPlongee(plongee: Plongee, settings: DiveSettings):
     ascentRateMpm: settings.ascentRateMMin,
     ascentRateBetweenStopsMpm: settings.ascentRateBetweenStopsMMin,
     timeStepMin: TIME_STEP_MIN,
+    ccr: ccrDefinitionOf(plongee, settings),
   };
 }
