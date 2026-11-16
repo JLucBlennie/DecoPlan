@@ -10,9 +10,57 @@ import {
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
+type GfKeys = ['gfLow', 'gfHigh'] | ['gfLowCcr', 'gfHighCcr'];
+
+/** Section GF Low / GF High (contrainte GF Low ≤ GF High) pour un type de plongée. */
+function GfSection({ title, subtitle, gfLow, gfHigh, onChange, keys }: {
+    title: string;
+    subtitle: string;
+    gfLow: number;
+    gfHigh: number;
+    onChange: (patch: Partial<Record<GfKeys[number], number>>) => void;
+    keys: GfKeys;
+}) {
+    const [lowKey, highKey] = keys;
+    return (
+        <Section title={title} subtitle={subtitle}>
+            <PrefSlider
+                label="GF Low"
+                hint="Conservatisme en profondeur (premier palier)"
+                value={gfLow}
+                min={0.10} max={1.00} step={0.05}
+                format={v => `${Math.round(v * 100)} %`}
+                color={ocean.accent.blue}
+                onChange={v => onChange({ [lowKey]: v, [highKey]: Math.max(gfHigh, v) })}
+            />
+
+            <PrefSlider
+                label="GF High"
+                hint="Conservatisme en surface (dernier palier)"
+                value={gfHigh}
+                min={0.10} max={1.00} step={0.05}
+                format={v => `${Math.round(v * 100)} %`}
+                color={ocean.accent.blue}
+                onChange={v => onChange({ [highKey]: v, [lowKey]: Math.min(gfLow, v) })}
+            />
+
+            {/* Indicateur de pente GF */}
+            <View style={styles.gfSlope}>
+                <View style={styles.gfSlopeDotSmall} />
+                <View style={[styles.gfSlopeLine, { borderColor: ocean.accent.blue + '50' }]} />
+                <View style={[styles.gfSlopeDotLarge, { backgroundColor: ocean.accent.blue }]} />
+                <Text style={styles.gfSlopeTxt}>
+                    Pente {Math.round(gfLow * 100)}→{Math.round(gfHigh * 100)} %
+                    {gfLow <= 0.30 ? '  · conservateur' : gfHigh >= 0.95 ? '  · ouvert' : ''}
+                </Text>
+            </View>
+        </Section>
+    );
+}
+
 export default function PreferencesScreen() {
     const {
-        gfLow, gfHigh, rmvFond, rmvDeco,
+        gfLow, gfHigh, gfLowCcr, gfHighCcr, rmvFond, rmvDeco,
         descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
         ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
         update, reset,
@@ -33,44 +81,21 @@ export default function PreferencesScreen() {
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 
             {/* ── Gradient Factors ──────────────────────────────────────────────── */}
-            <Section title="Gradient Factors par défaut"
-                subtitle="Utilisés au lancement du calcul et du mode pédagogique">
+            <GfSection
+                title="GF par défaut — circuit ouvert"
+                subtitle="Utilisés au lancement du calcul et du mode pédagogique"
+                gfLow={gfLow} gfHigh={gfHigh}
+                onChange={update}
+                keys={['gfLow', 'gfHigh']}
+            />
 
-                <PrefSlider
-                    label="GF Low"
-                    hint="Conservatisme en profondeur (premier palier)"
-                    value={gfLow}
-                    min={0.10} max={1.00} step={0.05}
-                    format={v => `${Math.round(v * 100)} %`}
-                    color={ocean.accent.blue}
-                    onChange={v => {
-                        update({ gfLow: v, gfHigh: Math.max(gfHigh, v) });
-                    }}
-                />
-
-                <PrefSlider
-                    label="GF High"
-                    hint="Conservatisme en surface (dernier palier)"
-                    value={gfHigh}
-                    min={0.10} max={1.00} step={0.05}
-                    format={v => `${Math.round(v * 100)} %`}
-                    color={ocean.accent.blue}
-                    onChange={v => {
-                        update({ gfHigh: v, gfLow: Math.min(gfLow, v) });
-                    }}
-                />
-
-                {/* Indicateur de pente GF */}
-                <View style={styles.gfSlope}>
-                    <View style={styles.gfSlopeDotSmall} />
-                    <View style={[styles.gfSlopeLine, { borderColor: ocean.accent.blue + '50' }]} />
-                    <View style={[styles.gfSlopeDotLarge, { backgroundColor: ocean.accent.blue }]} />
-                    <Text style={styles.gfSlopeTxt}>
-                        Pente {Math.round(gfLow * 100)}→{Math.round(gfHigh * 100)} %
-                        {gfLow <= 0.30 ? '  · conservateur' : gfHigh >= 0.95 ? '  · ouvert' : ''}
-                    </Text>
-                </View>
-            </Section>
+            <GfSection
+                title="GF par défaut — recycleur (CCR)"
+                subtitle="Appliqués aux plongées en circuit fermé"
+                gfLow={gfLowCcr} gfHigh={gfHighCcr}
+                onChange={update}
+                keys={['gfLowCcr', 'gfHighCcr']}
+            />
 
             {/* ── Consommation ─────────────────────────────────────────────────── */}
             <Section title="Consommation (RMV surface)"
@@ -202,8 +227,8 @@ export default function PreferencesScreen() {
             {/* ── Résumé ────────────────────────────────────────────────────── */}
             <Section title="Résumé des réglages">
                 <View style={styles.summaryGrid}>
-                    <SummaryCell label="GF Low" value={`${Math.round(gfLow * 100)} %`} />
-                    <SummaryCell label="GF High" value={`${Math.round(gfHigh * 100)} %`} />
+                    <SummaryCell label="GF circuit ouvert" value={`${Math.round(gfLow * 100)}/${Math.round(gfHigh * 100)}`} />
+                    <SummaryCell label="GF CCR" value={`${Math.round(gfLowCcr * 100)}/${Math.round(gfHighCcr * 100)}`} />
                     <SummaryCell label="RMV fond" value={`${rmvFond} L/min`} />
                     <SummaryCell label="RMV déco" value={`${rmvDeco} L/min`} />
                     <SummaryCell label="Descente" value={`${descentRateMMin} m/min`} />

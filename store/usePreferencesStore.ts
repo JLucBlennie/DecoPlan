@@ -9,6 +9,9 @@ export interface Preferences {
     gfLow: number;
     /** Gradient Factor High par défaut (0.50 – 1.00) */
     gfHigh: number;
+    /** GF par défaut des plongées en recycleur (CCR) */
+    gfLowCcr: number;
+    gfHighCcr: number;
     /** RMV surface au fond (L/min) */
     rmvFond: number;
     /** RMV surface aux paliers déco (L/min) — plus faible : effort réduit */
@@ -37,8 +40,10 @@ type PreferencesStore = Preferences & {
 // ── Valeurs par défaut ────────────────────────────────────────────────────────
 
 export const DEFAULT_PREFERENCES: Preferences = {
-    gfLow: 0.30,
-    gfHigh: 0.85,
+    gfLow: 0.95,
+    gfHigh: 0.95,
+    gfLowCcr: 0.30,
+    gfHighCcr: 0.70,
     rmvFond: 20,
     rmvDeco: 15,
     descentRateMMin: 20,
@@ -78,6 +83,8 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
             gfLow: next.gfLow,
             gfHigh: next.gfHigh,
+            gfLowCcr: next.gfLowCcr,
+            gfHighCcr: next.gfHighCcr,
             rmvFond: next.rmvFond,
             rmvDeco: next.rmvDeco,
             descentRateMMin: next.descentRateMMin,

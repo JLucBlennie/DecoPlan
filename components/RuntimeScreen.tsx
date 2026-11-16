@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
-  computeRuntime, computeWhatIf, definitionFromPlongee,
+  defaultGfFor, computeRuntime, computeWhatIf, definitionFromPlongee,
   Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
 } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -37,7 +37,7 @@ export default function RuntimeScreen() {
   // ── Paramètres ─────────────────────────────────────────────────────────────
   const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
   const {
-    gfLow: defaultGfLow, gfHigh: defaultGfHigh,
+    gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
     rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
   } = usePreferencesStore();
@@ -114,6 +114,13 @@ export default function RuntimeScreen() {
   const handlePlongeeSelect = (plongeeId: string | null) => {
     const found = plongeeList.find(p => p.id === plongeeId);
     setSelectedPlongee(found ?? null);
+    // GF par défaut selon le type de plongée (CCR ou circuit ouvert) ; les curseurs restent modifiables.
+    if (found) {
+      setGfValues(defaultGfFor(
+        { gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowCcr, gfHighCcr },
+        found.ccrDiluentName !== undefined,
+      ));
+    }
     setShowResult(false);
   };
 
