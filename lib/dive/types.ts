@@ -18,6 +18,11 @@ export interface Segment {
   endDepth: number;     // mètres
   gasName: string;      // référence au Gas.name utilisé
   time: number;         // minutes
+  /**
+   * Set point (bar de ppO₂ dans la boucle) si le segment est en circuit fermé.
+   * `undefined` = circuit ouvert (gasName = gaz respiré). En CCR, gasName = diluant.
+   */
+  setpointBar?: number;
 }
 
 export interface Plongee {
@@ -26,6 +31,8 @@ export interface Plongee {
   segments: Segment[];
   gazFond: GasData[];
   gazDeco: GasData[];
+  /** Nom du gaz diluant si la plongée est en recycleur (CCR). `undefined` = circuit ouvert. */
+  ccrDiluentName?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,7 +41,7 @@ export interface Plongee {
 
 // ── Gaz ──────────────────────────────────────────────────────────────────────
 
-export type GasRole = 'bottom' | 'deco';
+export type GasRole = 'bottom' | 'deco' | 'diluent';
 
 export interface GasConso {
   id: string;
@@ -56,6 +63,8 @@ export interface ProfileSegment {
   startDepthM: number;
   endDepthM: number;
   gasId: string;
+  /** Set point (bar) si le segment est en circuit fermé ; `undefined` = circuit ouvert. */
+  setpointBar?: number;
 }
 
 export type DecoModel = 'ZHL16C' | 'ZHL16B';
@@ -68,6 +77,16 @@ export interface DivePlan {
   model: DecoModel;
   gfLow: number;                 // ex. 0.30
   gfHigh: number;                // ex. 0.85
+  /** Volumes de gaz nécessaires en circuit ouvert (litres détendus), si calculés pour ce plan. */
+  gasNeedsL?: GasNeed[];
+}
+
+/** Volume de gaz nécessaire pour une plongée en circuit ouvert. */
+export interface GasNeed {
+  gasId: string;
+  label: string;
+  role: GasRole;
+  litres: number;
 }
 
 // ── Simulation ────────────────────────────────────────────────────────────────

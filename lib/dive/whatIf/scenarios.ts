@@ -21,6 +21,7 @@ export const WHATIF_KINDS: readonly WhatIfKind[] = [
   'DEEPER',
   'LONGER',
   'SHORT_BOTTOM',
+  'BAILOUT',
 ];
 
 export function scenarioLabel(kind: WhatIfKind, options: WhatIfOptions): string {
@@ -30,6 +31,7 @@ export function scenarioLabel(kind: WhatIfKind, options: WhatIfOptions): string 
     case 'DEEPER':        return `+${options.deeperByM} m plus profond`;
     case 'LONGER':        return `+${options.longerByMin} min au fond`;
     case 'SHORT_BOTTOM':  return `${options.shortBottomTimeMin} min seulement au fond`;
+    case 'BAILOUT':       return 'Bail-out en fin de fond';
   }
 }
 
@@ -48,7 +50,13 @@ function decoGasesUsedInProfile(def: DiveDefinition) {
  */
 export function applicableKinds(def: DiveDefinition): WhatIfKind[] {
   const hasDecoGasToLose = decoGasesUsedInProfile(def).length < def.decoGases.length;
-  return WHATIF_KINDS.filter(kind => kind !== 'LOST_DECO_GAS' || hasDecoGasToLose);
+  return WHATIF_KINDS.filter(kind => {
+    // En CCR, les gaz de déco ne servent qu'au bail-out : les perdre ne change pas le nominal.
+    if (kind === 'LOST_DECO_GAS') return !def.ccr && hasDecoGasToLose;
+    // Le bail-out n'a de sens qu'en CCR, avec au moins un gaz de déco.
+    if (kind === 'BAILOUT') return def.ccr !== undefined && def.decoGases.length > 0;
+    return true;
+  });
 }
 
 export function applyScenario(
@@ -58,6 +66,7 @@ export function applyScenario(
 ): DiveDefinition {
   switch (kind) {
     case 'NOMINAL':
+    case 'BAILOUT': // même profil que le nominal : la remontée change, pas le fond
       return def;
 
     // Remontée sur le gaz de fond, sans aucun gaz de déco.

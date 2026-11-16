@@ -18,6 +18,9 @@ import {
   barToDepthInMeters,
 } from './physics';
 import { createSegment, collapseSegments } from './segment';
+import { addCcrDepthChange } from './ccr/ccrLoading';
+import { crossoverDepth, inertSharesOfDiluent } from './ccr/inspiredGas';
+import { splitSegmentAtDepths } from './ccr/segmentSplit';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -230,15 +233,21 @@ export class Plan {
 
   // ── Ajout de segments au profil ───────────────────────────────────────────
 
-  addFlat(depth: number, gasName: string, time: number): number {
-    return this.addDepthChange(depth, depth, gasName, time);
+  addFlat(depth: number, gasName: string, time: number, setpointBar?: number): number {
+    return this.addDepthChange(depth, depth, gasName, time, setpointBar);
   }
 
+  /**
+   * Ajoute un segment au profil et charge les tissus.
+   * @param setpointBar si défini : circuit fermé (gasName = diluant) à ce set point ;
+   *                    sinon circuit ouvert (gasName = gaz respiré).
+   */
   addDepthChange(
     startDepth: number,
     endDepth:   number,
     gasName:    string,
     time:       number,
+    setpointBar?: number,
   ): number {
     const gas = this.bottomGasses[gasName] ?? this.decoGasses[gasName];
     if (!gas) {
@@ -247,11 +256,27 @@ export class Plan {
       );
     }
 
-    this.segments.push(createSegment(startDepth, endDepth, gasName, time));
+    this.segments.push(createSegment(startDepth, endDepth, gasName, time, setpointBar));
 
     let loadChange = 0;
-    for (const tissue of this.tissues) {
-      loadChange += tissue.addDepthChange(startDepth, endDepth, gas.fO2, gas.fHe, time);
+    if (setpointBar === undefined) {
+      for (const tissue of this.tissues) {
+        loadChange += tissue.addDepthChange(startDepth, endDepth, gas.fO2, gas.fHe, time);
+      }
+      return loadChange;
+    }
+
+    // CCR : découpe au crossover pour garder un inerte linéaire par morceau
+    const shares = inertSharesOfDiluent(gas.fO2, gas.fHe);
+    const pieces = splitSegmentAtDepths(
+      startDepth, endDepth, time, [crossoverDepth(setpointBar, this.isFreshWater)],
+    );
+    for (const piece of pieces) {
+      for (const tissue of this.tissues) {
+        loadChange += addCcrDepthChange(
+          tissue, piece.startDepth, piece.endDepth, piece.time, setpointBar, shares,
+        );
+      }
     }
     return loadChange;
   }
@@ -320,10 +345,21 @@ export class Plan {
     debug:           boolean  = false,
     /** Vitesse de remontée entre paliers, et du dernier palier à la surface, en m/min (défaut : 6 m/min, plus lente que la remontée initiale). */
     ascentRateBetweenStopsMpm: number = 6,
+    /** Mode CCR : déco en boucle au set point donné, sans changement de gaz (diluant). */
+    ccr?: { setpointBar: number; diluentName: string },
   ): Segment[] {
     let currentGasName: string;
+    const sp = ccr?.setpointBar;
 
-    if (fromDepth === undefined) {
+    if (ccr) {
+      if (fromDepth === undefined) {
+        if (this.segments.length === 0) {
+          throw new Error('Aucune profondeur de décompression spécifiée et aucun segment enregistré.');
+        }
+        fromDepth = this.segments[this.segments.length - 1].endDepth;
+      }
+      currentGasName = ccr.diluentName;
+    } else if (fromDepth === undefined) {
       if (this.segments.length === 0) {
         throw new Error(
           'Aucune profondeur de décompression spécifiée et aucun segment enregistré.',
@@ -367,8 +403,8 @@ export class Plan {
     }
 
     // Remontée du fond vers le 1er palier — vitesse "générale" (ascentRateMpm)
-    currentGasName = this.addDecoDepthChange(
-      fromDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateMpm, debug,
+    currentGasName = this.ascendTo(
+      fromDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateMpm, debug, sp,
     );
 
     while (ceiling > 0) {
@@ -384,7 +420,7 @@ export class Plan {
       let steps = 0;
 
       while (ceiling > nextDecoDepth && steps < maxSteps) {
-        this.addFlat(currentDepth, currentGasName, timeStepMin);
+        this.addFlat(currentDepth, currentGasName, timeStepMin, sp);
         elapsedMin += timeStepMin;
         steps++;
         ceiling = this.getCeiling(gf);
@@ -398,14 +434,39 @@ export class Plan {
       }
 
       // Remontée vers le palier suivant (ou la surface) — vitesse plus lente entre paliers
-      currentGasName = this.addDecoDepthChange(
-        currentDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateBetweenStopsMpm, debug,
+      currentGasName = this.ascendTo(
+        currentDepth, ceiling, maxppO2, maxEND, currentGasName, ascentRateBetweenStopsMpm, debug, sp,
       );
     }
 
     if (snapshot) this.restoreTissues(snapshot);
 
     return collapseSegments(this.segments.slice(decoSegmentStartIndex));
+  }
+
+  // ── Remontée (OC avec changements de gaz, ou CCR sans changement) ─────────
+
+  private ascendTo(
+    fromDepth:      number,
+    toDepth:        number,
+    maxppO2:        number,
+    maxEND:         number,
+    currentGasName: string,
+    ascentRateMpm:  number,
+    debug:          boolean,
+    setpointBar?:   number,
+  ): string {
+    if (setpointBar === undefined) {
+      return this.addDecoDepthChange(
+        fromDepth, toDepth, maxppO2, maxEND, currentGasName, ascentRateMpm, debug,
+      );
+    }
+    if (toDepth < fromDepth) {
+      this.addDepthChange(
+        fromDepth, toDepth, currentGasName, (fromDepth - toDepth) / ascentRateMpm, setpointBar,
+      );
+    }
+    return currentGasName;
   }
 
   // ── Remontée avec changements de gaz ─────────────────────────────────────

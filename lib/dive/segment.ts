@@ -17,8 +17,11 @@ export function createSegment(
   endDepth: number,
   gasName: string,
   time: number,
+  setpointBar?: number,
 ): Segment {
-  return { startDepth, endDepth, gasName, time };
+  const segment: Segment = { startDepth, endDepth, gasName, time };
+  if (setpointBar !== undefined) segment.setpointBar = setpointBar;
+  return segment;
 }
 
 // ─── Opérations ───────────────────────────────────────────────────────────────
@@ -42,8 +45,9 @@ export function collapseSegments(segments: Segment[]): Segment[] {
         s2.startDepth === s2.endDepth;
       const sameDepth   = s1.endDepth === s2.startDepth;
       const sameGas     = s1.gasName  === s2.gasName;
+      const sameSetpoint = s1.setpointBar === s2.setpointBar;
 
-      if (bothAreStops && sameDepth && sameGas) {
+      if (bothAreStops && sameDepth && sameGas && sameSetpoint) {
         result[i] = { ...s1, time: s1.time + s2.time };
         result.splice(i + 1, 1);
         merged = true;

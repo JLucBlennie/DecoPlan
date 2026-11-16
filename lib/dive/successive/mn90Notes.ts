@@ -21,9 +21,18 @@ function nonAirNames(def: DiveDefinition): string[] {
 }
 
 export function mn90Notes(first: DiveDefinition, second: DiveDefinition): string[] {
+  const notes: string[] = [];
+  if (first.ccr || second.ccr) {
+    notes.push(
+      `Plongée en recycleur : MN90 est une table de circuit ouvert à l'air. La comparaison reste `
+        + `affichée quand le couple profondeur / temps est dans la table, mais l'écart avec Bühlmann `
+        + `vient du mode de respiration autant que de l'algorithme.`,
+    );
+  }
   const names = [...new Set([...nonAirNames(first), ...nonAirNames(second)])];
-  if (names.length === 0) return [];
+  if (names.length === 0) return notes;
   return [
+    ...notes,
     `Gaz autre que l'air (${names.join(', ')}) : MN90 est lu à l'air, l'écart avec Bühlmann `
       + `inclut donc l'effet du gaz — c'est aussi ce qui montre l'intérêt d'une déco aux gaz enrichis.`,
   ];

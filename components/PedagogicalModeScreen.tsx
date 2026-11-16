@@ -17,6 +17,7 @@ import { CompartmentsPanel } from './CompartmentsPanel';
 import { DiveProfileView } from './DiveProfileView';
 import { DiveStatusPanel } from './DiveStatusPanel';
 import { GasConsumptionPanel } from './GasConsumptionPanel';
+import { GasNeedsCard } from './GasNeedsCard';
 import { TimelineControls } from './TimelineControls';
 
 export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: PedagogicalModeProps) {
@@ -180,11 +181,10 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
 
       {/* ── Bas de page fixe : consommation + état ───────────────────────── */}
       <View style={styles.bottomRow}>
-        <GasConsumptionPanel
-          style={styles.flex1}
-          gases={plan.gases}
-          frame={frameA}
-        />
+        {/* Départ en CCR comparé au circuit ouvert : volumes nécessaires plutôt que manomètres */}
+        {plan.segments.some(s => s.setpointBar !== undefined) && comparisonPlan?.gasNeedsL
+          ? <GasNeedsCard style={styles.flex1} needs={comparisonPlan.gasNeedsL} />
+          : <GasConsumptionPanel style={styles.flex1} gases={plan.gases} frame={frameA} />}
         <DiveStatusPanel
           style={styles.flex1}
           plan={plan}

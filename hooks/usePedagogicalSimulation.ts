@@ -59,6 +59,14 @@ function activeGasAtTime(plan: DivePlan, t: number, depthM: number): GasConso {
   return bottomGas;
 }
 
+/** Set point (bar) du segment en cours, `undefined` en circuit ouvert. */
+function setpointAtTime(plan: DivePlan, t: number): number | undefined {
+  return plan.segments.find(s => t >= s.startTimeMin && t <= s.endTimeMin)?.setpointBar;
+}
+
+/** Fraction d'azote de l'air, pour la saturation de surface d'un plan en recycleur. */
+const AIR_FN2 = 0.79;
+
 /** Valeur-M avec GF appliqué */
 function mValueGF(
   idx: number,
@@ -89,7 +97,9 @@ export function usePedagogicalSimulation(
     const stepCount = Math.round(totalTimeMin / dtMin);
 
     const bottomGas = plan.gases.find(g => g.role === 'bottom') ?? plan.gases[0];
-    const surfaceN2 = bottomGas.fN2 * (1 - WATER_VAPOR_PRESSURE_BAR);
+    const isCcrPlan = plan.segments.some(s => s.setpointBar !== undefined);
+    // En recycleur, le plongeur part de la surface saturé à l'air, quel que soit le diluant.
+    const surfaceN2 = (isCcrPlan ? AIR_FN2 : bottomGas.fN2) * (1 - WATER_VAPOR_PRESSURE_BAR);
 
     let n2 = Array<number>(NC).fill(surfaceN2);
     let he = Array<number>(NC).fill(0);
@@ -109,11 +119,22 @@ export function usePedagogicalSimulation(
       const t = s * dtMin;
       const depth = depthAtTime(plan, t);
       const pAmb = 1 + depth / 10;
-      const gas = activeGasAtTime(plan, t, depth);
+      const setpoint = isCcrPlan ? setpointAtTime(plan, t) : undefined;
+      // En boucle : le diluant est le seul gaz ; la boucle ajoute l'O₂ pour tenir le set point.
+      const gas = setpoint !== undefined ? bottomGas : activeGasAtTime(plan, t, depth);
 
       if (s > 0) {
+        // Inerte inspiré : OC = fraction du gaz ; CCR = (Pamb − PH₂O − ppO₂ boucle) réparti selon le diluant
+        const alveolar = pAmb - WATER_VAPOR_PRESSURE_BAR;
+        const inertShare = gas.fN2 + gas.fHe;
+        const loopInert = setpoint === undefined
+          ? 0
+          : Math.max(0, alveolar - Math.min(setpoint, alveolar));
+        const pAlvN2 = setpoint === undefined
+          ? gas.fN2 * alveolar
+          : (inertShare > 0 ? loopInert * gas.fN2 / inertShare : 0);
+
         // Compartiments N2
-        const pAlvN2 = gas.fN2 * (pAmb - WATER_VAPOR_PRESSURE_BAR);
         n2 = n2.map((p, i) => {
           const k = Math.LN2 / ZHL16C_N2[i].halfTime;
           return pAlvN2 + (p - pAlvN2) * Math.exp(-k * dtMin);
@@ -121,7 +142,9 @@ export function usePedagogicalSimulation(
 
         // Compartiments He
         if (gas.fHe > 0) {
-          const pAlvHe = gas.fHe * (pAmb - WATER_VAPOR_PRESSURE_BAR);
+          const pAlvHe = setpoint === undefined
+            ? gas.fHe * alveolar
+            : (inertShare > 0 ? loopInert * gas.fHe / inertShare : 0);
           he = he.map((p, i) => {
             const k = Math.LN2 / ZHL16C_HE[i].halfTime;
             return pAlvHe + (p - pAlvHe) * Math.exp(-k * dtMin);
@@ -130,8 +153,11 @@ export function usePedagogicalSimulation(
 
         // Consommation — RMV différent fond vs déco
         const avgPAmb = 1 + (depth + prevDepth) / 20;
-        const rmv = gas.role === 'deco' ? rmvDeco : rmvFond;
-        gasConsumedL[gas.id] += rmv * avgPAmb * dtMin;
+        // (en boucle, le diluant n'est pas consommé de façon significative : pas de décompte)
+        if (setpoint === undefined) {
+          const rmv = gas.role === 'deco' ? rmvDeco : rmvFond;
+          gasConsumedL[gas.id] += rmv * avgPAmb * dtMin;
+        }
       }
 
       // Ratios de saturation

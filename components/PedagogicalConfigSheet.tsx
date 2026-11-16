@@ -16,10 +16,12 @@ import {
 
 import type { Plan } from '../lib/dive/buhlmann';
 import type { DivePlan } from '../lib/dive/types';
+import type { DiveDefinition } from '../lib/dive/whatIf/types';
 
 import { usePedagogicalLaunch } from '../hooks/usePedagogicalLaunch';
 import { labelFromComposition } from '../lib/dive/buildDivePlan';
 import { GFSliderPair } from './GFSliderPair';
+import ComparisonSettings, { isComparisonBlocked } from './pedagogical/ComparisonSettings';
 import { TankConfigRow } from './TankConfigRow';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -36,6 +38,9 @@ export interface PedagogicalConfigSheetProps {
    * Reçoit les plans construits → à transmettre à PedagogicalModeScreen.
    * Typiquement : navigation.navigate('PedagogicalMode', { planA, planB })
    */
+  /** Plongée de départ : active la comparaison avec un autre mode de respiration. */
+  definition?: DiveDefinition;
+
   onLaunch: (planA: DivePlan, planB: DivePlan | undefined) => void;
 
   /** Contrôle externe de la visibilité (optionnel si vous utilisez PedagogicalLaunchButton). */
@@ -46,7 +51,7 @@ export interface PedagogicalConfigSheetProps {
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export function PedagogicalConfigSheet({
-  plan, planName, currentGfLow, currentGfHigh, onLaunch,
+  plan, planName, currentGfLow, currentGfHigh, definition, onLaunch,
   visible: visibleProp, onClose: onCloseProp,
 }: PedagogicalConfigSheetProps) {
 
@@ -54,12 +59,13 @@ export function PedagogicalConfigSheet({
     visible, open, close,
     config, stopSummary,
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
-    launch,
+    ccr, oc, launch,
   } = usePedagogicalLaunch(plan, {
-    planName, currentGfLow, currentGfHigh,
+    planName, currentGfLow, currentGfHigh, definition,
     onLaunch,
   });
 
+  const launchBlocked = isComparisonBlocked(config.showComparison, ccr, oc);
   const isVisible = visibleProp ?? visible;
   const handleClose = onCloseProp ?? close;
 
@@ -115,32 +121,11 @@ export function PedagogicalConfigSheet({
             />
           </Section>
 
-          {/* ── Comparaison ────────────────────────────────────────────── */}
-          <View style={styles.toggleRow}>
-            <View>
-              <Text style={styles.toggleLabel}>Comparer un 2ème réglage</Text>
-              <Text style={styles.toggleSub}>
-                Même profil, GF différents, côte à côte
-              </Text>
-            </View>
-            <Switch
-              value={config.showComparison}
-              onValueChange={toggleComparison}
-              trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(55,138,221,0.4)' }}
-              thumbColor={config.showComparison ? '#378ADD' : '#888780'}
-            />
-          </View>
-
-          {/* ── Bloc B ─────────────────────────────────────────────────── */}
-          {config.showComparison && (
-            <Section label="Réglage B" badge="GF alternatifs" badgeColor="#1D9E75">
-              <GFSliderPair
-                values={config.gfB}
-                onChange={setGfB}
-                accentColor="#1D9E75"
-              />
-            </Section>
-          )}
+          {/* ── Comparaison (GF, recycleur ou circuit ouvert) ───────────── */}
+          <ComparisonSettings
+            showComparison={config.showComparison} onToggle={toggleComparison}
+            gfB={config.gfB} onGfB={setGfB} ccr={ccr} oc={oc}
+          />
 
           {/* ── Blocs / bouteilles ─────────────────────────────────────── */}
           <Section label="Blocs" badge={`${allGasEntries.length} gaz`} badgeColor="#5F5E5A">
@@ -188,7 +173,12 @@ export function PedagogicalConfigSheet({
 
         {/* Bouton de lancement */}
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.launchBtn} onPress={launch} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.launchBtn, launchBlocked && { opacity: 0.4 }]}
+            onPress={launch}
+            disabled={launchBlocked}
+            activeOpacity={0.85}
+          >
             <Text style={styles.launchBtnTxt}>
               ▶  Lancer le mode pédagogique
             </Text>

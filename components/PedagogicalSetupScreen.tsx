@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
-  computeRuntime, definitionFromPlongee, type DiveSettings, type Plongee,
+  computeRuntime, defaultGfFor, definitionFromPlongee, type DiveSettings, type Plongee,
 } from '../lib/dive';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
@@ -31,20 +31,35 @@ export default function PedagogicalSetupScreen() {
   const { setPlans } = usePedagogicalStore();
   const { plongeeList } = usePlongeeStore();
   const {
-    gfLow: defaultGfLow, gfHigh: defaultGfHigh,
+    gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
   } = usePreferencesStore();
 
   const [mode, setMode] = useState<Mode>('single');
   const [first, setFirst] = useState<Plongee | null>(null);
   const [second, setSecond] = useState<Plongee | null>(null);
-  const [gf, setGf] = useState<GFValues>({ gfLow: defaultGfLow, gfHigh: defaultGfHigh });
+  const [gf, setGf] = useState<GFValues>({ gfLow: airGfLow, gfHigh: airGfHigh });
+  const [gf2, setGf2] = useState<GFValues>({ gfLow: airGfLow, gfHigh: airGfHigh });
+  const gfDefaults = { gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr };
+
+  // GF par défaut : ceux du type de la 1re plongée (air, trimix ou CCR).
+  const { gfLow: defaultGfLow, gfHigh: defaultGfHigh } = first
+    ? defaultGfFor({ gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr }, first)
+    : { gfLow: airGfLow, gfHigh: airGfHigh };
 
   const find = (id: string | null) => plongeeList.find(p => p.id === id) ?? null;
 
+  const ccrSettings = useMemo(() => ({
+    setpointLowBar: ccrSetpointLow, setpointHighBar: ccrSetpointHigh,
+    switchDepthM: ccrSwitchDepthM, bailoutRmvLMin: rmvDeco,
+  }), [ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, rmvDeco]);
+
+  // Successives : réglages de la 1re plongée (GF de `gf`) ; la 2e a ses propres GF (`gf2`).
   const settings: DiveSettings = useMemo(() => ({
     gfLow: gf.gfLow, gfHigh: gf.gfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-  }), [gf, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin]);
+    ccr: ccrSettings,
+  }), [gf, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin, ccrSettings]);
 
   // Mode 1 plongée : les GF se règlent dans le panneau (réglage A / B) ; le Plan de départ
   // est calculé avec les GF par défaut des préférences.
@@ -53,12 +68,14 @@ export default function PedagogicalSetupScreen() {
     try {
       const base: DiveSettings = {
         gfLow: defaultGfLow, gfHigh: defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+        ccr: ccrSettings,
       };
-      return { plan: computeRuntime(definitionFromPlongee(first, base)).plan, error: null as string | null };
+      const definition = definitionFromPlongee(first, base);
+      return { plan: computeRuntime(definition).plan, definition, error: null as string | null };
     } catch (e) {
-      return { plan: null, error: e instanceof Error ? e.message : String(e) };
+      return { plan: null, definition: undefined, error: e instanceof Error ? e.message : String(e) };
     }
-  }, [mode, first, defaultGfLow, defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin]);
+  }, [mode, first, defaultGfLow, defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin, ccrSettings]);
 
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
@@ -73,23 +90,39 @@ export default function PedagogicalSetupScreen() {
 
         <Text style={sharedStyles.sectionLabel}>{mode === 'single' ? 'Plongée' : 'Plongée 1'}</Text>
         <View style={styles.picker}>
-          <PlongeePicker plongees={plongeeList} selectedId={first?.id ?? null} onSelect={id => setFirst(find(id))} />
+          <PlongeePicker plongees={plongeeList} selectedId={first?.id ?? null} onSelect={id => {
+            const plongee = find(id);
+            setFirst(plongee);
+            if (plongee) {
+              setGf(defaultGfFor(
+                { gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr }, plongee,
+              ));
+            }
+          }} />
         </View>
 
         {mode === 'successive' && (
           <>
             <Text style={[sharedStyles.sectionLabel, styles.spaced]}>Plongée 2</Text>
             <View style={styles.picker}>
-              <PlongeePicker plongees={plongeeList} selectedId={second?.id ?? null} onSelect={id => setSecond(find(id))} />
+              <PlongeePicker plongees={plongeeList} selectedId={second?.id ?? null} onSelect={id => {
+                const plongee = find(id);
+                setSecond(plongee);
+                if (plongee) setGf2(defaultGfFor(gfDefaults, plongee));
+              }} />
             </View>
           </>
         )}
 
         {mode === 'successive' && (
           <>
-            <Text style={[sharedStyles.sectionLabel, styles.spaced]}>Gradient Factors</Text>
+            <Text style={[sharedStyles.sectionLabel, styles.spaced]}>Gradient Factors — plongée 1</Text>
             <View style={styles.gfCard}>
               <GFSliderPair values={gf} onChange={setGf} accentColor={ocean.accent.blue} />
+            </View>
+            <Text style={[sharedStyles.sectionLabel, styles.spaced]}>Gradient Factors — plongée 2</Text>
+            <View style={styles.gfCard}>
+              <GFSliderPair values={gf2} onChange={setGf2} accentColor={ocean.accent.green} />
             </View>
           </>
         )}
@@ -106,6 +139,7 @@ export default function PedagogicalSetupScreen() {
                 key={first.id}
                 plan={single.plan}
                 planName={first.name}
+                definition={single.definition}
                 currentGfLow={defaultGfLow}
                 currentGfHigh={defaultGfHigh}
                 onLaunch={(planA, planB) => {
@@ -119,7 +153,7 @@ export default function PedagogicalSetupScreen() {
 
         {mode === 'successive' && (
           first && second
-            ? <SuccessivePanel first={first} second={second} settings={settings} />
+            ? <SuccessivePanel first={first} second={second} settings={settings} secondGf={gf2} />
             : <Text style={styles.hint}>Choisis les deux plongées pour comparer Bühlmann et MN90.</Text>
         )}
       </ScrollView>

@@ -16,12 +16,18 @@ export interface RuntimeRow {
   gasName: string;
   /** Vrai pour le premier segment et à chaque changement de gaz. */
   gasSwitch: boolean;
+  /** Set point (bar) si le segment est en circuit fermé, sinon `undefined`. */
+  setpointBar?: number;
+  /** Vrai quand le set point (ou le passage CCR ↔ circuit ouvert) change. */
+  setpointSwitch: boolean;
 }
 
 export function toRuntimeRows(segments: Segment[]): RuntimeRow[] {
   const deepest = maxDepth(segments);
   let cumulative = 0;
   let previousGas: string | undefined;
+  let previousSetpoint: number | undefined;
+  let first = true;
 
   return segments.map(seg => {
     cumulative += seg.time;
@@ -32,9 +38,13 @@ export function toRuntimeRows(segments: Segment[]): RuntimeRow[] {
       durationMin: seg.time,
       cumulativeMin: cumulative,
       gasName: seg.gasName,
-      gasSwitch: seg.gasName !== previousGas,
+      gasSwitch: seg.gasName !== previousGas || (!first && (seg.setpointBar === undefined) !== (previousSetpoint === undefined)),
+      setpointBar: seg.setpointBar,
+      setpointSwitch: seg.setpointBar !== undefined && seg.setpointBar !== previousSetpoint,
     };
     previousGas = seg.gasName;
+    previousSetpoint = seg.setpointBar;
+    first = false;
     return row;
   });
 }

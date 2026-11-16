@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
-  computeRuntime, computeWhatIf, definitionFromPlongee,
-  Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
+  defaultGfFor, computeRuntime, computeWhatIf, definitionFromPlongee,
+  DiveDefinition, Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
 } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
@@ -37,8 +37,9 @@ export default function RuntimeScreen() {
   // ── Paramètres ─────────────────────────────────────────────────────────────
   const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
   const {
-    gfLow: defaultGfLow, gfHigh: defaultGfHigh,
+    gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
   } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
@@ -47,6 +48,7 @@ export default function RuntimeScreen() {
 
   // ── Résultats ──────────────────────────────────────────────────────────────
   const [decoPlan, setDecoPlan] = useState<Segment[]>([]);
+  const [decoDefinition, setDecoDefinition] = useState<DiveDefinition | undefined>(undefined);
   const [decoObject, setDecoObject] = useState<Plan | null>(null);  // ← Plan conservé pour le mode péda
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
@@ -76,15 +78,25 @@ export default function RuntimeScreen() {
       descentRateMMin,
       ascentRateMMin,
       ascentRateBetweenStopsMMin,
+      ccr: {
+        setpointLowBar: ccrSetpointLow,
+        setpointHighBar: ccrSetpointHigh,
+        switchDepthM: ccrSwitchDepthM,
+        bailoutRmvLMin: rmvDeco,
+      },
     });
 
     const { plan, decoSegments } = computeRuntime(definition);
     setDecoPlan([...selectedPlongee.segments, ...decoSegments]);
     setDecoObject(plan);          // ← Plan stocké pour le mode pédagogique
+    setDecoDefinition(definition);
 
     setSheetOptions({
       title: selectedPlongee.name,
       subtitle: `GF ${Math.round(gfValues.gfLow * 100)}/${Math.round(gfValues.gfHigh * 100)}`
+        + (selectedPlongee.ccrDiluentName
+          ? ` · CCR SP ${ccrSetpointLow.toFixed(2)}/${ccrSetpointHigh.toFixed(2)} (bascule ${ccrSwitchDepthM} m)`
+          : '')
         + ` · descente ${descentRateMMin} m/min · remontée ${ascentRateMMin} puis ${ascentRateBetweenStopsMMin} m/min`,
       dateLabel: new Date().toLocaleDateString('fr-FR'),
     });
@@ -104,6 +116,13 @@ export default function RuntimeScreen() {
   const handlePlongeeSelect = (plongeeId: string | null) => {
     const found = plongeeList.find(p => p.id === plongeeId);
     setSelectedPlongee(found ?? null);
+    // GF par défaut selon le type de plongée (CCR ou circuit ouvert) ; les curseurs restent modifiables.
+    if (found) {
+      setGfValues(defaultGfFor(
+        { gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr },
+        found,
+      ));
+    }
     setShowResult(false);
   };
 
@@ -160,6 +179,7 @@ export default function RuntimeScreen() {
                   planName={selectedPlongee.name}
                   currentGfLow={gfValues.gfLow}
                   currentGfHigh={gfValues.gfHigh}
+                  definition={decoDefinition}
                   variant="button"
                   onLaunch={(planA, planB) => {
                     setPlans(planA, planB);

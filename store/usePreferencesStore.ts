@@ -9,6 +9,12 @@ export interface Preferences {
     gfLow: number;
     /** Gradient Factor High par défaut (0.50 – 1.00) */
     gfHigh: number;
+    /** GF par défaut des plongées au trimix en circuit ouvert */
+    gfLowTrimix: number;
+    gfHighTrimix: number;
+    /** GF par défaut des plongées en recycleur (CCR) */
+    gfLowCcr: number;
+    gfHighCcr: number;
     /** RMV surface au fond (L/min) */
     rmvFond: number;
     /** RMV surface aux paliers déco (L/min) — plus faible : effort réduit */
@@ -19,6 +25,12 @@ export interface Preferences {
     ascentRateMMin: number;
     /** Vitesse de remontée entre paliers, et du dernier palier à la surface (m/min) — plus lente, typiquement 6 m/min */
     ascentRateBetweenStopsMMin: number;
+    /** CCR : set point bas (bar de ppO₂) — surface et début de descente */
+    ccrSetpointLow: number;
+    /** CCR : set point haut (bar de ppO₂) — fond et déco */
+    ccrSetpointHigh: number;
+    /** CCR : profondeur (m) de passage du set point bas au haut en descente */
+    ccrSwitchDepthM: number;
 }
 
 type PreferencesStore = Preferences & {
@@ -31,13 +43,20 @@ type PreferencesStore = Preferences & {
 // ── Valeurs par défaut ────────────────────────────────────────────────────────
 
 export const DEFAULT_PREFERENCES: Preferences = {
-    gfLow: 0.30,
-    gfHigh: 0.85,
+    gfLow: 0.95,
+    gfHigh: 0.95,
+    gfLowTrimix: 0.50,
+    gfHighTrimix: 0.70,
+    gfLowCcr: 0.30,
+    gfHighCcr: 0.70,
     rmvFond: 20,
     rmvDeco: 15,
     descentRateMMin: 20,
     ascentRateMMin: 10,
     ascentRateBetweenStopsMMin: 6,
+    ccrSetpointLow: 0.7,
+    ccrSetpointHigh: 1.3,
+    ccrSwitchDepthM: 20,
 };
 
 const STORAGE_KEY = 'decoplan_preferences';
@@ -69,11 +88,18 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
             gfLow: next.gfLow,
             gfHigh: next.gfHigh,
+            gfLowTrimix: next.gfLowTrimix,
+            gfHighTrimix: next.gfHighTrimix,
+            gfLowCcr: next.gfLowCcr,
+            gfHighCcr: next.gfHighCcr,
             rmvFond: next.rmvFond,
             rmvDeco: next.rmvDeco,
             descentRateMMin: next.descentRateMMin,
             ascentRateMMin: next.ascentRateMMin,
             ascentRateBetweenStopsMMin: next.ascentRateBetweenStopsMMin,
+            ccrSetpointLow: next.ccrSetpointLow,
+            ccrSetpointHigh: next.ccrSetpointHigh,
+            ccrSwitchDepthM: next.ccrSwitchDepthM,
         }));
     },
 

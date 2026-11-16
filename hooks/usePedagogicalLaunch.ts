@@ -12,7 +12,10 @@ import type { GFValues } from '../components/GFSliderPair';
 import type { Plan } from '../lib/dive/buhlmann';
 import type { DecoStopSummary, TankConfig } from '../lib/dive/buildDivePlan';
 import type { DecoModel, DivePlan } from '../lib/dive/types';
+import type { DiveDefinition } from '../lib/dive/whatIf/types';
 import { usePreferencesStore } from '../store/usePreferencesStore';
+import { usePedagogicalCcr, type UsePedagogicalCcrReturn } from './usePedagogicalCcr';
+import { usePedagogicalOc, type UsePedagogicalOcReturn } from './usePedagogicalOc';
 
 import {
   buildComparisonPlan,
@@ -42,6 +45,9 @@ export interface UsePedagogicalLaunchOptions {
   /** Variante Bühlmann utilisée. */
   variant?: DecoModel;
 
+  /** Définition de la plongée de départ : active la comparaison avec un recycleur. */
+  definition?: DiveDefinition;
+
   /**
    * Appelé quand l'utilisateur tape "Lancer".
    * C'est ici que vous appelez navigation.navigate() ou setModalVisible().
@@ -67,6 +73,10 @@ export interface UsePedagogicalLaunchReturn {
     toggleComparison:   () => void;
     updateTank:         (updated: TankConfig) => void;
   };
+  /** Réglage « même plongée en recycleur » */
+  ccr: UsePedagogicalCcrReturn;
+  /** Réglage « même plongée en circuit ouvert » (départ en CCR) */
+  oc: UsePedagogicalOcReturn;
   /** Lance le mode pédagogique */
   launch: () => void;
 }
@@ -83,8 +93,12 @@ export function usePedagogicalLaunch(
     currentGfLow   = 0.30,
     currentGfHigh  = 0.85,
     variant        = 'ZHL16C',
+    definition,
     onLaunch,
   } = options;
+
+  const ccr = usePedagogicalCcr(definition);
+  const oc = usePedagogicalOc(definition);
 
   // ── Visibilité ──────────────────────────────────────────────────────────────
   const [visible, setVisible] = useState(false);
@@ -158,8 +172,9 @@ export function usePedagogicalLaunch(
     });
 
     // Plan B (comparaison) : même profil, GF différents
-    let planB: DivePlan | undefined;
-    if (config.showComparison) {
+    // Plan B : soit la même plongée en recycleur, soit les mêmes niveaux avec d'autres GF.
+    let planB: DivePlan | undefined = ccr.buildPlan(planA) ?? oc.buildPlan(planA);
+    if (!planB && config.showComparison) {
       planB = buildComparisonPlan(plan, planA, {
         gfLow:    config.gfB.gfLow,
         gfHigh:   config.gfB.gfHigh,
@@ -171,12 +186,12 @@ export function usePedagogicalLaunch(
 
     close();
     onLaunch(planA, planB);
-  }, [plan, config, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
+  }, [plan, config, ccr, oc, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
   return {
     visible, open, close,
     config, stopSummary,
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
-    launch,
+    ccr, oc, launch,
   };
 }

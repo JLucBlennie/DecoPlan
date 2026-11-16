@@ -10,10 +10,59 @@ import {
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
+type GfKeys = ['gfLow', 'gfHigh'] | ['gfLowTrimix', 'gfHighTrimix'] | ['gfLowCcr', 'gfHighCcr'];
+
+/** Section GF Low / GF High (contrainte GF Low ≤ GF High) pour un type de plongée. */
+function GfSection({ title, subtitle, gfLow, gfHigh, onChange, keys }: {
+    title: string;
+    subtitle: string;
+    gfLow: number;
+    gfHigh: number;
+    onChange: (patch: Partial<Record<GfKeys[number], number>>) => void;
+    keys: GfKeys;
+}) {
+    const [lowKey, highKey] = keys;
+    return (
+        <Section title={title} subtitle={subtitle}>
+            <PrefSlider
+                label="GF Low"
+                hint="Conservatisme en profondeur (premier palier)"
+                value={gfLow}
+                min={0.10} max={1.00} step={0.05}
+                format={v => `${Math.round(v * 100)} %`}
+                color={ocean.accent.blue}
+                onChange={v => onChange({ [lowKey]: v, [highKey]: Math.max(gfHigh, v) })}
+            />
+
+            <PrefSlider
+                label="GF High"
+                hint="Conservatisme en surface (dernier palier)"
+                value={gfHigh}
+                min={0.10} max={1.00} step={0.05}
+                format={v => `${Math.round(v * 100)} %`}
+                color={ocean.accent.blue}
+                onChange={v => onChange({ [highKey]: v, [lowKey]: Math.min(gfLow, v) })}
+            />
+
+            {/* Indicateur de pente GF */}
+            <View style={styles.gfSlope}>
+                <View style={styles.gfSlopeDotSmall} />
+                <View style={[styles.gfSlopeLine, { borderColor: ocean.accent.blue + '50' }]} />
+                <View style={[styles.gfSlopeDotLarge, { backgroundColor: ocean.accent.blue }]} />
+                <Text style={styles.gfSlopeTxt}>
+                    Pente {Math.round(gfLow * 100)}→{Math.round(gfHigh * 100)} %
+                    {gfLow <= 0.30 ? '  · conservateur' : gfHigh >= 0.95 ? '  · ouvert' : ''}
+                </Text>
+            </View>
+        </Section>
+    );
+}
+
 export default function PreferencesScreen() {
     const {
-        gfLow, gfHigh, rmvFond, rmvDeco,
+        gfLow, gfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr, rmvFond, rmvDeco,
         descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+        ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
         update, reset,
     } = usePreferencesStore();
 
@@ -32,44 +81,29 @@ export default function PreferencesScreen() {
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 
             {/* ── Gradient Factors ──────────────────────────────────────────────── */}
-            <Section title="Gradient Factors par défaut"
-                subtitle="Utilisés au lancement du calcul et du mode pédagogique">
+            <GfSection
+                title="GF par défaut — circuit ouvert, air"
+                subtitle="Sans hélium : des GF proches (parallèles aux M-values) ont du sens, pas en dessous de 85 %"
+                gfLow={gfLow} gfHigh={gfHigh}
+                onChange={update}
+                keys={['gfLow', 'gfHigh']}
+            />
 
-                <PrefSlider
-                    label="GF Low"
-                    hint="Conservatisme en profondeur (premier palier)"
-                    value={gfLow}
-                    min={0.10} max={1.00} step={0.05}
-                    format={v => `${Math.round(v * 100)} %`}
-                    color={ocean.accent.blue}
-                    onChange={v => {
-                        update({ gfLow: v, gfHigh: Math.max(gfHigh, v) });
-                    }}
-                />
+            <GfSection
+                title="GF par défaut — circuit ouvert, trimix"
+                subtitle="Plongées avec de l'hélium dans un gaz de fond"
+                gfLow={gfLowTrimix} gfHigh={gfHighTrimix}
+                onChange={update}
+                keys={['gfLowTrimix', 'gfHighTrimix']}
+            />
 
-                <PrefSlider
-                    label="GF High"
-                    hint="Conservatisme en surface (dernier palier)"
-                    value={gfHigh}
-                    min={0.10} max={1.00} step={0.05}
-                    format={v => `${Math.round(v * 100)} %`}
-                    color={ocean.accent.blue}
-                    onChange={v => {
-                        update({ gfHigh: v, gfLow: Math.min(gfLow, v) });
-                    }}
-                />
-
-                {/* Indicateur de pente GF */}
-                <View style={styles.gfSlope}>
-                    <View style={styles.gfSlopeDotSmall} />
-                    <View style={[styles.gfSlopeLine, { borderColor: ocean.accent.blue + '50' }]} />
-                    <View style={[styles.gfSlopeDotLarge, { backgroundColor: ocean.accent.blue }]} />
-                    <Text style={styles.gfSlopeTxt}>
-                        Pente {Math.round(gfLow * 100)}→{Math.round(gfHigh * 100)} %
-                        {gfLow <= 0.30 ? '  · conservateur' : gfHigh >= 0.95 ? '  · ouvert' : ''}
-                    </Text>
-                </View>
-            </Section>
+            <GfSection
+                title="GF par défaut — recycleur (CCR)"
+                subtitle="Appliqués aux plongées en circuit fermé"
+                gfLow={gfLowCcr} gfHigh={gfHighCcr}
+                onChange={update}
+                keys={['gfLowCcr', 'gfHighCcr']}
+            />
 
             {/* ── Consommation ─────────────────────────────────────────────────── */}
             <Section title="Consommation (RMV surface)"
@@ -147,16 +181,70 @@ export default function PreferencesScreen() {
                 )}
             </Section>
 
+            {/* ── CCR ───────────────────────────────────────────────────────────── */}
+            <Section title="Recycleur (CCR)"
+                subtitle="Set points de ppO₂ et profondeur de bascule, utilisés pour les plongées en circuit fermé">
+
+                <PrefSlider
+                    label="Set point bas"
+                    hint="Surface et début de descente"
+                    value={ccrSetpointLow}
+                    min={0.4} max={1.0} step={0.05}
+                    format={v => `${v.toFixed(2)} bar`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({
+                        ccrSetpointLow: v,
+                        ccrSetpointHigh: Math.max(ccrSetpointHigh, v),
+                    })}
+                />
+
+                <PrefSlider
+                    label="Set point haut"
+                    hint="Fond et décompression"
+                    value={ccrSetpointHigh}
+                    min={1.0} max={1.6} step={0.05}
+                    format={v => `${v.toFixed(2)} bar`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({
+                        ccrSetpointHigh: v,
+                        ccrSetpointLow: Math.min(ccrSetpointLow, v),
+                    })}
+                />
+
+                <PrefSlider
+                    label="Bascule bas → haut"
+                    hint="Profondeur à laquelle on passe au set point haut en descente"
+                    value={ccrSwitchDepthM}
+                    min={3} max={30} step={1}
+                    format={v => `${v} m`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({ ccrSwitchDepthM: v })}
+                />
+
+                {ccrSetpointHigh > 1.4 && (
+                    <InfoRow icon="warning" color="#BA7517"
+                        text="Un set point haut au-delà de 1,4 bar augmente le risque d'hyperoxie (toxicité de l'O₂)."
+                    />
+                )}
+
+                <InfoRow icon="info-outline"
+                    text="Le bail-out est simulé en fin de phase fond, en circuit ouvert, avec les gaz de déco et le RMV déco."
+                />
+            </Section>
+
             {/* ── Résumé ────────────────────────────────────────────────────── */}
             <Section title="Résumé des réglages">
                 <View style={styles.summaryGrid}>
-                    <SummaryCell label="GF Low" value={`${Math.round(gfLow * 100)} %`} />
-                    <SummaryCell label="GF High" value={`${Math.round(gfHigh * 100)} %`} />
+                    <SummaryCell label="GF air" value={`${Math.round(gfLow * 100)}/${Math.round(gfHigh * 100)}`} />
+                    <SummaryCell label="GF trimix" value={`${Math.round(gfLowTrimix * 100)}/${Math.round(gfHighTrimix * 100)}`} />
+                    <SummaryCell label="GF CCR" value={`${Math.round(gfLowCcr * 100)}/${Math.round(gfHighCcr * 100)}`} />
                     <SummaryCell label="RMV fond" value={`${rmvFond} L/min`} />
                     <SummaryCell label="RMV déco" value={`${rmvDeco} L/min`} />
                     <SummaryCell label="Descente" value={`${descentRateMMin} m/min`} />
                     <SummaryCell label="Remontée" value={`${ascentRateMMin} m/min`} />
                     <SummaryCell label="Entre paliers" value={`${ascentRateBetweenStopsMMin} m/min`} />
+                    <SummaryCell label="SP bas / haut" value={`${ccrSetpointLow.toFixed(2)} / ${ccrSetpointHigh.toFixed(2)}`} />
+                    <SummaryCell label="Bascule SP" value={`${ccrSwitchDepthM} m`} />
                 </View>
             </Section>
 

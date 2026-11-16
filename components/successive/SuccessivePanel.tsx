@@ -17,9 +17,16 @@ import SuccessiveProfileChart from './SuccessiveProfileChart';
 const SWEEP_INTERVALS_MIN = [0, 15, 30, 60, 120, 180, 240, 360, 480, 720];
 const DEFAULT_INTERVAL_MIN = 60;
 
-type Props = { first: Plongee; second: Plongee; settings: DiveSettings };
+type Props = {
+  first: Plongee;
+  second: Plongee;
+  /** Réglages de la 1re plongée (GF compris) et vitesses communes. */
+  settings: DiveSettings;
+  /** GF propres à la 2e plongée. */
+  secondGf: { gfLow: number; gfHigh: number };
+};
 
-export default function SuccessivePanel({ first, second, settings }: Props) {
+export default function SuccessivePanel({ first, second, settings, secondGf }: Props) {
   const [intervalMin, setIntervalMin] = useState(DEFAULT_INTERVAL_MIN);
   const [showMn90, setShowMn90] = useState(false);
 
@@ -28,7 +35,7 @@ export default function SuccessivePanel({ first, second, settings }: Props) {
     try {
       const defs = {
         first: definitionFromPlongee(first, settings),
-        second: definitionFromPlongee(second, settings),
+        second: definitionFromPlongee(second, { ...settings, ...secondGf }),
       };
       return {
         defs,
@@ -39,7 +46,7 @@ export default function SuccessivePanel({ first, second, settings }: Props) {
     } catch (e) {
       return { defs: null, sweep: [], notes: [], error: e instanceof Error ? e.message : String(e) };
     }
-  }, [first, second, settings]);
+  }, [first, second, settings, secondGf]);
 
   const result = useMemo(
     () => (computed.defs ? computeSuccessive({ ...computed.defs, surfaceIntervalMin: intervalMin }) : null),

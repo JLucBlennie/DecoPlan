@@ -7,6 +7,8 @@
 import type { TissueCoefficient } from '../buhlmann';
 import type { Gas } from '../gas';
 import type { Segment } from '../types';
+import type { CcrDefinition } from '../ccr/types';
+import type { GasUsage } from '../ccr/bailoutGas';
 
 /** Scénarios disponibles. NOMINAL est la plongée de référence. */
 export type WhatIfKind =
@@ -14,7 +16,8 @@ export type WhatIfKind =
   | 'LOST_DECO_GAS'
   | 'DEEPER'
   | 'LONGER'
-  | 'SHORT_BOTTOM';
+  | 'SHORT_BOTTOM'
+  | 'BAILOUT';
 
 /**
  * Tout ce qu'il faut pour recalculer un runtime de A à Z.
@@ -38,6 +41,8 @@ export interface DiveDefinition {
   ascentRateMpm: number;
   ascentRateBetweenStopsMpm: number;
   timeStepMin: number;
+  /** Présent = plongée en recycleur (CCR). Absent = circuit ouvert. */
+  ccr?: CcrDefinition;
 }
 
 /** Paramètres des scénarios (valeurs par défaut : voir scenarios.ts). */
@@ -80,11 +85,22 @@ export interface WhatIfRuntime {
   segments: Segment[];
   summary: RuntimeSummary;
   warnings: string[];
+  /** Consommation de gaz (bail-out seulement). */
+  gasUsage?: GasUsage[];
   /** Absent pour le nominal. */
   delta?: RuntimeDelta;
+}
+
+/** Scénario qui n'a pas pu être calculé (ex. bail-out sans gaz respirable en fin de fond). */
+export interface WhatIfUnavailable {
+  kind: WhatIfKind;
+  label: string;
+  reason: string;
 }
 
 export interface WhatIfResult {
   nominal: WhatIfRuntime;
   scenarios: WhatIfRuntime[];
+  /** Scénarios non calculables : le reste du résultat reste valable. */
+  unavailable: WhatIfUnavailable[];
 }

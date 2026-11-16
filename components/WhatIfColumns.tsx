@@ -38,10 +38,17 @@ export default function WhatIfColumns({ result }: Props) {
                 </ScrollView>
             </View>
 
+            {result.unavailable.map(u => (
+                <View key={u.kind} style={styles.note}>
+                    <MaterialIcons name="warning" size={12} color="#BA7517" />
+                    <Text style={[styles.noteTxt, { color: '#BA7517' }]}>{u.label} : {u.reason}</Text>
+                </View>
+            ))}
+
             <View style={styles.note}>
                 <MaterialIcons name="info-outline" size={12} color={ocean.text.muted} />
                 <Text style={styles.noteTxt}>
-                    Perte des gaz de déco : remontée sur le gaz de fond. « Au fond » désigne le niveau
+                    Perte des gaz de déco : remontée sur le gaz de fond. Bail-out (recycleur) : passage en circuit ouvert en fin de fond, sur les gaz de déco ; consommation calculée avec le RMV déco et des blocs de 7 L / 200 bar. « Au fond » désigne le niveau
                     plat le plus profond, descente non comprise. Écarts calculés par rapport au nominal.
                     Calcul indicatif uniquement — non qualifié pour la plongée réelle.
                 </Text>

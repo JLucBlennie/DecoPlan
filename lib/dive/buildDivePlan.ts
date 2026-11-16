@@ -29,6 +29,7 @@ import type {
   DecoModel,
   DivePlan,
   GasConso as PedaGas,
+  GasRole,
   ProfileSegment,
 } from './types';
 
@@ -66,6 +67,9 @@ export interface BuildPlanOptions {
    * par défaut sont appliquées (12L / 200 bar).
    */
   tanks?: TankConfig[];
+
+  /** Plan en recycleur : les gaz de fond sont des diluants (non consommés dans la simulation). */
+  ccr?: boolean;
 
   /** Valeur par défaut si tankVolumeLiters non fourni. */
   defaultVolumeLiters?: number;
@@ -105,6 +109,7 @@ export function buildDivePlanFromPlan(
     gfHigh,
     planName = 'Plongée',
     tanks = [],
+    ccr = false,
     defaultVolumeLiters = 12,
     defaultStartPressure = 200,
   } = options;
@@ -113,7 +118,7 @@ export function buildDivePlanFromPlan(
   const tankMap = new Map(tanks.map(t => [t.gasName, t]));
 
   const bottomGases = Object.values(plan.bottomGasses).map(gas =>
-    convertGas(gas, 'bottom', undefined, tankMap, defaultVolumeLiters, defaultStartPressure)
+    convertGas(gas, ccr ? 'diluent' : 'bottom', undefined, tankMap, defaultVolumeLiters, defaultStartPressure)
   );
 
   // Pour les gaz de déco : on déduit la profondeur de changement depuis les
@@ -156,7 +161,7 @@ export function buildDivePlanFromPlan(
  */
 function convertGas(
   gas: Gas,
-  role: 'bottom' | 'deco',
+  role: GasRole,
   switchDepthM: number | undefined,
   tankMap: Map<string, TankConfig>,
   defaultVolume: number,
@@ -246,6 +251,7 @@ function buildProfileSegments(plan: Plan): ProfileSegment[] {
       startDepthM: seg.startDepth,
       endDepthM: seg.endDepth,
       gasId: seg.gasName,
+      ...(seg.setpointBar !== undefined ? { setpointBar: seg.setpointBar } : {}),
     };
   });
 }

@@ -9,6 +9,8 @@ import type { Plan } from '../../lib/dive/buhlmann';
 import type { DivePlan } from '../../lib/dive/types';
 import { GFSliderPair } from '../GFSliderPair';
 import { TankConfigRow } from '../TankConfigRow';
+import type { DiveDefinition } from '../../lib/dive/whatIf/types';
+import ComparisonSettings, { isComparisonBlocked } from './ComparisonSettings';
 import ConfigSection from './ConfigSection';
 
 export interface PedagogicalConfigPanelProps {
@@ -17,22 +19,26 @@ export interface PedagogicalConfigPanelProps {
   /** GF qui pré-remplissent le réglage A. */
   currentGfLow: number;
   currentGfHigh: number;
+  /** Plongée de départ : active la comparaison avec un recycleur. */
+  definition?: DiveDefinition;
   onLaunch: (planA: DivePlan, planB: DivePlan | undefined) => void;
 }
 
 export default function PedagogicalConfigPanel({
-  plan, planName, currentGfLow, currentGfHigh, onLaunch,
+  plan, planName, currentGfLow, currentGfHigh, definition, onLaunch,
 }: PedagogicalConfigPanelProps) {
   const {
     config, stopSummary,
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
-    launch,
-  } = usePedagogicalLaunch(plan, { planName, currentGfLow, currentGfHigh, onLaunch });
+    ccr, oc, launch,
+  } = usePedagogicalLaunch(plan, { planName, currentGfLow, currentGfHigh, definition, onLaunch });
 
   const gasEntries = [
     ...Object.values(plan.bottomGasses).map(gas => ({ gas, role: 'bottom' as const })),
     ...Object.values(plan.decoGasses).map(gas => ({ gas, role: 'deco' as const })),
   ];
+
+  const launchBlocked = isComparisonBlocked(config.showComparison, ccr, oc);
 
   return (
     <View style={styles.root}>
@@ -40,24 +46,10 @@ export default function PedagogicalConfigPanel({
         <GFSliderPair values={config.gfA} onChange={setGfA} accentColor="#378ADD" />
       </ConfigSection>
 
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleTexts}>
-          <Text style={styles.toggleLabel}>Comparer un 2ème réglage</Text>
-          <Text style={styles.toggleSub}>Même profil, GF différents, côte à côte</Text>
-        </View>
-        <Switch
-          value={config.showComparison}
-          onValueChange={toggleComparison}
-          trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(55,138,221,0.4)' }}
-          thumbColor={config.showComparison ? '#378ADD' : '#888780'}
-        />
-      </View>
-
-      {config.showComparison && (
-        <ConfigSection label="Réglage B" badge="GF alternatifs" badgeColor="#1D9E75">
-          <GFSliderPair values={config.gfB} onChange={setGfB} accentColor="#1D9E75" />
-        </ConfigSection>
-      )}
+      <ComparisonSettings
+        showComparison={config.showComparison} onToggle={toggleComparison}
+        gfB={config.gfB} onGfB={setGfB} ccr={ccr} oc={oc}
+      />
 
       <ConfigSection label="Blocs" badge={`${gasEntries.length} gaz`}>
         {gasEntries.map(({ gas, role }) => {
@@ -91,7 +83,12 @@ export default function PedagogicalConfigPanel({
         </View>
       )}
 
-      <TouchableOpacity style={styles.launchBtn} onPress={launch} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={[styles.launchBtn, launchBlocked && styles.launchBtnDisabled]}
+        onPress={launch}
+        disabled={launchBlocked}
+        activeOpacity={0.85}
+      >
         <Text style={styles.launchBtnTxt}>▶  Lancer le mode pédagogique</Text>
       </TouchableOpacity>
     </View>
@@ -117,5 +114,6 @@ const styles = StyleSheet.create({
   },
   ndlText: { fontSize: 13, color: '#1D9E75' },
   launchBtn: { backgroundColor: '#185FA5', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  launchBtnDisabled: { opacity: 0.4 },
   launchBtnTxt: { fontSize: 15, fontWeight: '500', color: '#E8F3FB' },
 });
