@@ -33,6 +33,7 @@ export default function PedagogicalSetupScreen() {
   const {
     gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
   } = usePreferencesStore();
 
   const [mode, setMode] = useState<Mode>('single');
@@ -49,7 +50,12 @@ export default function PedagogicalSetupScreen() {
 
   const settings: DiveSettings = useMemo(() => ({
     gfLow: gf.gfLow, gfHigh: gf.gfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-  }), [gf, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin]);
+    ccr: {
+      setpointLowBar: ccrSetpointLow, setpointHighBar: ccrSetpointHigh,
+      switchDepthM: ccrSwitchDepthM, bailoutRmvLMin: rmvDeco,
+    },
+  }), [gf, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
+       ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, rmvDeco]);
 
   // Mode 1 plongée : les GF se règlent dans le panneau (réglage A / B) ; le Plan de départ
   // est calculé avec les GF par défaut des préférences.

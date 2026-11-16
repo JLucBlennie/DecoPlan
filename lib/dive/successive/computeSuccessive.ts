@@ -7,6 +7,7 @@
  */
 
 import { summarizeRuntime } from '../whatIf/summary';
+import { bottomSegmentsOf } from '../whatIf/ccrBottom';
 import { computeRuntime } from '../whatIf/runtime';
 import type { DiveDefinition } from '../whatIf/types';
 import { getMN90SuccessiveProfile } from '../mn90Successive';
@@ -18,7 +19,7 @@ import type {
 
 function computeDive(def: DiveDefinition, initialTissues?: TissueState[], keepEndState = false) {
   const { plan, decoSegments } = computeRuntime(def, { initialTissues, keepEndState });
-  const segments = [...def.bottomSegments.map(s => ({ ...s })), ...decoSegments];
+  const segments = [...bottomSegmentsOf(def).map(s => ({ ...s })), ...decoSegments];
   const dive: ComputedDive = { segments, summary: summarizeRuntime(def, segments) };
   return { dive, plan };
 }
