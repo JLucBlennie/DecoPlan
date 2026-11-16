@@ -65,9 +65,10 @@ export default function PedagogicalSetupScreen() {
       const base: DiveSettings = {
         gfLow: defaultGfLow, gfHigh: defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
       };
-      return { plan: computeRuntime(definitionFromPlongee(first, base)).plan, error: null as string | null };
+      const definition = definitionFromPlongee(first, base);
+      return { plan: computeRuntime(definition).plan, definition, error: null as string | null };
     } catch (e) {
-      return { plan: null, error: e instanceof Error ? e.message : String(e) };
+      return { plan: null, definition: undefined, error: e instanceof Error ? e.message : String(e) };
     }
   }, [mode, first, defaultGfLow, defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
@@ -125,6 +126,7 @@ export default function PedagogicalSetupScreen() {
                 key={first.id}
                 plan={single.plan}
                 planName={first.name}
+                definition={first.ccrDiluentName ? undefined : single.definition}
                 currentGfLow={defaultGfLow}
                 currentGfHigh={defaultGfHigh}
                 onLaunch={(planA, planB) => {

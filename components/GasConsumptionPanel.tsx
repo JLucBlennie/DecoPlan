@@ -23,6 +23,7 @@ const GAS_ACCENT: Record<string, string> = {
 const GAS_ROLE_LABEL: Record<string, string> = {
   bottom: 'Fond',
   deco:   'Déco',
+  diluent: 'Diluant',
 };
 
 export function GasConsumptionPanel({ gases, frame, style }: GasConsumptionPanelProps) {

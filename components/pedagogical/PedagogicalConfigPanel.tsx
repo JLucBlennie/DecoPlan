@@ -9,6 +9,8 @@ import type { Plan } from '../../lib/dive/buhlmann';
 import type { DivePlan } from '../../lib/dive/types';
 import { GFSliderPair } from '../GFSliderPair';
 import { TankConfigRow } from '../TankConfigRow';
+import type { DiveDefinition } from '../../lib/dive/whatIf/types';
+import CcrComparisonSection from './CcrComparisonSection';
 import ConfigSection from './ConfigSection';
 
 export interface PedagogicalConfigPanelProps {
@@ -17,17 +19,19 @@ export interface PedagogicalConfigPanelProps {
   /** GF qui pré-remplissent le réglage A. */
   currentGfLow: number;
   currentGfHigh: number;
+  /** Plongée de départ : active la comparaison avec un recycleur. */
+  definition?: DiveDefinition;
   onLaunch: (planA: DivePlan, planB: DivePlan | undefined) => void;
 }
 
 export default function PedagogicalConfigPanel({
-  plan, planName, currentGfLow, currentGfHigh, onLaunch,
+  plan, planName, currentGfLow, currentGfHigh, definition, onLaunch,
 }: PedagogicalConfigPanelProps) {
   const {
     config, stopSummary,
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
-    launch,
-  } = usePedagogicalLaunch(plan, { planName, currentGfLow, currentGfHigh, onLaunch });
+    ccr, launch,
+  } = usePedagogicalLaunch(plan, { planName, currentGfLow, currentGfHigh, definition, onLaunch });
 
   const gasEntries = [
     ...Object.values(plan.bottomGasses).map(gas => ({ gas, role: 'bottom' as const })),
@@ -53,7 +57,9 @@ export default function PedagogicalConfigPanel({
         />
       </View>
 
-      {config.showComparison && (
+      {definition && <CcrComparisonSection ccr={ccr} />}
+
+      {config.showComparison && !ccr.state.enabled && (
         <ConfigSection label="Réglage B" badge="GF alternatifs" badgeColor="#1D9E75">
           <GFSliderPair values={config.gfB} onChange={setGfB} accentColor="#1D9E75" />
         </ConfigSection>
@@ -91,7 +97,12 @@ export default function PedagogicalConfigPanel({
         </View>
       )}
 
-      <TouchableOpacity style={styles.launchBtn} onPress={launch} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={[styles.launchBtn, ccr.state.enabled && ccr.error !== null && styles.launchBtnDisabled]}
+        onPress={launch}
+        disabled={ccr.state.enabled && ccr.error !== null}
+        activeOpacity={0.85}
+      >
         <Text style={styles.launchBtnTxt}>▶  Lancer le mode pédagogique</Text>
       </TouchableOpacity>
     </View>
@@ -117,5 +128,6 @@ const styles = StyleSheet.create({
   },
   ndlText: { fontSize: 13, color: '#1D9E75' },
   launchBtn: { backgroundColor: '#185FA5', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  launchBtnDisabled: { opacity: 0.4 },
   launchBtnTxt: { fontSize: 15, fontWeight: '500', color: '#E8F3FB' },
 });

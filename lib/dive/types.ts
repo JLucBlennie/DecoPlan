@@ -41,7 +41,7 @@ export interface Plongee {
 
 // ── Gaz ──────────────────────────────────────────────────────────────────────
 
-export type GasRole = 'bottom' | 'deco';
+export type GasRole = 'bottom' | 'deco' | 'diluent';
 
 export interface GasConso {
   id: string;
@@ -63,6 +63,8 @@ export interface ProfileSegment {
   startDepthM: number;
   endDepthM: number;
   gasId: string;
+  /** Set point (bar) si le segment est en circuit fermé ; `undefined` = circuit ouvert. */
+  setpointBar?: number;
 }
 
 export type DecoModel = 'ZHL16C' | 'ZHL16B';
