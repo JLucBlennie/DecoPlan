@@ -37,7 +37,7 @@ export default function RuntimeScreen() {
   // ── Paramètres ─────────────────────────────────────────────────────────────
   const [selectedPlongee, setSelectedPlongee] = useState<Plongee | null>(null);
   const {
-    gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowCcr, gfHighCcr,
+    gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
     rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
   } = usePreferencesStore();
@@ -117,8 +117,8 @@ export default function RuntimeScreen() {
     // GF par défaut selon le type de plongée (CCR ou circuit ouvert) ; les curseurs restent modifiables.
     if (found) {
       setGfValues(defaultGfFor(
-        { gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowCcr, gfHighCcr },
-        found.ccrDiluentName !== undefined,
+        { gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr },
+        found,
       ));
     }
     setShowResult(false);

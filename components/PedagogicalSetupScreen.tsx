@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
-  computeRuntime, definitionFromPlongee, type DiveSettings, type Plongee,
+  computeRuntime, defaultGfFor, definitionFromPlongee, type DiveSettings, type Plongee,
 } from '../lib/dive';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
@@ -31,14 +31,19 @@ export default function PedagogicalSetupScreen() {
   const { setPlans } = usePedagogicalStore();
   const { plongeeList } = usePlongeeStore();
   const {
-    gfLow: defaultGfLow, gfHigh: defaultGfHigh,
+    gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
   } = usePreferencesStore();
 
   const [mode, setMode] = useState<Mode>('single');
   const [first, setFirst] = useState<Plongee | null>(null);
   const [second, setSecond] = useState<Plongee | null>(null);
-  const [gf, setGf] = useState<GFValues>({ gfLow: defaultGfLow, gfHigh: defaultGfHigh });
+  const [gf, setGf] = useState<GFValues>({ gfLow: airGfLow, gfHigh: airGfHigh });
+
+  // GF par défaut : ceux du type de la 1re plongée (air, trimix ou CCR).
+  const { gfLow: defaultGfLow, gfHigh: defaultGfHigh } = first
+    ? defaultGfFor({ gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr }, first)
+    : { gfLow: airGfLow, gfHigh: airGfHigh };
 
   const find = (id: string | null) => plongeeList.find(p => p.id === id) ?? null;
 
@@ -73,7 +78,15 @@ export default function PedagogicalSetupScreen() {
 
         <Text style={sharedStyles.sectionLabel}>{mode === 'single' ? 'Plongée' : 'Plongée 1'}</Text>
         <View style={styles.picker}>
-          <PlongeePicker plongees={plongeeList} selectedId={first?.id ?? null} onSelect={id => setFirst(find(id))} />
+          <PlongeePicker plongees={plongeeList} selectedId={first?.id ?? null} onSelect={id => {
+            const plongee = find(id);
+            setFirst(plongee);
+            if (plongee) {
+              setGf(defaultGfFor(
+                { gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr }, plongee,
+              ));
+            }
+          }} />
         </View>
 
         {mode === 'successive' && (

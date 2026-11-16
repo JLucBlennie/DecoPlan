@@ -9,6 +9,9 @@ export interface Preferences {
     gfLow: number;
     /** Gradient Factor High par défaut (0.50 – 1.00) */
     gfHigh: number;
+    /** GF par défaut des plongées au trimix en circuit ouvert */
+    gfLowTrimix: number;
+    gfHighTrimix: number;
     /** GF par défaut des plongées en recycleur (CCR) */
     gfLowCcr: number;
     gfHighCcr: number;
@@ -42,6 +45,8 @@ type PreferencesStore = Preferences & {
 export const DEFAULT_PREFERENCES: Preferences = {
     gfLow: 0.95,
     gfHigh: 0.95,
+    gfLowTrimix: 0.50,
+    gfHighTrimix: 0.70,
     gfLowCcr: 0.30,
     gfHighCcr: 0.70,
     rmvFond: 20,
@@ -83,6 +88,8 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
             gfLow: next.gfLow,
             gfHigh: next.gfHigh,
+            gfLowTrimix: next.gfLowTrimix,
+            gfHighTrimix: next.gfHighTrimix,
             gfLowCcr: next.gfLowCcr,
             gfHighCcr: next.gfHighCcr,
             rmvFond: next.rmvFond,

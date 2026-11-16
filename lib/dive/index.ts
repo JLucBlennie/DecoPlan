@@ -70,7 +70,7 @@ export type { TissueCoefficient } from './buhlmann';
 
 // Scénarios WhatIf (runtimes alternatifs à côté du nominal)
 export * from './whatIf';
-export { defaultGfFor } from './gfDefaults';
+export { defaultGfFor, gfProfileKind } from './gfDefaults';
 export type { GfPair, GfPreferences } from './gfDefaults';
 
 // Fiche imprimable des runtimes (à plastifier)

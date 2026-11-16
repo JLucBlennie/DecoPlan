@@ -10,7 +10,7 @@ import {
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
-type GfKeys = ['gfLow', 'gfHigh'] | ['gfLowCcr', 'gfHighCcr'];
+type GfKeys = ['gfLow', 'gfHigh'] | ['gfLowTrimix', 'gfHighTrimix'] | ['gfLowCcr', 'gfHighCcr'];
 
 /** Section GF Low / GF High (contrainte GF Low ≤ GF High) pour un type de plongée. */
 function GfSection({ title, subtitle, gfLow, gfHigh, onChange, keys }: {
@@ -60,7 +60,7 @@ function GfSection({ title, subtitle, gfLow, gfHigh, onChange, keys }: {
 
 export default function PreferencesScreen() {
     const {
-        gfLow, gfHigh, gfLowCcr, gfHighCcr, rmvFond, rmvDeco,
+        gfLow, gfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr, rmvFond, rmvDeco,
         descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
         ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
         update, reset,
@@ -82,11 +82,19 @@ export default function PreferencesScreen() {
 
             {/* ── Gradient Factors ──────────────────────────────────────────────── */}
             <GfSection
-                title="GF par défaut — circuit ouvert"
-                subtitle="Utilisés au lancement du calcul et du mode pédagogique"
+                title="GF par défaut — circuit ouvert, air"
+                subtitle="Sans hélium : des GF proches (parallèles aux M-values) ont du sens, pas en dessous de 85 %"
                 gfLow={gfLow} gfHigh={gfHigh}
                 onChange={update}
                 keys={['gfLow', 'gfHigh']}
+            />
+
+            <GfSection
+                title="GF par défaut — circuit ouvert, trimix"
+                subtitle="Plongées avec de l'hélium dans un gaz de fond"
+                gfLow={gfLowTrimix} gfHigh={gfHighTrimix}
+                onChange={update}
+                keys={['gfLowTrimix', 'gfHighTrimix']}
             />
 
             <GfSection
@@ -227,7 +235,8 @@ export default function PreferencesScreen() {
             {/* ── Résumé ────────────────────────────────────────────────────── */}
             <Section title="Résumé des réglages">
                 <View style={styles.summaryGrid}>
-                    <SummaryCell label="GF circuit ouvert" value={`${Math.round(gfLow * 100)}/${Math.round(gfHigh * 100)}`} />
+                    <SummaryCell label="GF air" value={`${Math.round(gfLow * 100)}/${Math.round(gfHigh * 100)}`} />
+                    <SummaryCell label="GF trimix" value={`${Math.round(gfLowTrimix * 100)}/${Math.round(gfHighTrimix * 100)}`} />
                     <SummaryCell label="GF CCR" value={`${Math.round(gfLowCcr * 100)}/${Math.round(gfHighCcr * 100)}`} />
                     <SummaryCell label="RMV fond" value={`${rmvFond} L/min`} />
                     <SummaryCell label="RMV déco" value={`${rmvDeco} L/min`} />
