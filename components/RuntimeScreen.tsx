@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
   defaultGfFor, computeRuntime, computeWhatIf, definitionFromPlongee,
-  Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
+  DiveDefinition, Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
 } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
@@ -48,6 +48,7 @@ export default function RuntimeScreen() {
 
   // ── Résultats ──────────────────────────────────────────────────────────────
   const [decoPlan, setDecoPlan] = useState<Segment[]>([]);
+  const [decoDefinition, setDecoDefinition] = useState<DiveDefinition | undefined>(undefined);
   const [decoObject, setDecoObject] = useState<Plan | null>(null);  // ← Plan conservé pour le mode péda
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
@@ -88,6 +89,7 @@ export default function RuntimeScreen() {
     const { plan, decoSegments } = computeRuntime(definition);
     setDecoPlan([...selectedPlongee.segments, ...decoSegments]);
     setDecoObject(plan);          // ← Plan stocké pour le mode pédagogique
+    setDecoDefinition(definition);
 
     setSheetOptions({
       title: selectedPlongee.name,
@@ -171,12 +173,13 @@ export default function RuntimeScreen() {
             <View style={styles.resultHeader}>
               <Text style={styles.resultTitle}>Résultat</Text>
               {/* Bouton mode pédagogique — visible uniquement après calcul */}
-              {decoObject && selectedPlongee && !selectedPlongee.ccrDiluentName && (
+              {decoObject && selectedPlongee && (
                 <PedagogicalLaunchButton
                   plan={decoObject}
                   planName={selectedPlongee.name}
                   currentGfLow={gfValues.gfLow}
                   currentGfHigh={gfValues.gfHigh}
+                  definition={decoDefinition}
                   variant="button"
                   onLaunch={(planA, planB) => {
                     setPlans(planA, planB);

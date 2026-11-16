@@ -1,5 +1,5 @@
 // Réglage B « même plongée en recycleur » : diluant saisi librement, GF CCR.
-import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { UsePedagogicalCcrReturn } from '../../hooks/usePedagogicalCcr';
 import { GFSliderPair } from '../GFSliderPair';
@@ -14,19 +14,6 @@ export default function CcrComparisonSection({ ccr }: Props) {
 
   return (
     <>
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleTexts}>
-          <Text style={styles.toggleLabel}>Comparer avec un recycleur (CCR)</Text>
-          <Text style={styles.toggleSub}>Même profondeur / temps, diluant au choix, sans bail-out</Text>
-        </View>
-        <Switch
-          value={state.enabled}
-          onValueChange={ccr.setEnabled}
-          trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(29,158,117,0.4)' }}
-          thumbColor={state.enabled ? ACCENT : '#888780'}
-        />
-      </View>
-
       {state.enabled && (
         <ConfigSection label="Réglage B — recycleur" badge="CCR" badgeColor={ACCENT}>
           <Text style={styles.fieldLabel}>Diluant</Text>
@@ -66,10 +53,6 @@ function PercentInput({ label, value, onChange }: {
 }
 
 const styles = StyleSheet.create({
-  toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
-  toggleTexts: { flex: 1 },
-  toggleLabel: { fontSize: 14, fontWeight: '500', color: '#E8E8E6' },
-  toggleSub: { fontSize: 11, color: '#5F5E5A', marginTop: 2 },
   fieldLabel: { fontSize: 11, color: '#5F5E5A' },
   diluentRow: { flexDirection: 'row', gap: 12 },
   inputBox: { flexDirection: 'row', alignItems: 'center', gap: 6 },

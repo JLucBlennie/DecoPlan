@@ -10,8 +10,7 @@ import type { DivePlan } from '../../lib/dive/types';
 import { GFSliderPair } from '../GFSliderPair';
 import { TankConfigRow } from '../TankConfigRow';
 import type { DiveDefinition } from '../../lib/dive/whatIf/types';
-import CcrComparisonSection from './CcrComparisonSection';
-import OcComparisonSection from './OcComparisonSection';
+import ComparisonSettings, { isComparisonBlocked } from './ComparisonSettings';
 import ConfigSection from './ConfigSection';
 
 export interface PedagogicalConfigPanelProps {
@@ -39,9 +38,7 @@ export default function PedagogicalConfigPanel({
     ...Object.values(plan.decoGasses).map(gas => ({ gas, role: 'deco' as const })),
   ];
 
-  const launchBlocked =
-    (ccr.available && ccr.state.enabled && ccr.error !== null)
-    || (oc.available && oc.state.enabled && oc.error !== null);
+  const launchBlocked = isComparisonBlocked(config.showComparison, ccr, oc);
 
   return (
     <View style={styles.root}>
@@ -49,27 +46,10 @@ export default function PedagogicalConfigPanel({
         <GFSliderPair values={config.gfA} onChange={setGfA} accentColor="#378ADD" />
       </ConfigSection>
 
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleTexts}>
-          <Text style={styles.toggleLabel}>Comparer un 2ème réglage</Text>
-          <Text style={styles.toggleSub}>Même profil, GF différents, côte à côte</Text>
-        </View>
-        <Switch
-          value={config.showComparison}
-          onValueChange={toggleComparison}
-          trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(55,138,221,0.4)' }}
-          thumbColor={config.showComparison ? '#378ADD' : '#888780'}
-        />
-      </View>
-
-      {ccr.available && <CcrComparisonSection ccr={ccr} />}
-      {oc.available && <OcComparisonSection oc={oc} />}
-
-      {config.showComparison && !ccr.state.enabled && !oc.state.enabled && (
-        <ConfigSection label="Réglage B" badge="GF alternatifs" badgeColor="#1D9E75">
-          <GFSliderPair values={config.gfB} onChange={setGfB} accentColor="#1D9E75" />
-        </ConfigSection>
-      )}
+      <ComparisonSettings
+        showComparison={config.showComparison} onToggle={toggleComparison}
+        gfB={config.gfB} onGfB={setGfB} ccr={ccr} oc={oc}
+      />
 
       <ConfigSection label="Blocs" badge={`${gasEntries.length} gaz`}>
         {gasEntries.map(({ gas, role }) => {

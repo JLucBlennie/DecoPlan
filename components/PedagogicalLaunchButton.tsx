@@ -7,6 +7,7 @@ import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 import type { Plan } from '../lib/dive/buhlmann';
 import type { DivePlan } from '../lib/dive/types';
+import type { DiveDefinition } from '../lib/dive/whatIf/types';
 import { PedagogicalConfigSheet } from './PedagogicalConfigSheet';
 
 export interface PedagogicalLaunchButtonProps {
@@ -14,13 +15,15 @@ export interface PedagogicalLaunchButtonProps {
   planName:      string;
   currentGfLow:  number;
   currentGfHigh: number;
+  /** Plongée de départ : active la comparaison avec un autre mode de respiration. */
+  definition?:   DiveDefinition;
   onLaunch:      (planA: DivePlan, planB: DivePlan | undefined) => void;
   /** Variante d'affichage */
   variant?: 'button' | 'fab' | 'menuItem';
 }
 
 export function PedagogicalLaunchButton({
-  plan, planName, currentGfLow, currentGfHigh, onLaunch,
+  plan, planName, currentGfLow, currentGfHigh, definition, onLaunch,
   variant = 'button',
 }: PedagogicalLaunchButtonProps) {
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -64,6 +67,7 @@ export function PedagogicalLaunchButton({
         planName={planName}
         currentGfLow={currentGfLow}
         currentGfHigh={currentGfHigh}
+        definition={definition}
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
         onLaunch={(planA, planB) => {
