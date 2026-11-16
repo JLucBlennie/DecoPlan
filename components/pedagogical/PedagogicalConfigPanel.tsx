@@ -11,6 +11,7 @@ import { GFSliderPair } from '../GFSliderPair';
 import { TankConfigRow } from '../TankConfigRow';
 import type { DiveDefinition } from '../../lib/dive/whatIf/types';
 import CcrComparisonSection from './CcrComparisonSection';
+import OcComparisonSection from './OcComparisonSection';
 import ConfigSection from './ConfigSection';
 
 export interface PedagogicalConfigPanelProps {
@@ -30,13 +31,17 @@ export default function PedagogicalConfigPanel({
   const {
     config, stopSummary,
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
-    ccr, launch,
+    ccr, oc, launch,
   } = usePedagogicalLaunch(plan, { planName, currentGfLow, currentGfHigh, definition, onLaunch });
 
   const gasEntries = [
     ...Object.values(plan.bottomGasses).map(gas => ({ gas, role: 'bottom' as const })),
     ...Object.values(plan.decoGasses).map(gas => ({ gas, role: 'deco' as const })),
   ];
+
+  const launchBlocked =
+    (ccr.available && ccr.state.enabled && ccr.error !== null)
+    || (oc.available && oc.state.enabled && oc.error !== null);
 
   return (
     <View style={styles.root}>
@@ -57,9 +62,10 @@ export default function PedagogicalConfigPanel({
         />
       </View>
 
-      {definition && <CcrComparisonSection ccr={ccr} />}
+      {ccr.available && <CcrComparisonSection ccr={ccr} />}
+      {oc.available && <OcComparisonSection oc={oc} />}
 
-      {config.showComparison && !ccr.state.enabled && (
+      {config.showComparison && !ccr.state.enabled && !oc.state.enabled && (
         <ConfigSection label="Réglage B" badge="GF alternatifs" badgeColor="#1D9E75">
           <GFSliderPair values={config.gfB} onChange={setGfB} accentColor="#1D9E75" />
         </ConfigSection>
@@ -98,9 +104,9 @@ export default function PedagogicalConfigPanel({
       )}
 
       <TouchableOpacity
-        style={[styles.launchBtn, ccr.state.enabled && ccr.error !== null && styles.launchBtnDisabled]}
+        style={[styles.launchBtn, launchBlocked && styles.launchBtnDisabled]}
         onPress={launch}
-        disabled={ccr.state.enabled && ccr.error !== null}
+        disabled={launchBlocked}
         activeOpacity={0.85}
       >
         <Text style={styles.launchBtnTxt}>▶  Lancer le mode pédagogique</Text>

@@ -139,7 +139,7 @@ export default function PedagogicalSetupScreen() {
                 key={first.id}
                 plan={single.plan}
                 planName={first.name}
-                definition={first.ccrDiluentName ? undefined : single.definition}
+                definition={single.definition}
                 currentGfLow={defaultGfLow}
                 currentGfHigh={defaultGfHigh}
                 onLaunch={(planA, planB) => {

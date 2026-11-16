@@ -64,7 +64,7 @@ export function usePedagogicalCcr(definition: DiveDefinition | undefined): UsePe
   );
 
   const buildPlan = useCallback((reference: DivePlan): DivePlan | undefined => {
-    if (!state.enabled || !definition || error) return undefined;
+    if (!state.enabled || !definition || definition.ccr || error) return undefined;
     return buildCcrComparisonPlan(definition, {
       diluentFO2: toFraction(state.diluentO2Pct),
       diluentFHe: toFraction(state.diluentHePct || '0'),
@@ -77,5 +77,5 @@ export function usePedagogicalCcr(definition: DiveDefinition | undefined): UsePe
     });
   }, [state, definition, error, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM]);
 
-  return { available: definition !== undefined, state, error, setEnabled, setGf, setDiluent, buildPlan };
+  return { available: definition !== undefined && !definition.ccr, state, error, setEnabled, setGf, setDiluent, buildPlan };
 }

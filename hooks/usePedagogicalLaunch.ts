@@ -15,6 +15,7 @@ import type { DecoModel, DivePlan } from '../lib/dive/types';
 import type { DiveDefinition } from '../lib/dive/whatIf/types';
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { usePedagogicalCcr, type UsePedagogicalCcrReturn } from './usePedagogicalCcr';
+import { usePedagogicalOc, type UsePedagogicalOcReturn } from './usePedagogicalOc';
 
 import {
   buildComparisonPlan,
@@ -74,6 +75,8 @@ export interface UsePedagogicalLaunchReturn {
   };
   /** Réglage « même plongée en recycleur » */
   ccr: UsePedagogicalCcrReturn;
+  /** Réglage « même plongée en circuit ouvert » (départ en CCR) */
+  oc: UsePedagogicalOcReturn;
   /** Lance le mode pédagogique */
   launch: () => void;
 }
@@ -95,6 +98,7 @@ export function usePedagogicalLaunch(
   } = options;
 
   const ccr = usePedagogicalCcr(definition);
+  const oc = usePedagogicalOc(definition);
 
   // ── Visibilité ──────────────────────────────────────────────────────────────
   const [visible, setVisible] = useState(false);
@@ -169,7 +173,7 @@ export function usePedagogicalLaunch(
 
     // Plan B (comparaison) : même profil, GF différents
     // Plan B : soit la même plongée en recycleur, soit les mêmes niveaux avec d'autres GF.
-    let planB: DivePlan | undefined = ccr.buildPlan(planA);
+    let planB: DivePlan | undefined = ccr.buildPlan(planA) ?? oc.buildPlan(planA);
     if (!planB && config.showComparison) {
       planB = buildComparisonPlan(plan, planA, {
         gfLow:    config.gfB.gfLow,
@@ -182,12 +186,12 @@ export function usePedagogicalLaunch(
 
     close();
     onLaunch(planA, planB);
-  }, [plan, config, ccr, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
+  }, [plan, config, ccr, oc, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
   return {
     visible, open, close,
     config, stopSummary,
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
-    ccr, launch,
+    ccr, oc, launch,
   };
 }

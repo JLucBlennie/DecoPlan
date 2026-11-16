@@ -77,6 +77,16 @@ export interface DivePlan {
   model: DecoModel;
   gfLow: number;                 // ex. 0.30
   gfHigh: number;                // ex. 0.85
+  /** Volumes de gaz nécessaires en circuit ouvert (litres détendus), si calculés pour ce plan. */
+  gasNeedsL?: GasNeed[];
+}
+
+/** Volume de gaz nécessaire pour une plongée en circuit ouvert. */
+export interface GasNeed {
+  gasId: string;
+  label: string;
+  role: GasRole;
+  litres: number;
 }
 
 // ── Simulation ────────────────────────────────────────────────────────────────
