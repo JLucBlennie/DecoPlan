@@ -9,6 +9,7 @@ import { Plan } from '../buhlmann';
 import { captureTissues, loadTissues } from '../successive/tissueState';
 import type { Segment } from '../types';
 import type { DiveDefinition } from '../whatIf/types';
+import { bailoutProblem } from './bailoutCheck';
 import { buildCcrBottomPlan } from './ccrRuntime';
 import { computeGasUsage, type GasUsage, type TankConfig } from './bailoutGas';
 import type { CcrConfig } from './types';
@@ -47,14 +48,12 @@ export function computeBailout(
     const dil = [...def.bottomGases, ...def.decoGases].find(g => g.name === cfg.diluentName);
     if (dil) oc.addDecoGas(dil);
   }
-  if (Object.keys(oc.decoGasses).length === 0) {
-    throw new Error('Bail-out impossible : aucun gaz de déco défini.');
-  }
-  if (!oc.bestDecoGasName(bailoutDepth, def.maxDecoPpO2, def.maxEndM)) {
-    throw new Error(
-      `Bail-out impossible à ${bailoutDepth} m : aucun gaz de déco respirable à cette profondeur.`,
-    );
-  }
+  const problem = bailoutProblem(Object.values(oc.decoGasses), bailoutDepth, {
+    maxPpO2Bar: def.maxDecoPpO2,
+    maxEndM: def.maxEndM,
+    isFreshWater: def.isFreshWater,
+  });
+  if (problem) throw new Error(problem);
 
   const segments = oc.calculateDecompression(
     false, def.gfLow, def.gfHigh, def.maxDecoPpO2, def.maxEndM,

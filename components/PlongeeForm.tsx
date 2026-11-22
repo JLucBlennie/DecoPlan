@@ -11,6 +11,7 @@ import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import CcrBailoutWarning from './CcrBailoutWarning';
 import CcrDiluentPicker, { validDiluent } from './CcrDiluentPicker';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
 
@@ -157,6 +158,7 @@ export default function PlongeeForm({ plongee }: PlongeeFormProps) {
       </View>
 
       <CcrDiluentPicker gazFond={gazFond} diluentName={ccrDiluentName} onChange={setCcrDiluentName} />
+      <CcrBailoutWarning diluentName={ccrDiluentName} gazDeco={gazDeco} segments={segments} />
 
       {/* Profil / segments */}
       <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>

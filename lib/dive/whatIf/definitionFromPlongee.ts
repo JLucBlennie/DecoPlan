@@ -7,6 +7,7 @@
 
 import { ZH16CTissues } from '../buhlmann';
 import { Gas } from '../gas';
+import type { BailoutLimits } from '../ccr/bailoutCheck';
 import type { CcrDefinition } from '../ccr/types';
 import type { Plongee } from '../types';
 import { expandPlongeeSegments } from './bottomSegmentsFromPlongee';
@@ -59,6 +60,13 @@ const MAX_BOTTOM_PPO2_BAR = 1.4;
 const MAX_DECO_PPO2_BAR = 1.6;
 const MAX_END_M = 30;
 const TIME_STEP_MIN = 1;
+
+/** Limites utilisées pour choisir (et vérifier) les gaz de bail-out. */
+export const BAILOUT_LIMITS: BailoutLimits = {
+    maxPpO2Bar: MAX_DECO_PPO2_BAR,
+    maxEndM: MAX_END_M,
+    isFreshWater: false,
+};
 
 export function definitionFromPlongee(plongee: Plongee, settings: DiveSettings): DiveDefinition {
   return {

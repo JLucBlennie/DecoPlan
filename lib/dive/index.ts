@@ -70,6 +70,8 @@ export type { TissueCoefficient } from './buhlmann';
 
 // Scénarios WhatIf (runtimes alternatifs à côté du nominal)
 export * from './whatIf';
+export { bailoutProblem, NO_BAILOUT_GAS_MESSAGE } from './ccr/bailoutCheck';
+export type { BailoutLimits } from './ccr/bailoutCheck';
 export { defaultGfFor, gfProfileKind } from './gfDefaults';
 export type { GfPair, GfPreferences } from './gfDefaults';
 
