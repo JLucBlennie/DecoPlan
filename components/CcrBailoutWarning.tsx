@@ -12,19 +12,19 @@ import { fontSize, spacing } from '../styles/theme';
 type Props = {
   /** Nom du diluant : `undefined` = circuit ouvert, rien à vérifier. */
   diluentName: string | undefined;
-  /** Gaz de déco sélectionnés : ils servent de gaz de bail-out. */
-  gazDeco: Gas[];
+  /** Gaz de bail-out effectifs (ceux choisis, sinon les gaz de déco). */
+  bailoutGases: Gas[];
   /** Segments saisis (profondeur maximale = profondeur de bail-out la plus défavorable). */
   segments: Segment[];
 };
 
-export default function CcrBailoutWarning({ diluentName, gazDeco, segments }: Props) {
+export default function CcrBailoutWarning({ diluentName, bailoutGases, segments }: Props) {
   const ccrBailoutMaxEndM = usePreferencesStore(s => s.ccrBailoutMaxEndM);
   const message = useMemo(() => {
     if (diluentName === undefined) return undefined;
     const deepest = Math.max(0, ...segments.flatMap(s => [s.startDepth, s.endDepth]));
-    return bailoutProblem(gazDeco, deepest, bailoutLimitsFor(ccrBailoutMaxEndM));
-  }, [diluentName, gazDeco, segments, ccrBailoutMaxEndM]);
+    return bailoutProblem(bailoutGases, deepest, bailoutLimitsFor(ccrBailoutMaxEndM));
+  }, [diluentName, bailoutGases, segments, ccrBailoutMaxEndM]);
 
   if (!message) return null;
 

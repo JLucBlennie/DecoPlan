@@ -6,6 +6,7 @@
  */
 
 import { Plan } from '../buhlmann';
+import type { Gas } from '../gas';
 import { captureTissues, loadTissues } from '../successive/tissueState';
 import type { Segment } from '../types';
 import type { DiveDefinition } from '../whatIf/types';
@@ -32,6 +33,12 @@ export interface BailoutResult {
   gasUsage: GasUsage[];
 }
 
+/** Gaz de bail-out d'une plongée CCR : ceux choisis, sinon les gaz de déco. */
+export function bailoutGasesOf(def: DiveDefinition): Gas[] {
+  const chosen = def.ccr?.bailoutGases;
+  return chosen && chosen.length > 0 ? chosen : def.decoGases;
+}
+
 export function computeBailout(
   def: DiveDefinition,
   cfg: CcrConfig,
@@ -43,9 +50,10 @@ export function computeBailout(
 
   const oc = new Plan(def.tissueTable, def.absPressureBar, def.isFreshWater);
   loadTissues(oc, tissues);
-  def.decoGases.forEach(g => oc.addDecoGas(g));
+  const bailoutGases = bailoutGasesOf(def);
+  bailoutGases.forEach(g => oc.addDecoGas(g));
   if (options.includeDiluent) {
-    const dil = [...def.bottomGases, ...def.decoGases].find(g => g.name === cfg.diluentName);
+    const dil = [...def.bottomGases, ...bailoutGases].find(g => g.name === cfg.diluentName);
     if (dil) oc.addDecoGas(dil);
   }
   const maxEndM = def.ccr?.bailoutMaxEndM ?? def.maxEndM;

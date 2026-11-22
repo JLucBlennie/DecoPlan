@@ -18,7 +18,7 @@ export interface BailoutLimits {
 }
 
 export const NO_BAILOUT_GAS_MESSAGE =
-  'Aucun gaz de bail-out prévu : sélectionnez au moins un gaz de déco, qui servira de bail-out.';
+  'Aucun gaz de bail-out prévu : sélectionnez au moins un gaz de bail-out (ou de déco, utilisé par défaut).';
 
 /** Raison pour laquelle le gaz ne peut pas être respiré à cette profondeur, sinon `undefined`. */
 function unusableReason(gas: Gas, depthM: number, limits: BailoutLimits): string | undefined {

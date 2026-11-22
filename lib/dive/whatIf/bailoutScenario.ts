@@ -2,7 +2,7 @@
  * DecoPlan – WhatIf : scénario « bail-out » d'une plongée CCR.
  */
 
-import { computeBailout } from '../ccr/bailout';
+import { bailoutGasesOf, computeBailout } from '../ccr/bailout';
 import type { GasUsage } from '../ccr/bailoutGas';
 import type { Segment } from '../types';
 import { bottomSegmentsOf } from './ccrBottom';
@@ -18,7 +18,7 @@ export function computeBailoutScenario(def: DiveDefinition): BailoutScenarioResu
   if (!def.ccr) throw new Error('Le bail-out ne s’applique qu’aux plongées en recycleur.');
 
   const tanks: Record<string, { volumeL: number; pressureBar: number }> = {};
-  for (const gas of def.decoGases) tanks[gas.name] = def.ccr.bailoutTank;
+  for (const gas of bailoutGasesOf(def)) tanks[gas.name] = def.ccr.bailoutTank;
 
   const bailout = computeBailout(def, def.ccr.config, {
     rmvLMin: def.ccr.bailoutRmvLMin,

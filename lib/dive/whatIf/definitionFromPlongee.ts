@@ -54,6 +54,9 @@ function ccrDefinitionOf(plongee: Plongee, settings: DiveSettings): CcrDefinitio
     },
     bailoutRmvLMin: settings.ccr.bailoutRmvLMin,
     bailoutMaxEndM: settings.ccr.bailoutMaxEndM,
+    ...(plongee.gazBailout && plongee.gazBailout.length > 0
+        ? { bailoutGases: plongee.gazBailout.map(Gas.fromJSON) }
+        : {}),
     bailoutTank: BAILOUT_TANK,
   };
 }
