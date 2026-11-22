@@ -12,6 +12,9 @@ import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
 import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import CcrBailoutGasPicker from './CcrBailoutGasPicker';
+import CcrBailoutWarning from './CcrBailoutWarning';
+import CcrDiluentAdvice from './CcrDiluentAdvice';
 import CcrDiluentPicker, { validDiluent } from './CcrDiluentPicker';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
 
@@ -23,6 +26,7 @@ export default function AddPlongeeForm() {
   const [gazFond, setGazFond] = useState<Gas[]>([]);
   const [gazDeco, setGazDeco] = useState<Gas[]>([]);
   const [ccrDiluentName, setCcrDiluentName] = useState<string | undefined>(undefined);
+  const [gazBailout, setGazBailout] = useState<Gas[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
 
   // id stable pour toute la durée du formulaire
@@ -30,7 +34,11 @@ export default function AddPlongeeForm() {
 
   // ── Soumission ─────────────────────────────────────────────────────────────
   const handleSubmit = () => {
-    addPlongee({ id: plongeeId, name: nom, gazFond, gazDeco, segments, ccrDiluentName: validDiluent(gazFond, ccrDiluentName) });
+    const diluent = validDiluent(gazFond, ccrDiluentName);
+    addPlongee({
+      id: plongeeId, name: nom, gazFond, gazDeco, segments, ccrDiluentName: diluent,
+      gazBailout: diluent !== undefined ? gazBailout : [],
+    });
     router.back();
   };
 
@@ -136,6 +144,19 @@ export default function AddPlongeeForm() {
       </View>
 
       <CcrDiluentPicker gazFond={gazFond} diluentName={ccrDiluentName} onChange={setCcrDiluentName} />
+      <CcrDiluentAdvice diluentName={ccrDiluentName} gazFond={gazFond} segments={segments} />
+      <CcrBailoutGasPicker
+        diluentName={ccrDiluentName}
+        gazList={gazList}
+        selected={gazBailout}
+        onChange={setGazBailout}
+        gazDeco={gazDeco}
+      />
+      <CcrBailoutWarning
+        diluentName={ccrDiluentName}
+        bailoutGases={gazBailout.length > 0 ? gazBailout : gazDeco}
+        segments={segments}
+      />
 
       {/* Profil */}
       <Text style={[sharedStyles.sectionLabel, { marginTop: spacing.md }]}>

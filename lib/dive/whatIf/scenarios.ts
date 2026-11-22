@@ -53,8 +53,9 @@ export function applicableKinds(def: DiveDefinition): WhatIfKind[] {
   return WHATIF_KINDS.filter(kind => {
     // En CCR, les gaz de déco ne servent qu'au bail-out : les perdre ne change pas le nominal.
     if (kind === 'LOST_DECO_GAS') return !def.ccr && hasDecoGasToLose;
-    // Le bail-out n'a de sens qu'en CCR, avec au moins un gaz de déco.
-    if (kind === 'BAILOUT') return def.ccr !== undefined && def.decoGases.length > 0;
+    // Le bail-out n'a de sens qu'en CCR. Sans gaz de bail-out, il est quand même proposé :
+    // le calcul échoue alors et « Et si ? » affiche la raison (voir computeWhatIf).
+    if (kind === 'BAILOUT') return def.ccr !== undefined;
     return true;
   });
 }

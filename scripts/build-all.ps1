@@ -11,8 +11,9 @@ param(
     [switch]$Android,
     [switch]$Windows,
     [switch]$Linux,
-    [string]$AndroidProfile = 'production',
+    [string]$AndroidProfile = 'apk-release',
     [switch]$NoWait,                         # EAS : ne pas attendre la fin du build cloud
+    [switch]$Store,          # AAB pour le Play Store
     [string]$WslDistro      = 'Ubuntu',
     [string]$WslProjectDir  = '~/DecoPlan',
     [string]$OutputDir      = 'D:\Dev\releases'
@@ -52,9 +53,10 @@ if ($Linux -and $ahead -gt 0) {
 
 # --- Android (EAS, build dans le cloud) -----------------------------------
 if ($Android) {
-    $easArgs = @('build', '--platform', 'android', '--profile', $AndroidProfile, '--non-interactive')
+    $profile = if ($Store) { 'production' } else { $AndroidProfile }
+    $easArgs = @('build', '--platform', 'android', '--profile', $profile, '--non-interactive')
     if ($NoWait) { $easArgs += '--no-wait' }
-    Invoke-Step "Android (EAS, profil $AndroidProfile)" { eas @easArgs }
+    Invoke-Step "Android (EAS, profil $profile)" { eas @easArgs }
 }
 
 # --- Windows (Tauri) -------------------------------------------------------

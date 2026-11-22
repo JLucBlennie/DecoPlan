@@ -7,6 +7,8 @@
 
 import { ZH16CTissues } from '../buhlmann';
 import { Gas } from '../gas';
+import type { BailoutLimits } from '../ccr/bailoutCheck';
+import type { DiluentLimits } from '../ccr/diluentCheck';
 import type { CcrDefinition } from '../ccr/types';
 import type { Plongee } from '../types';
 import { expandPlongeeSegments } from './bottomSegmentsFromPlongee';
@@ -32,6 +34,8 @@ export interface CcrSettings {
   switchDepthM: number;
   /** RMV de bail-out (L/min). */
   bailoutRmvLMin: number;
+  /** END max (m) acceptée pour un gaz de bail-out. */
+  bailoutMaxEndM: number;
 }
 
 /** Bloc supposé pour chaque gaz de bail-out (comme le mode pédagogique : 7 L / 200 bar). */
@@ -50,6 +54,10 @@ function ccrDefinitionOf(plongee: Plongee, settings: DiveSettings): CcrDefinitio
       switchDepthM: settings.ccr.switchDepthM,
     },
     bailoutRmvLMin: settings.ccr.bailoutRmvLMin,
+    bailoutMaxEndM: settings.ccr.bailoutMaxEndM,
+    ...(plongee.gazBailout && plongee.gazBailout.length > 0
+        ? { bailoutGases: plongee.gazBailout.map(Gas.fromJSON) }
+        : {}),
     bailoutTank: BAILOUT_TANK,
   };
 }
@@ -59,6 +67,16 @@ const MAX_BOTTOM_PPO2_BAR = 1.4;
 const MAX_DECO_PPO2_BAR = 1.6;
 const MAX_END_M = 30;
 const TIME_STEP_MIN = 1;
+
+/** Limites pour vérifier le diluant : ppO₂ sous le set point haut, END de la déco normale. */
+export function diluentLimitsFor(setpointHighBar: number): DiluentLimits {
+    return { setpointHighBar, maxEndM: MAX_END_M, isFreshWater: false };
+}
+
+/** Limites pour vérifier les gaz de bail-out ; l'END max vient des préférences. */
+export function bailoutLimitsFor(bailoutMaxEndM: number): BailoutLimits {
+    return { maxPpO2Bar: MAX_DECO_PPO2_BAR, maxEndM: bailoutMaxEndM, isFreshWater: false };
+}
 
 export function definitionFromPlongee(plongee: Plongee, settings: DiveSettings): DiveDefinition {
   return {

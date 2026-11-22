@@ -2,6 +2,8 @@
  * DecoPlan – CCR : types de configuration.
  */
 
+import type { Gas } from '../gas';
+
 export interface CcrConfig {
   /** Nom du gaz diluant (1 seul diluant par plongée). */
   diluentName: string;
@@ -36,6 +38,10 @@ export interface CcrDefinition {
   config: CcrConfig;
   /** RMV de bail-out (L/min) — préférence rmvDeco. */
   bailoutRmvLMin: number;
+  /** END max (m) des gaz de bail-out ; `undefined` = limite de déco de la plongée (maxEndM). */
+  bailoutMaxEndM?: number;
+  /** Gaz de bail-out choisis ; absent ou vide = gaz de déco de la plongée. */
+  bailoutGases?: Gas[];
   /** Bloc supposé pour chaque gaz de bail-out. */
   bailoutTank: BailoutTankDefault;
 }

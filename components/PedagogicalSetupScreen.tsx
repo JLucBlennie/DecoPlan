@@ -33,7 +33,7 @@ export default function PedagogicalSetupScreen() {
   const {
     gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
+    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
   } = usePreferencesStore();
 
   const [mode, setMode] = useState<Mode>('single');
@@ -52,8 +52,8 @@ export default function PedagogicalSetupScreen() {
 
   const ccrSettings = useMemo(() => ({
     setpointLowBar: ccrSetpointLow, setpointHighBar: ccrSetpointHigh,
-    switchDepthM: ccrSwitchDepthM, bailoutRmvLMin: rmvDeco,
-  }), [ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, rmvDeco]);
+    switchDepthM: ccrSwitchDepthM, bailoutRmvLMin: rmvDeco, bailoutMaxEndM: ccrBailoutMaxEndM,
+  }), [ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, rmvDeco, ccrBailoutMaxEndM]);
 
   // Successives : réglages de la 1re plongée (GF de `gf`) ; la 2e a ses propres GF (`gf2`).
   const settings: DiveSettings = useMemo(() => ({

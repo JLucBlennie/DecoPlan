@@ -33,6 +33,8 @@ export interface Plongee {
   gazDeco: GasData[];
   /** Nom du gaz diluant si la plongée est en recycleur (CCR). `undefined` = circuit ouvert. */
   ccrDiluentName?: string;
+  /** Gaz de bail-out (CCR). Vide ou absent = les gaz de déco servent de bail-out. */
+  gazBailout?: GasData[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

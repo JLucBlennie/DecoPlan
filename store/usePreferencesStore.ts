@@ -31,6 +31,8 @@ export interface Preferences {
     ccrSetpointHigh: number;
     /** CCR : profondeur (m) de passage du set point bas au haut en descente */
     ccrSwitchDepthM: number;
+    /** CCR : END max (m) acceptée pour respirer un gaz de bail-out (plus souple que la déco normale) */
+    ccrBailoutMaxEndM: number;
 }
 
 type PreferencesStore = Preferences & {
@@ -57,6 +59,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
     ccrSetpointLow: 0.7,
     ccrSetpointHigh: 1.3,
     ccrSwitchDepthM: 20,
+    ccrBailoutMaxEndM: 40,
 };
 
 const STORAGE_KEY = 'decoplan_preferences';
@@ -100,6 +103,7 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
             ccrSetpointLow: next.ccrSetpointLow,
             ccrSetpointHigh: next.ccrSetpointHigh,
             ccrSwitchDepthM: next.ccrSwitchDepthM,
+            ccrBailoutMaxEndM: next.ccrBailoutMaxEndM,
         }));
     },
 

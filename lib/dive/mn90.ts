@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // DecoPlan — Table MN90 (Marine Nationale 1990), profil pour le mode pédagogique
 // ─────────────────────────────────────────────────────────────────────────────
-import type { DivePlan, MN90Profile, MN90Stop } from './types';
 import { MN90_DEPTHS, MN90_TABLE, type Mn90Entry } from './mn90Table';
+import type { DivePlan, MN90Profile, MN90Stop } from './types';
 
 /** Profondeurs de palier gérées par la table, de la plus profonde à la plus proche de la surface. */
 const STOP_DEPTHS = [15, 12, 9, 6, 3] as const;
@@ -28,7 +28,7 @@ export function getMN90DiveParameters(plan: DivePlan): MN90DiveParameters {
   const maxDepthM = Math.max(...plan.segments.map(s => Math.max(s.startDepthM, s.endDepthM)));
 
   const bottomSegments = plan.segments
-    .filter(s => s.startDepthM === s.endDepthM && s.startDepthM >= maxDepthM * 0.9);
+    .filter(s => s.startDepthM === s.endDepthM);
   const diveTimeMin = bottomSegments.length > 0
     ? bottomSegments[bottomSegments.length - 1].endTimeMin
     : 0;

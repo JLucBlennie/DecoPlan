@@ -1,0 +1,175 @@
+// components/WhatIfRuntimeBody.tsx
+// Corps d'un runtime « Et si ? » : chiffres clés, avertissements, gaz, tableau des phases.
+// Partagé par la colonne (nominal, bail-out) et l'accordéon des écarts.
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useMemo } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+import {
+    deltaTrend, formatDeltaMinutes, formatMinutes, toRuntimeRows,
+    type RuntimeRow, type WhatIfRuntime,
+} from '../lib/dive';
+import { fontSize, ocean, spacing } from '../styles/theme';
+import { KIND_META, TREND_COLOR } from './runtimeKindMeta';
+
+type Props = { runtime: WhatIfRuntime };
+
+function formatDepth(depthM: number): string {
+    return String(Math.round(depthM * 10) / 10);
+}
+
+function depthLabel(row: RuntimeRow): string {
+    return row.startDepthM === row.endDepthM
+        ? `${formatDepth(row.endDepthM)} m`
+        : `${formatDepth(row.startDepthM)}→${formatDepth(row.endDepthM)}`;
+}
+
+export default function WhatIfRuntimeBody({ runtime }: Props) {
+    const { summary, delta, warnings } = runtime;
+    const rows = useMemo(() => toRuntimeRows(runtime.segments), [runtime.segments]);
+
+    return (
+        <View>
+            {/* Chiffres clés */}
+            <View style={styles.metrics}>
+                <Metric label="Remontée" value={`${formatMinutes(summary.ttsMin)}'`}
+                    delta={delta?.ttsMin} unit="'" />
+                <Metric label="Paliers" value={`${formatMinutes(summary.decoTimeMin)}'`}
+                    delta={delta?.decoTimeMin} unit="'" />
+                <Metric
+                    label="1er palier"
+                    value={summary.stops.length > 0 ? `${formatDepth(summary.firstStopDepthM)} m` : '—'}
+                    delta={delta?.firstStopDepthM} unit=" m" />
+            </View>
+
+            {/* Avertissements (PpO₂ au fond…) */}
+            {warnings.map(text => (
+                <View key={text} style={styles.warning}>
+                    <MaterialIcons name="warning" size={12} color="#BA7517" />
+                    <Text style={styles.warningTxt}>{text}</Text>
+                </View>
+            ))}
+
+            {/* Consommation de bail-out */}
+            {runtime.gasUsage && runtime.gasUsage.length > 0 && (
+                <View style={styles.gasUsage}>
+                    {runtime.gasUsage.map(g => (
+                        <View key={g.gasName} style={styles.gasUsageRow}>
+                            <Text style={styles.gasUsageName} numberOfLines={1}>{g.gasName}</Text>
+                            <Text style={[styles.gasUsageValue, g.insufficient && styles.gasUsageAlert]}>
+                                {Math.round(g.litres)} L
+                                {g.barUsed !== undefined ? ` · ${Math.round(g.barUsed)} bar` : ''}
+                                {g.insufficient ? ' ⚠' : ''}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            )}
+
+            {/* Phases */}
+            <View style={styles.tableHeader}>
+                <Text style={[styles.hCell, styles.colDepth]}>Prof.</Text>
+                <Text style={[styles.hCell, styles.colTime]}>Durée</Text>
+                <Text style={[styles.hCell, styles.colRuntime]}>Runtime</Text>
+            </View>
+            {rows.map((row, i) => {
+                const meta = KIND_META[row.kind];
+                return (
+                    <View key={i} style={[styles.row, { backgroundColor: meta.bg }]}>
+                        <View style={[styles.bar, { backgroundColor: meta.color }]} />
+                        <View style={styles.colDepth}>
+                            <Text style={styles.cellTxt}>{depthLabel(row)}</Text>
+                            {row.gasSwitch && (
+                                <Text style={styles.gasTxt} numberOfLines={1}>{row.gasName}</Text>
+                            )}
+                            {row.setpointSwitch && row.setpointBar !== undefined && (
+                                <Text style={styles.gasTxt} numberOfLines={1}>
+                                    SP {row.setpointBar.toFixed(2)}
+                                </Text>
+                            )}
+                        </View>
+                        <Text style={[styles.cellTxt, styles.colTime]}>
+                            {formatMinutes(row.durationMin)}'
+                        </Text>
+                        <Text style={[styles.cellTxt, styles.runtimeTxt, styles.colRuntime]}>
+                            {formatMinutes(row.cumulativeMin)}'
+                        </Text>
+                    </View>
+                );
+            })}
+        </View>
+    );
+}
+
+// ── Sous-composants ───────────────────────────────────────────────────────────
+
+/** Écart avec le nominal : ambre si plus long/profond, teal si plus court/léger. */
+export function Delta({ value, unit }: { value: number; unit: string }) {
+    return (
+        <Text style={[styles.delta, { color: TREND_COLOR[deltaTrend(value)] }]}>
+            {formatDeltaMinutes(value)}{unit}
+        </Text>
+    );
+}
+
+function Metric({ label, value, delta, unit }: {
+    label: string; value: string; delta?: number; unit: string;
+}) {
+    return (
+        <View style={styles.metric}>
+            <Text style={styles.metricLabel}>{label}</Text>
+            <View style={styles.metricValueRow}>
+                <Text style={styles.metricValue}>{value}</Text>
+                {delta !== undefined && <Delta value={delta} unit={unit} />}
+            </View>
+        </View>
+    );
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+    metrics: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: 2 },
+    metric: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+    metricLabel: { fontSize: 10, color: ocean.text.muted },
+    metricValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+    metricValue: { fontSize: fontSize.xs, color: ocean.text.primary },
+
+    warning: {
+        flexDirection: 'row', alignItems: 'flex-start', gap: 4,
+        marginHorizontal: spacing.sm, marginBottom: spacing.xs,
+    },
+    warningTxt: { fontSize: 9, color: '#BA7517', flex: 1 },
+
+    gasUsage: { paddingHorizontal: spacing.sm, paddingBottom: spacing.xs, gap: 2 },
+    gasUsageRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
+    gasUsageName: { fontSize: 10, color: ocean.accent.blue, flexShrink: 1 },
+    gasUsageValue: { fontSize: 10, color: ocean.text.primary },
+    gasUsageAlert: { color: '#BA7517', fontWeight: '600' },
+
+    tableHeader: {
+        flexDirection: 'row',
+        paddingVertical: 4, paddingLeft: 6,
+        borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: ocean.border.subtle,
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: ocean.border.subtle,
+    },
+    hCell: {
+        fontSize: 9, fontWeight: '600', color: ocean.text.muted,
+        textTransform: 'uppercase', letterSpacing: 0.2, textAlign: 'center',
+    },
+
+    row: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingVertical: 5, paddingLeft: 6,
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: ocean.border.subtle,
+    },
+    bar: { position: 'absolute', left: 0, top: 4, bottom: 4, width: 2.5, borderRadius: 2 },
+    cellTxt: { fontSize: fontSize.xs, color: ocean.text.primary, textAlign: 'center' },
+    runtimeTxt: { fontWeight: '500', color: ocean.text.secondary },
+    gasTxt: { fontSize: 9, color: ocean.accent.blue, textAlign: 'center' },
+
+    colDepth: { flex: 2.2, alignItems: 'center' },
+    colTime: { flex: 1.2 },
+    colRuntime: { flex: 1.4 },
+    delta: { fontSize: fontSize.xs, fontWeight: '600' },
+});
