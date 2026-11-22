@@ -14,6 +14,7 @@ import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import CcrBailoutGasPicker from './CcrBailoutGasPicker';
 import CcrBailoutWarning from './CcrBailoutWarning';
+import CcrDiluentAdvice from './CcrDiluentAdvice';
 import CcrDiluentPicker, { validDiluent } from './CcrDiluentPicker';
 import PlongeeProfileGraph from './PlongeeProfileGraph';
 
@@ -143,6 +144,7 @@ export default function AddPlongeeForm() {
       </View>
 
       <CcrDiluentPicker gazFond={gazFond} diluentName={ccrDiluentName} onChange={setCcrDiluentName} />
+      <CcrDiluentAdvice diluentName={ccrDiluentName} gazFond={gazFond} segments={segments} />
       <CcrBailoutGasPicker
         diluentName={ccrDiluentName}
         gazList={gazList}

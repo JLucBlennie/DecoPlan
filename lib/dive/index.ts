@@ -72,6 +72,8 @@ export type { TissueCoefficient } from './buhlmann';
 export * from './whatIf';
 export { bailoutProblem, NO_BAILOUT_GAS_MESSAGE } from './ccr/bailoutCheck';
 export type { BailoutLimits } from './ccr/bailoutCheck';
+export { diluentAdvice } from './ccr/diluentCheck';
+export type { DiluentAdvice, DiluentLimits, DiluentMessage, DiluentSuggestion } from './ccr/diluentCheck';
 export { defaultGfFor, gfProfileKind } from './gfDefaults';
 export type { GfPair, GfPreferences } from './gfDefaults';
 
