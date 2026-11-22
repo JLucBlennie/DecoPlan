@@ -6,7 +6,7 @@ import Svg, {
   Path, Polyline, Rect, Stop, Text as SvgText,
 } from 'react-native-svg';
 
-import type { DivePlan, MN90Profile, PedagogicalSimulation } from '../lib/dive/types';
+import type { DivePlan, MN90Profile, PedagogicalSimulation, ProfileSegment } from '../lib/dive/types';
 
 export interface DiveProfileViewProps {
   plan: DivePlan;
@@ -94,7 +94,9 @@ export function DiveProfileView({
   const polylineB = hasComparison ? buildPolyline(comparisonPlan!) : null;
 
   // Zones de paliers (plan A uniquement pour éviter le bruit visuel)
-  const stopSegsA = plan.segments.filter(s => s.startDepthM === s.endDepthM && s.startDepthM > 0);
+  const stopSegsA = mergeConsecutiveStops(
+    plan.segments.filter(s => s.startDepthM === s.endDepthM && s.startDepthM > 0),
+  );
 
   // Curseur animé (plan A)
   const frameA = simulation.frames[currentStep];
@@ -226,6 +228,30 @@ export function DiveProfileView({
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Regroupe les paliers consécutifs à la même profondeur (le calcul les découpe
+ * en pas de 1 min) pour afficher « 6m·3' » au lieu de trois fois « 6m·1' ».
+ */
+function mergeConsecutiveStops(stops: ProfileSegment[]): ProfileSegment[] {
+  const TOLERANCE_MIN = 1e-3;
+  const merged: ProfileSegment[] = [];
+  for (const stop of stops) {
+    const last = merged[merged.length - 1];
+    if (
+      last
+      && last.endDepthM === stop.startDepthM
+      && last.gasId === stop.gasId
+      && last.setpointBar === stop.setpointBar
+      && Math.abs(last.endTimeMin - stop.startTimeMin) < TOLERANCE_MIN
+    ) {
+      merged[merged.length - 1] = { ...last, endTimeMin: stop.endTimeMin };
+    } else {
+      merged.push(stop);
+    }
+  }
+  return merged;
+}
 
 function buildTimeTicks(totalTime: number): number[] {
   const step = totalTime <= 20 ? 5 : totalTime <= 60 ? 10 : 15;
