@@ -33,6 +33,8 @@ export interface CcrSettings {
   switchDepthM: number;
   /** RMV de bail-out (L/min). */
   bailoutRmvLMin: number;
+  /** END max (m) acceptée pour un gaz de bail-out. */
+  bailoutMaxEndM: number;
 }
 
 /** Bloc supposé pour chaque gaz de bail-out (comme le mode pédagogique : 7 L / 200 bar). */
@@ -51,6 +53,7 @@ function ccrDefinitionOf(plongee: Plongee, settings: DiveSettings): CcrDefinitio
       switchDepthM: settings.ccr.switchDepthM,
     },
     bailoutRmvLMin: settings.ccr.bailoutRmvLMin,
+    bailoutMaxEndM: settings.ccr.bailoutMaxEndM,
     bailoutTank: BAILOUT_TANK,
   };
 }
@@ -61,12 +64,10 @@ const MAX_DECO_PPO2_BAR = 1.6;
 const MAX_END_M = 30;
 const TIME_STEP_MIN = 1;
 
-/** Limites utilisées pour choisir (et vérifier) les gaz de bail-out. */
-export const BAILOUT_LIMITS: BailoutLimits = {
-    maxPpO2Bar: MAX_DECO_PPO2_BAR,
-    maxEndM: MAX_END_M,
-    isFreshWater: false,
-};
+/** Limites pour vérifier les gaz de bail-out ; l'END max vient des préférences. */
+export function bailoutLimitsFor(bailoutMaxEndM: number): BailoutLimits {
+    return { maxPpO2Bar: MAX_DECO_PPO2_BAR, maxEndM: bailoutMaxEndM, isFreshWater: false };
+}
 
 export function definitionFromPlongee(plongee: Plongee, settings: DiveSettings): DiveDefinition {
   return {

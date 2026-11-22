@@ -36,6 +36,8 @@ export interface CcrDefinition {
   config: CcrConfig;
   /** RMV de bail-out (L/min) — préférence rmvDeco. */
   bailoutRmvLMin: number;
+  /** END max (m) des gaz de bail-out ; `undefined` = limite de déco de la plongée (maxEndM). */
+  bailoutMaxEndM?: number;
   /** Bloc supposé pour chaque gaz de bail-out. */
   bailoutTank: BailoutTankDefault;
 }

@@ -48,15 +48,16 @@ export function computeBailout(
     const dil = [...def.bottomGases, ...def.decoGases].find(g => g.name === cfg.diluentName);
     if (dil) oc.addDecoGas(dil);
   }
+  const maxEndM = def.ccr?.bailoutMaxEndM ?? def.maxEndM;
   const problem = bailoutProblem(Object.values(oc.decoGasses), bailoutDepth, {
     maxPpO2Bar: def.maxDecoPpO2,
-    maxEndM: def.maxEndM,
+    maxEndM,
     isFreshWater: def.isFreshWater,
   });
   if (problem) throw new Error(problem);
 
   const segments = oc.calculateDecompression(
-    false, def.gfLow, def.gfHigh, def.maxDecoPpO2, def.maxEndM,
+    false, def.gfLow, def.gfHigh, def.maxDecoPpO2, maxEndM,
     bailoutDepth, def.ascentRateMpm, def.timeStepMin, false, def.ascentRateBetweenStopsMpm,
   );
 

@@ -5,7 +5,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BAILOUT_LIMITS, bailoutProblem, type Gas, type Segment } from '../lib/dive';
+import { bailoutLimitsFor, bailoutProblem, type Gas, type Segment } from '../lib/dive';
+import { usePreferencesStore } from '../store/usePreferencesStore';
 import { fontSize, spacing } from '../styles/theme';
 
 type Props = {
@@ -18,11 +19,12 @@ type Props = {
 };
 
 export default function CcrBailoutWarning({ diluentName, gazDeco, segments }: Props) {
+  const ccrBailoutMaxEndM = usePreferencesStore(s => s.ccrBailoutMaxEndM);
   const message = useMemo(() => {
     if (diluentName === undefined) return undefined;
     const deepest = Math.max(0, ...segments.flatMap(s => [s.startDepth, s.endDepth]));
-    return bailoutProblem(gazDeco, deepest, BAILOUT_LIMITS);
-  }, [diluentName, gazDeco, segments]);
+    return bailoutProblem(gazDeco, deepest, bailoutLimitsFor(ccrBailoutMaxEndM));
+  }, [diluentName, gazDeco, segments, ccrBailoutMaxEndM]);
 
   if (!message) return null;
 

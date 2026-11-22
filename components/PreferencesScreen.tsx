@@ -62,7 +62,7 @@ export default function PreferencesScreen() {
     const {
         gfLow, gfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr, rmvFond, rmvDeco,
         descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-        ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
+        ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
         update, reset,
     } = usePreferencesStore();
 
@@ -221,6 +221,16 @@ export default function PreferencesScreen() {
                     onChange={v => update({ ccrSwitchDepthM: v })}
                 />
 
+                <PrefSlider
+                    label="END max du bail-out"
+                    hint="Narcose équivalente maximale acceptée pour un gaz de bail-out (urgence)"
+                    value={ccrBailoutMaxEndM}
+                    min={30} max={50} step={1}
+                    format={v => `${v} m`}
+                    color={ocean.accent.blue}
+                    onChange={v => update({ ccrBailoutMaxEndM: v })}
+                />
+
                 {ccrSetpointHigh > 1.4 && (
                     <InfoRow icon="warning" color="#BA7517"
                         text="Un set point haut au-delà de 1,4 bar augmente le risque d'hyperoxie (toxicité de l'O₂)."
@@ -228,7 +238,7 @@ export default function PreferencesScreen() {
                 )}
 
                 <InfoRow icon="info-outline"
-                    text="Le bail-out est simulé en fin de phase fond, en circuit ouvert, avec les gaz de déco et le RMV déco."
+                    text="Le bail-out est simulé en fin de phase fond, en circuit ouvert, avec les gaz de déco, le RMV déco et l'END max du bail-out."
                 />
             </Section>
 
@@ -245,6 +255,7 @@ export default function PreferencesScreen() {
                     <SummaryCell label="Entre paliers" value={`${ascentRateBetweenStopsMMin} m/min`} />
                     <SummaryCell label="SP bas / haut" value={`${ccrSetpointLow.toFixed(2)} / ${ccrSetpointHigh.toFixed(2)}`} />
                     <SummaryCell label="Bascule SP" value={`${ccrSwitchDepthM} m`} />
+                    <SummaryCell label="END max bail-out" value={`${ccrBailoutMaxEndM} m`} />
                 </View>
             </Section>
 

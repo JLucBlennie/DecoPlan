@@ -39,7 +39,7 @@ export default function RuntimeScreen() {
   const {
     gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM,
+    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
   } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
@@ -83,6 +83,7 @@ export default function RuntimeScreen() {
         setpointHighBar: ccrSetpointHigh,
         switchDepthM: ccrSwitchDepthM,
         bailoutRmvLMin: rmvDeco,
+        bailoutMaxEndM: ccrBailoutMaxEndM,
       },
     });
 

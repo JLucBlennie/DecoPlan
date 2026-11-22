@@ -1,5 +1,5 @@
 export { computeScenarioRuntime, computeWhatIf } from './computeWhatIf';
-export { BAILOUT_LIMITS, definitionFromPlongee } from './definitionFromPlongee';
+export { bailoutLimitsFor, definitionFromPlongee } from './definitionFromPlongee';
 export type { CcrSettings, DiveSettings } from './definitionFromPlongee';
 export { deltaTrend, formatDeltaMinutes, formatMinutes } from './format';
 export type { DeltaTrend } from './format';
