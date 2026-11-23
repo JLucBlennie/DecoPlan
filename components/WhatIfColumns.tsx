@@ -1,5 +1,5 @@
 // components/WhatIfColumns.tsx
-// Onglet « Et si ? » : trois colonnes fixes (côte à côte sur grand écran, empilées sur téléphone).
+// Onglet « Et si ? » : un graphique des profils superposés, puis trois colonnes fixes (côte à côte sur grand écran, empilées sur téléphone).
 //   1. le runtime nominal ;
 //   2. les variantes (+5 m, +5 min, 5 min au fond) dans un accordéon ;
 //   3. les pertes de gaz : bail-out en recycleur, perte des gaz de déco en circuit ouvert.
@@ -10,6 +10,7 @@ import type { WhatIfKind, WhatIfResult } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import WhatIfAccordion from './WhatIfAccordion';
 import WhatIfColumn from './WhatIfColumn';
+import WhatIfProfileChart from './WhatIfProfileChart';
 
 type Props = { result: WhatIfResult };
 
@@ -33,6 +34,7 @@ export default function WhatIfColumns({ result }: Props) {
 
     return (
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+            <WhatIfProfileChart result={result} />
             <View style={[styles.columns, isWide && styles.columnsWide]}>
                 <View style={isWide ? styles.cell : undefined}>
                     <Text style={styles.sectionTitle}>Nominal</Text>
