@@ -22,6 +22,7 @@ export default function GasBlocksList({ needs }: Props) {
                         </Text>
                         <Text style={styles.litres}>{Math.round(need.litres)} L</Text>
                     </View>
+                    <Text style={styles.reserve}>réserve {need.reserveBar} b par bloc</Text>
                     {need.options.map(option => (
                         <Text
                             key={`${option.block.volumeL}-${option.block.pressureBar}`}
@@ -34,7 +35,8 @@ export default function GasBlocksList({ needs }: Props) {
                 </View>
             ))}
             <Text style={styles.note}>
-                Litres détendus, sans réserve. Blocs : fond 12 ou 15 L/230 b, déco 7 L/200 b, bail-out 7 L/200 b ou 11 L/200 b.
+                Litres détendus. Blocs dimensionnés avec la réserve indiquée (réglable dans les préférences) :
+                fond 12 ou 15 L/230 b, déco 7 L/200 b, bail-out 7 L/200 b ou 11 L/200 b.
             </Text>
         </View>
     );
@@ -50,6 +52,7 @@ const styles = StyleSheet.create({
     headRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.xs },
     gasName: { fontSize: 10, color: ocean.accent.blue, flexShrink: 1 },
     litres: { fontSize: 10, color: ocean.text.primary },
+    reserve: { fontSize: 9, color: ocean.text.muted, paddingLeft: spacing.sm },
     option: { fontSize: fontSize.xs, color: ocean.text.secondary, paddingLeft: spacing.sm },
     optionBest: { color: ocean.accent.teal, fontWeight: '600' },
     note: { fontSize: 9, color: ocean.text.muted },

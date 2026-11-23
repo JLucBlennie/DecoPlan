@@ -28,7 +28,7 @@ export function computeScenarioRuntime(
 
   const summary = summarizeRuntime(def, segments);
   const gasNeeds = bailout
-    ? bailoutGasNeeds({ gasUsage: bailout.gasUsage })
+    ? bailoutGasNeeds({ gasUsage: bailout.gasUsage }, def.gasReserves)
     : openCircuitGasNeeds(def, segments, summary.bottomPhaseMin);
 
   return {

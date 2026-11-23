@@ -20,6 +20,7 @@ import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
 import PlongeePicker from './PlongeePicker';
 import PrintRunSheetButton from './PrintRunSheetButton';
 import RuntimeResult from './RuntimeResult';
+import WhatIfProfileChart from './WhatIfProfileChart';
 import SegmentedToggle from './SegmentedToggle';
 import WhatIfColumns from './WhatIfColumns';
 
@@ -39,7 +40,7 @@ export default function RuntimeScreen() {
   const {
     gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-    rmvFond, rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
+    rmvFond, rmvDeco, reserveBottomBar, reserveDecoBar, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
   } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
@@ -79,6 +80,7 @@ export default function RuntimeScreen() {
       ascentRateMMin,
       ascentRateBetweenStopsMMin,
       rmv: { fondLMin: rmvFond, decoLMin: rmvDeco },
+      gasReserves: { bottomBar: reserveBottomBar, decoBar: reserveDecoBar },
       ccr: {
         setpointLowBar: ccrSetpointLow,
         setpointHighBar: ccrSetpointHigh,
@@ -190,6 +192,9 @@ export default function RuntimeScreen() {
                 />
               )}
             </View>
+
+            {/* Profils superposés : au-dessus des onglets, visibles dans les deux vues */}
+            {whatIf && <WhatIfProfileChart result={whatIf} />}
 
             {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal, et fiche à imprimer */}
             <View style={styles.toolbar}>

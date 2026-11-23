@@ -10,5 +10,5 @@ export { toRuntimeRows } from './runtimeRows';
 export type { RuntimeRow } from './runtimeRows';
 export { applicableKinds, applyScenario, DEFAULT_WHATIF_OPTIONS, scenarioLabel, WHATIF_KINDS } from './scenarios';
 export type {
-  DiveDefinition, RuntimeDelta, RuntimeGasNeed, RuntimeGasRole, RuntimeStop, RuntimeSummary, WhatIfKind, WhatIfOptions, WhatIfResult, WhatIfRuntime, WhatIfUnavailable
+  DiveDefinition, RuntimeDelta, GasReserves, RuntimeGasNeed, RuntimeGasRole, RuntimeStop, RuntimeSummary, WhatIfKind, WhatIfOptions, WhatIfResult, WhatIfRuntime, WhatIfUnavailable
 } from './types';

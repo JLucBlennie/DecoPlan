@@ -1,9 +1,9 @@
 /**
  * DecoPlan – Choix de blocs pour un volume de gaz donné.
  *
- * Capacité d'un bloc (L détendus) = volume × pression de gonflage.
- * Le « meilleur » choix est la capacité totale la plus proche du besoin (sans le dépasser par
- * défaut), à égalité le moins de blocs. Aucune réserve n'est ajoutée au besoin.
+ * Capacité utile d'un bloc (L détendus) = volume × (pression de gonflage − réserve).
+ * Le « meilleur » choix est la capacité utile totale la plus proche du besoin (sans le
+ * dépasser), à égalité le moins de blocs.
  */
 
 export interface BlockSize {
@@ -14,8 +14,10 @@ export interface BlockSize {
 export interface BlockSuggestion {
   block: BlockSize;
   count: number;
-  /** Capacité totale des blocs proposés (L détendus). */
+  /** Capacité utile totale des blocs proposés, réserve déduite (L détendus). */
   capacityL: number;
+  /** Réserve laissée dans chaque bloc (bar). */
+  reserveBar: number;
 }
 
 /** Gaz de fond : blocs courants, en 230 bar. */
@@ -33,20 +35,21 @@ export const BAILOUT_BLOCKS: readonly BlockSize[] = [
   { volumeL: 11, pressureBar: 200 },
 ];
 
-export function blockCapacityL(block: BlockSize): number {
-  return block.volumeL * block.pressureBar;
+/** Capacité utile d'un bloc : réserve déduite (jamais négative). */
+export function blockCapacityL(block: BlockSize, reserveBar = 0): number {
+  return block.volumeL * Math.max(0, block.pressureBar - reserveBar);
 }
 
-/** Nombre de blocs de cette taille pour couvrir `litres` (au moins 1 si le besoin est positif). */
-export function suggestBlocks(litres: number, block: BlockSize): BlockSuggestion {
-  const capacity = blockCapacityL(block);
-  const count = litres > 0 ? Math.ceil(litres / capacity) : 0;
-  return { block, count, capacityL: count * capacity };
+/** Nombre de blocs de cette taille pour couvrir `litres` en gardant la réserve (au moins 1 si besoin). */
+export function suggestBlocks(litres: number, block: BlockSize, reserveBar = 0): BlockSuggestion {
+  const capacity = blockCapacityL(block, reserveBar);
+  const count = litres > 0 && capacity > 0 ? Math.ceil(litres / capacity) : 0;
+  return { block, count, capacityL: count * capacity, reserveBar };
 }
 
 /** Une proposition par taille de bloc, dans l'ordre donné. */
-export function suggestAll(litres: number, blocks: readonly BlockSize[]): BlockSuggestion[] {
-  return blocks.map(b => suggestBlocks(litres, b));
+export function suggestAll(litres: number, blocks: readonly BlockSize[], reserveBar = 0): BlockSuggestion[] {
+  return blocks.map(b => suggestBlocks(litres, b, reserveBar));
 }
 
 /** Proposition la plus économe : capacité totale minimale, puis nombre de blocs minimal. */

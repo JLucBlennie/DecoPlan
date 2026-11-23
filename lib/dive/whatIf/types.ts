@@ -46,6 +46,8 @@ export interface DiveDefinition {
   ccr?: CcrDefinition;
   /** RMV (L/min) pour estimer les gaz nécessaires ; absent = pas d'estimation. */
   rmv?: { fondLMin: number; decoLMin: number };
+  /** Réserve (bar) gardée dans les blocs ; absent = aucune réserve. Le bail-out suit la réserve déco. */
+  gasReserves?: GasReserves;
 }
 
 /** Paramètres des scénarios (valeurs par défaut : voir scenarios.ts). */
@@ -82,14 +84,22 @@ export interface RuntimeDelta {
   firstStopDepthM: number;
 }
 
+/** Réserves de pression (bar) à garder dans les blocs. */
+export interface GasReserves {
+  bottomBar: number;
+  decoBar: number;
+}
+
 export type RuntimeGasRole = 'bottom' | 'deco' | 'bailout';
 
 /** Gaz nécessaire pour aller au bout du runtime, avec les blocs proposés. */
 export interface RuntimeGasNeed {
   gasName: string;
   role: RuntimeGasRole;
-  /** Litres détendus. */
+  /** Litres détendus nécessaires, réserve non comprise. */
   litres: number;
+  /** Réserve (bar) prise en compte pour dimensionner les blocs. */
+  reserveBar: number;
   /** Une proposition par taille de bloc considérée. */
   options: BlockSuggestion[];
   /** Proposition la plus économe parmi `options`. */

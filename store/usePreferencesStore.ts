@@ -19,6 +19,10 @@ export interface Preferences {
     rmvFond: number;
     /** RMV surface aux paliers déco (L/min) — plus faible : effort réduit */
     rmvDeco: number;
+    /** Réserve (bar) à garder dans les blocs de gaz de fond */
+    reserveBottomBar: number;
+    /** Réserve (bar) à garder dans les blocs de gaz de déco et de bail-out */
+    reserveDecoBar: number;
     /** Vitesse de descente (m/min) */
     descentRateMMin: number;
     /** Vitesse de remontée du fond jusqu'au 1er palier (m/min) — norme FFESSM : 9–15 m/min */
@@ -53,6 +57,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
     gfHighCcr: 0.70,
     rmvFond: 20,
     rmvDeco: 15,
+    reserveBottomBar: 50,
+    reserveDecoBar: 30,
     descentRateMMin: 20,
     ascentRateMMin: 10,
     ascentRateBetweenStopsMMin: 6,
@@ -97,6 +103,8 @@ export const usePreferencesStore = create<PreferencesStore>((set, get) => ({
             gfHighCcr: next.gfHighCcr,
             rmvFond: next.rmvFond,
             rmvDeco: next.rmvDeco,
+            reserveBottomBar: next.reserveBottomBar,
+            reserveDecoBar: next.reserveDecoBar,
             descentRateMMin: next.descentRateMMin,
             ascentRateMMin: next.ascentRateMMin,
             ascentRateBetweenStopsMMin: next.ascentRateBetweenStopsMMin,

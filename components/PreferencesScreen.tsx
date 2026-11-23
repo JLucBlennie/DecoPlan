@@ -60,7 +60,7 @@ function GfSection({ title, subtitle, gfLow, gfHigh, onChange, keys }: {
 
 export default function PreferencesScreen() {
     const {
-        gfLow, gfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr, rmvFond, rmvDeco,
+        gfLow, gfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr, rmvFond, rmvDeco, reserveBottomBar, reserveDecoBar,
         descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
         ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
         update, reset,
@@ -131,6 +131,31 @@ export default function PreferencesScreen() {
 
                 <InfoRow icon="info-outline"
                     text={`À ${rmvFond} L/min fond, un bloc 12 L/200 bar dure env. ${Math.round(12 * 200 / rmvFond)} min en surface (sans pression).`}
+                />
+            </Section>
+
+            {/* ── Réserve de gaz ───────────────────────────────────────────────── */}
+            <Section title="Réserve de gaz"
+                subtitle="Pression à garder dans chaque bloc pour dimensionner les gaz nécessaires">
+
+                <PrefSlider
+                    label="Réserve gaz de fond"
+                    hint="Pression minimale gardée dans le bloc de fond"
+                    value={reserveBottomBar}
+                    min={0} max={100} step={5}
+                    format={v => `${v} bar`}
+                    color={ocean.accent.teal}
+                    onChange={v => update({ reserveBottomBar: v })}
+                />
+
+                <PrefSlider
+                    label="Réserve gaz de déco et bail-out"
+                    hint="Pression minimale gardée dans chaque bloc de déco ou de bail-out"
+                    value={reserveDecoBar}
+                    min={0} max={100} step={5}
+                    format={v => `${v} bar`}
+                    color={ocean.accent.teal}
+                    onChange={v => update({ reserveDecoBar: v })}
                 />
             </Section>
 
@@ -250,6 +275,8 @@ export default function PreferencesScreen() {
                     <SummaryCell label="GF CCR" value={`${Math.round(gfLowCcr * 100)}/${Math.round(gfHighCcr * 100)}`} />
                     <SummaryCell label="RMV fond" value={`${rmvFond} L/min`} />
                     <SummaryCell label="RMV déco" value={`${rmvDeco} L/min`} />
+                    <SummaryCell label="Réserve fond" value={`${reserveBottomBar} bar`} />
+                    <SummaryCell label="Réserve déco" value={`${reserveDecoBar} bar`} />
                     <SummaryCell label="Descente" value={`${descentRateMMin} m/min`} />
                     <SummaryCell label="Remontée" value={`${ascentRateMMin} m/min`} />
                     <SummaryCell label="Entre paliers" value={`${ascentRateBetweenStopsMMin} m/min`} />
