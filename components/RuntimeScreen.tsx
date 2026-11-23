@@ -39,7 +39,7 @@ export default function RuntimeScreen() {
   const {
     gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
+    rmvFond, rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
   } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
@@ -78,6 +78,7 @@ export default function RuntimeScreen() {
       descentRateMMin,
       ascentRateMMin,
       ascentRateBetweenStopsMMin,
+      rmv: { fondLMin: rmvFond, decoLMin: rmvDeco },
       ccr: {
         setpointLowBar: ccrSetpointLow,
         setpointHighBar: ccrSetpointHigh,
@@ -198,7 +199,7 @@ export default function RuntimeScreen() {
               {whatIf && sheetOptions && <PrintRunSheetButton result={whatIf} options={sheetOptions} />}
             </View>
 
-            {resultView === 'detail' && <RuntimeResult data={decoPlan} />}
+            {resultView === 'detail' && <RuntimeResult data={decoPlan} gasNeeds={whatIf?.nominal.gasNeeds} />}
             {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} />}
             {resultView === 'whatIf' && !whatIf && (
               <Text style={styles.whatIfError}>

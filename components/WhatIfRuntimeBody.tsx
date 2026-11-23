@@ -10,6 +10,7 @@ import {
     type RuntimeRow, type WhatIfRuntime,
 } from '../lib/dive';
 import { fontSize, ocean, spacing } from '../styles/theme';
+import GasBlocksList from './GasBlocksList';
 import { KIND_META, TREND_COLOR } from './runtimeKindMeta';
 
 type Props = { runtime: WhatIfRuntime };
@@ -50,21 +51,8 @@ export default function WhatIfRuntimeBody({ runtime }: Props) {
                 </View>
             ))}
 
-            {/* Consommation de bail-out */}
-            {runtime.gasUsage && runtime.gasUsage.length > 0 && (
-                <View style={styles.gasUsage}>
-                    {runtime.gasUsage.map(g => (
-                        <View key={g.gasName} style={styles.gasUsageRow}>
-                            <Text style={styles.gasUsageName} numberOfLines={1}>{g.gasName}</Text>
-                            <Text style={[styles.gasUsageValue, g.insufficient && styles.gasUsageAlert]}>
-                                {Math.round(g.litres)} L
-                                {g.barUsed !== undefined ? ` · ${Math.round(g.barUsed)} bar` : ''}
-                                {g.insufficient ? ' ⚠' : ''}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
-            )}
+            {/* Gaz nécessaires et blocs conseillés */}
+            {runtime.gasNeeds && <GasBlocksList needs={runtime.gasNeeds} />}
 
             {/* Phases */}
             <View style={styles.tableHeader}>
@@ -140,12 +128,6 @@ const styles = StyleSheet.create({
         marginHorizontal: spacing.sm, marginBottom: spacing.xs,
     },
     warningTxt: { fontSize: 9, color: '#BA7517', flex: 1 },
-
-    gasUsage: { paddingHorizontal: spacing.sm, paddingBottom: spacing.xs, gap: 2 },
-    gasUsageRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
-    gasUsageName: { fontSize: 10, color: ocean.accent.blue, flexShrink: 1 },
-    gasUsageValue: { fontSize: 10, color: ocean.text.primary },
-    gasUsageAlert: { color: '#BA7517', fontWeight: '600' },
 
     tableHeader: {
         flexDirection: 'row',

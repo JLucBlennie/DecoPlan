@@ -3,17 +3,22 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { classifySegment, Segment } from '../lib/dive';
+import { classifySegment, Segment, type RuntimeGasNeed } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import GasBlocksList from './GasBlocksList';
 import { KIND_META } from './runtimeKindMeta';
 
-type Props = { data: Segment[] };
+type Props = {
+    data: Segment[];
+    /** Gaz nécessaires du runtime nominal (circuit ouvert) ; absent = rien à afficher. */
+    gasNeeds?: RuntimeGasNeed[];
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Composant
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function RuntimeResult({ data }: Props) {
+export default function RuntimeResult({ data, gasNeeds }: Props) {
 
     const maxDepth = useMemo(
         () => Math.max(...data.map(s => Math.max(s.startDepth, s.endDepth)), 0),
@@ -120,6 +125,8 @@ export default function RuntimeResult({ data }: Props) {
 
                 </View>
             </ScrollView>
+
+            {gasNeeds && <GasBlocksList needs={gasNeeds} />}
 
             {/* Avertissement */}
             <View style={styles.warning}>
