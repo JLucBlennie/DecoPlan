@@ -1,18 +1,22 @@
 // components/WhatIfColumns.tsx
-// Onglet « Et si ? » : un graphique des profils superposés, puis trois colonnes fixes (côte à côte sur grand écran, empilées sur téléphone).
+// Onglet « Et si ? » : trois colonnes fixes (côte à côte sur grand écran, empilées sur téléphone).
 //   1. le runtime nominal ;
 //   2. les variantes (+5 m, +5 min, 5 min au fond) dans un accordéon ;
 //   3. les pertes de gaz : bail-out en recycleur, perte des gaz de déco en circuit ouvert.
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import type { WhatIfKind, WhatIfResult } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import WhatIfAccordion from './WhatIfAccordion';
 import WhatIfColumn from './WhatIfColumn';
-import WhatIfProfileChart from './WhatIfProfileChart';
 
-type Props = { result: WhatIfResult };
+type Props = {
+    result: WhatIfResult;
+    /** Runtime mis en évidence dans le graphique ; toucher une colonne le change. */
+    selectedKind?: WhatIfKind;
+    onSelect?: (kind: WhatIfKind) => void;
+};
 
 /** À partir de cette largeur d'écran, les trois colonnes sont côte à côte. */
 const WIDE_BREAKPOINT = 700;
@@ -20,7 +24,7 @@ const WIDE_BREAKPOINT = 700;
 const VARIANT_KINDS: readonly WhatIfKind[] = ['DEEPER', 'LONGER', 'SHORT_BOTTOM'];
 const GAS_LOSS_KINDS: readonly WhatIfKind[] = ['BAILOUT', 'LOST_DECO_GAS'];
 
-export default function WhatIfColumns({ result }: Props) {
+export default function WhatIfColumns({ result, selectedKind, onSelect }: Props) {
     const { width: screenWidth } = useWindowDimensions();
     const isWide = screenWidth >= WIDE_BREAKPOINT;
 
@@ -33,25 +37,35 @@ export default function WhatIfColumns({ result }: Props) {
     const otherUnavailable = result.unavailable.filter(u => u !== gasLossUnavailable);
 
     return (
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-            <WhatIfProfileChart result={result} />
+        <View>
             <View style={[styles.columns, isWide && styles.columnsWide]}>
                 <View style={isWide ? styles.cell : undefined}>
                     <Text style={styles.sectionTitle}>Nominal</Text>
-                    <WhatIfColumn runtime={result.nominal} isReference />
+                    <WhatIfColumn
+                        runtime={result.nominal} isReference
+                        selected={selectedKind === 'NOMINAL'} onSelect={onSelect && (() => onSelect('NOMINAL'))}
+                    />
                 </View>
 
                 {variants.length > 0 && (
                     <View style={isWide ? styles.cell : undefined}>
                         <Text style={styles.sectionTitle}>Écarts</Text>
-                        <WhatIfAccordion runtimes={variants} defaultOpenKind="LONGER" />
+                        <WhatIfAccordion
+                            runtimes={variants} defaultOpenKind="LONGER"
+                            selectedKind={selectedKind} onSelect={onSelect}
+                        />
                     </View>
                 )}
 
                 {(gasLoss || gasLossUnavailable) && (
                     <View style={isWide ? styles.cell : undefined}>
                         <Text style={styles.sectionTitle}>Pertes de gaz</Text>
-                        {gasLoss && <WhatIfColumn runtime={gasLoss} />}
+                        {gasLoss && (
+                            <WhatIfColumn
+                                runtime={gasLoss}
+                                selected={selectedKind === gasLoss.kind} onSelect={onSelect && (() => onSelect(gasLoss.kind))}
+                            />
+                        )}
                         {gasLossUnavailable && (
                             <View style={styles.unavailableCard}>
                                 <Text style={styles.unavailableTitle}>{gasLossUnavailable.label}</Text>
@@ -82,12 +96,11 @@ export default function WhatIfColumns({ result }: Props) {
                     Calcul indicatif uniquement — non qualifié pour la plongée réelle.
                 </Text>
             </View>
-        </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    scroll: { flex: 1 },
     columns: { gap: spacing.md },
     columnsWide: { flexDirection: 'row', alignItems: 'flex-start' },
     cell: { flex: 1 },

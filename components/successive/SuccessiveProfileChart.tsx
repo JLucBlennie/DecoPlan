@@ -1,19 +1,21 @@
 // Profils des deux plongées bout à bout (Bühlmann), avec le profil MN90 en option.
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Svg, { Defs, Line, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import {
   buhlmannPoints, endTimeMin, maxDepthM, mn90Points,
   type ComputedDive, type DiveSettings, type ProfilePoint, type SuccessiveResult,
 } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
-import { computeProfileLayout, shiftPoints, timeTicks } from './successiveProfileLayout';
+import ProfileGrid from '../charts/ProfileGrid';
+import ProfilePlot from '../charts/ProfilePlot';
+import { profileScale, PT, timeTicks } from '../charts/profileFrame';
+import { fillPathOf, polylineOf } from '../charts/profilePaths';
+import { computeProfileLayout, shiftPoints } from './successiveProfileLayout';
 import { formatInterval } from './successiveFormat';
 
-const PL = 38, PR = 8, PT = 10, PB = 26;
 const HEIGHT = 260;
-const MIN_WIDTH = 120;
 const COLOR_BUHLMANN = '#378ADD';
 const COLOR_MN90 = '#EF9F27';
 
@@ -40,10 +42,6 @@ function stopSegments(dive: ComputedDive) {
 }
 
 export default function SuccessiveProfileChart({ result, settings, showMn90, onToggleMn90 }: Props) {
-  const [width, setWidth] = useState(320);
-  const pw = width - PL - PR;
-  const ph = HEIGHT - PT - PB;
-
   const { first, second, mn90, surfaceIntervalMin } = result;
   const isConsecutive = mn90.relation === 'CONSECUTIVE';
 
@@ -63,21 +61,11 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
   const layout = computeProfileLayout(firstEnd, secondEnd, isConsecutive ? endTimeMin(mn90First ?? []) : 0);
 
   const maxDepth = Math.max(10, maxDepthM(buh1), maxDepthM(buh2), maxDepthM(mn90First ?? []), maxDepthM(mn90Second ?? []));
-  const axisMax = Math.ceil(maxDepth / 10) * 10;
-  const tx = (v: number) => PL + (v / layout.totalLenMin) * pw;
-  const ty = (d: number) => PT + (d / axisMax) * ph;
-
-  const polyline = (points: ProfilePoint[]) => points.map(p => `${tx(p.timeMin).toFixed(1)},${ty(p.depthM).toFixed(1)}`).join(' ');
-  const fillPath = (points: ProfilePoint[]) => {
-    const line = points.map(p => `L ${tx(p.timeMin).toFixed(1)} ${ty(p.depthM).toFixed(1)}`).join(' ');
-    return `M ${tx(points[0].timeMin).toFixed(1)} ${ty(0).toFixed(1)} ${line} L ${tx(points[points.length - 1].timeMin).toFixed(1)} ${ty(0).toFixed(1)} Z`;
-  };
 
   const dives = [
     { dive: first, points: shiftPoints(buh1, 0), offset: 0, len: layout.firstLenMin },
     { dive: second, points: shiftPoints(buh2, layout.secondStartMin), offset: layout.secondStartMin, len: layout.secondLenMin },
   ];
-  const depthTicks = Array.from({ length: axisMax / 10 + 1 }, (_, i) => i * 10);
 
   return (
     <View style={styles.card}>
@@ -88,10 +76,11 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
         </TouchableOpacity>
       </View>
 
-      {/* La largeur vient d'un conteneur dont la taille ne dépend PAS du SVG (sinon boucle de mesure :
-          le SVG élargit la carte, qui élargit le SVG…). Le SVG est donc posé en absolu dedans. */}
-      <View style={styles.plot} onLayout={e => setWidth(Math.max(MIN_WIDTH, Math.floor(e.nativeEvent.layout.width)))}>
-        <View style={StyleSheet.absoluteFill}>
+      <ProfilePlot height={HEIGHT}>
+        {width => {
+          const scale = profileScale(width, HEIGHT, layout.totalLenMin, maxDepth);
+          const { tx, ty, ph } = scale;
+          return (
       <Svg width={width} height={HEIGHT}>
         <Defs>
           <LinearGradient id="fillDive" x1="0" y1="0" x2="0" y2="1">
@@ -108,24 +97,16 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
           {formatInterval(surfaceIntervalMin)}
         </SvgText>
 
-        {depthTicks.map(d => (
-          <React.Fragment key={`d${d}`}>
-            <Line x1={PL} y1={ty(d)} x2={PL + pw} y2={ty(d)} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} />
-            <SvgText x={PL - 4} y={ty(d) + 3.5} textAnchor="end" fontSize={9} fill="#5F5E5A">{d}m</SvgText>
-          </React.Fragment>
-        ))}
-        <Line x1={PL} y1={ty(0)} x2={PL + pw} y2={ty(0)} stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} />
+        <ProfileGrid
+          scale={scale}
+          height={HEIGHT}
+          timeTicks={dives.flatMap(({ offset, len }) => timeTicks(len).map(t => ({ atMin: offset + t, label: `${t}'` })))}
+        />
 
-        {dives.map(({ dive, points, offset, len }, i) => (
+        {dives.map(({ dive, points, offset }, i) => (
           <React.Fragment key={i}>
-            {timeTicks(len).map(t => (
-              <React.Fragment key={`t${i}-${t}`}>
-                <Line x1={tx(offset + t)} y1={PT} x2={tx(offset + t)} y2={PT + ph} stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />
-                <SvgText x={tx(offset + t)} y={HEIGHT - 4} textAnchor="middle" fontSize={9} fill="#5F5E5A">{t}'</SvgText>
-              </React.Fragment>
-            ))}
-            <Path d={fillPath(points)} fill="url(#fillDive)" />
-            <Polyline points={polyline(points)} fill="none" stroke={COLOR_BUHLMANN} strokeWidth={1.8} strokeLinejoin="round" />
+            <Path d={fillPathOf(points, scale)} fill="url(#fillDive)" />
+            <Polyline points={polylineOf(points, scale)} fill="none" stroke={COLOR_BUHLMANN} strokeWidth={1.8} strokeLinejoin="round" />
             {stopSegments(dive).map((s, k) => (
               <SvgText key={k} x={tx(offset + (s.startMin + s.endMin) / 2)} y={ty(s.depthM) - 5}
                 textAnchor="middle" fontSize={8} fill="#BA7517">
@@ -137,16 +118,17 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
         ))}
 
         {mn90First && (
-          <Polyline points={polyline(mn90First)} fill="none" stroke={COLOR_MN90} strokeWidth={1.4}
+          <Polyline points={polylineOf(mn90First, scale)} fill="none" stroke={COLOR_MN90} strokeWidth={1.4}
             strokeDasharray="4,3" strokeLinejoin="round" />
         )}
         {mn90Second && (
-          <Polyline points={polyline(shiftPoints(mn90Second, layout.secondStartMin))} fill="none" stroke={COLOR_MN90}
+          <Polyline points={polylineOf(shiftPoints(mn90Second, layout.secondStartMin), scale)} fill="none" stroke={COLOR_MN90}
             strokeWidth={1.4} strokeDasharray="4,3" strokeLinejoin="round" />
         )}
       </Svg>
-        </View>
-      </View>
+          );
+        }}
+      </ProfilePlot>
 
       <View style={styles.legend}>
         <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_BUHLMANN }]} /><Text style={styles.legendTxt}>Bühlmann</Text></View>
@@ -170,7 +152,6 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch', backgroundColor: ocean.bg.surface, borderRadius: radius.md,
     borderWidth: 0.5, borderColor: ocean.border.subtle, padding: spacing.md,
   },
-  plot: { alignSelf: 'stretch', height: HEIGHT },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xs },
   title: { fontSize: fontSize.sm, fontWeight: '500', color: ocean.text.primary },
   chip: {

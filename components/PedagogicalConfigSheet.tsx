@@ -22,6 +22,7 @@ import { usePedagogicalLaunch } from '../hooks/usePedagogicalLaunch';
 import { labelFromComposition } from '../lib/dive/buildDivePlan';
 import { GFSliderPair } from './GFSliderPair';
 import ComparisonSettings, { isComparisonBlocked } from './pedagogical/ComparisonSettings';
+import type { TankConfig } from '../lib/dive/buildDivePlan';
 import { TankConfigRow } from './TankConfigRow';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -40,6 +41,8 @@ export interface PedagogicalConfigSheetProps {
    */
   /** Plongée de départ : active la comparaison avec un autre mode de respiration. */
   definition?: DiveDefinition;
+  /** Blocs de départ (ex. repris de l'optimiseur). */
+  initialTanks?: TankConfig[];
 
   onLaunch: (planA: DivePlan, planB: DivePlan | undefined) => void;
 
@@ -51,7 +54,7 @@ export interface PedagogicalConfigSheetProps {
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export function PedagogicalConfigSheet({
-  plan, planName, currentGfLow, currentGfHigh, definition, onLaunch,
+  plan, planName, currentGfLow, currentGfHigh, definition, initialTanks, onLaunch,
   visible: visibleProp, onClose: onCloseProp,
 }: PedagogicalConfigSheetProps) {
 
@@ -61,7 +64,7 @@ export function PedagogicalConfigSheet({
     handlers: { setGfA, setGfB, toggleComparison, updateTank },
     ccr, oc, launch,
   } = usePedagogicalLaunch(plan, {
-    planName, currentGfLow, currentGfHigh, definition,
+    planName, currentGfLow, currentGfHigh, definition, initialTanks,
     onLaunch,
   });
 

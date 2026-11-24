@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 import type { Plan } from '../lib/dive/buhlmann';
+import type { TankConfig } from '../lib/dive/buildDivePlan';
 import type { DivePlan } from '../lib/dive/types';
 import type { DiveDefinition } from '../lib/dive/whatIf/types';
 import { PedagogicalConfigSheet } from './PedagogicalConfigSheet';
@@ -17,13 +18,15 @@ export interface PedagogicalLaunchButtonProps {
   currentGfHigh: number;
   /** Plongée de départ : active la comparaison avec un autre mode de respiration. */
   definition?:   DiveDefinition;
+  /** Blocs de départ (ex. repris de l'optimiseur). */
+  initialTanks?: TankConfig[];
   onLaunch:      (planA: DivePlan, planB: DivePlan | undefined) => void;
   /** Variante d'affichage */
   variant?: 'button' | 'fab' | 'menuItem';
 }
 
 export function PedagogicalLaunchButton({
-  plan, planName, currentGfLow, currentGfHigh, definition, onLaunch,
+  plan, planName, currentGfLow, currentGfHigh, definition, initialTanks, onLaunch,
   variant = 'button',
 }: PedagogicalLaunchButtonProps) {
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -68,6 +71,7 @@ export function PedagogicalLaunchButton({
         currentGfLow={currentGfLow}
         currentGfHigh={currentGfHigh}
         definition={definition}
+        initialTanks={initialTanks}
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
         onLaunch={(planA, planB) => {

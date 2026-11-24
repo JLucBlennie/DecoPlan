@@ -19,9 +19,17 @@ export interface TankConfigRowProps {
   gasLabel: string;   // libellé lisible du gaz (ex. "Air", "EAN 50")
   gasRole:  'bottom' | 'deco';
   onChange: (updated: TankConfig) => void;
+  /** Nombre de blocs de ce type ; affiché seulement si `onCountChange` est fourni. */
+  count?:   number;
+  onCountChange?: (count: number) => void;
 }
 
-export function TankConfigRow({ tank, gasLabel, gasRole, onChange }: TankConfigRowProps) {
+/** Touches rapides, plus le volume courant s'il n'en fait pas partie (ex. 30 L pour un jumelé 2 × 15 L). */
+function volumeChoices(current: number): number[] {
+  return QUICK_VOLUMES.includes(current) ? QUICK_VOLUMES : [...QUICK_VOLUMES, current].sort((a, b) => a - b);
+}
+
+export function TankConfigRow({ tank, gasLabel, gasRole, onChange, count = 1, onCountChange }: TankConfigRowProps) {
   const [pressureStr, setPressureStr] = useState(String(tank.startPressureBar));
 
   const handleVolumeChange = (v: number) => {
@@ -58,7 +66,7 @@ export function TankConfigRow({ tank, gasLabel, gasRole, onChange }: TankConfigR
       <View style={styles.volumeCol}>
         <Text style={styles.colHeader}>Volume</Text>
         <View style={styles.volumePicker}>
-          {QUICK_VOLUMES.map(v => (
+          {volumeChoices(tank.volumeLiters).map(v => (
             <TouchableOpacity
               key={v}
               onPress={() => handleVolumeChange(v)}
@@ -108,6 +116,22 @@ export function TankConfigRow({ tank, gasLabel, gasRole, onChange }: TankConfigR
         </View>
       </View>
 
+      {/* Nombre de blocs (optionnel) */}
+      {onCountChange && (
+        <View style={styles.countCol}>
+          <Text style={styles.colHeader}>Blocs</Text>
+          <View style={styles.countControls}>
+            <TouchableOpacity onPress={() => onCountChange(Math.max(1, count - 1))} accessibilityLabel={`${gasLabel} : un bloc de moins`}>
+              <Text style={styles.countBtn}>−</Text>
+            </TouchableOpacity>
+            <Text style={styles.countValue}>{count}</Text>
+            <TouchableOpacity onPress={() => onCountChange(Math.min(6, count + 1))} accessibilityLabel={`${gasLabel} : un bloc de plus`}>
+              <Text style={styles.countBtn}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
     </View>
   );
 }
@@ -129,6 +153,10 @@ const styles = StyleSheet.create({
 
   volumeCol:   { flex: 1, gap: 4 },
   pressureCol: { width: 90, gap: 4 },
+  countCol:    { width: 56, gap: 4 },
+  countControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  countBtn:    { fontSize: 18, color: '#378ADD', paddingHorizontal: 4 },
+  countValue:  { fontSize: 13, color: '#E8E8E6' },
   colHeader:   { fontSize: 9, color: '#5F5E5A', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   volumePicker: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },

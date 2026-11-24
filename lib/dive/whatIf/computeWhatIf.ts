@@ -8,6 +8,7 @@
 
 import { computeBailoutScenario } from './bailoutScenario';
 import { computeRuntimeSegments } from './runtime';
+import { bailoutGasNeeds, openCircuitGasNeeds } from './runtimeGasNeeds';
 import { applicableKinds, applyScenario, DEFAULT_WHATIF_OPTIONS, scenarioLabel } from './scenarios';
 import { deltaFromNominal, summarizeRuntime } from './summary';
 import type {
@@ -25,13 +26,19 @@ export function computeScenarioRuntime(
   const bailout = kind === 'BAILOUT' ? computeBailoutScenario(def) : undefined;
   const segments = bailout ? bailout.segments : computeRuntimeSegments(def);
 
+  const summary = summarizeRuntime(def, segments);
+  const gasNeeds = bailout
+    ? bailoutGasNeeds({ gasUsage: bailout.gasUsage }, def.gasReserves)
+    : openCircuitGasNeeds(def, segments, summary.bottomPhaseMin);
+
   return {
     kind,
     label: scenarioLabel(kind, options),
     segments,
-    summary: summarizeRuntime(def, segments),
+    summary,
     warnings: collectWarnings(def),
     ...(bailout ? { gasUsage: bailout.gasUsage } : {}),
+    ...(gasNeeds.length > 0 ? { gasNeeds } : {}),
   };
 }
 

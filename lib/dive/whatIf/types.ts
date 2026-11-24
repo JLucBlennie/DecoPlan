@@ -9,6 +9,7 @@ import type { Gas } from '../gas';
 import type { Segment } from '../types';
 import type { CcrDefinition } from '../ccr/types';
 import type { GasUsage } from '../ccr/bailoutGas';
+import type { BlockSuggestion } from '../gasBlocks';
 
 /** Scénarios disponibles. NOMINAL est la plongée de référence. */
 export type WhatIfKind =
@@ -43,6 +44,10 @@ export interface DiveDefinition {
   timeStepMin: number;
   /** Présent = plongée en recycleur (CCR). Absent = circuit ouvert. */
   ccr?: CcrDefinition;
+  /** RMV (L/min) pour estimer les gaz nécessaires ; absent = pas d'estimation. */
+  rmv?: { fondLMin: number; decoLMin: number };
+  /** Réserve (bar) gardée dans les blocs ; absent = aucune réserve. Le bail-out suit la réserve déco. */
+  gasReserves?: GasReserves;
 }
 
 /** Paramètres des scénarios (valeurs par défaut : voir scenarios.ts). */
@@ -79,6 +84,28 @@ export interface RuntimeDelta {
   firstStopDepthM: number;
 }
 
+/** Réserves de pression (bar) à garder dans les blocs. */
+export interface GasReserves {
+  bottomBar: number;
+  decoBar: number;
+}
+
+export type RuntimeGasRole = 'bottom' | 'deco' | 'bailout';
+
+/** Gaz nécessaire pour aller au bout du runtime, avec les blocs proposés. */
+export interface RuntimeGasNeed {
+  gasName: string;
+  role: RuntimeGasRole;
+  /** Litres détendus nécessaires, réserve non comprise. */
+  litres: number;
+  /** Réserve (bar) prise en compte pour dimensionner les blocs. */
+  reserveBar: number;
+  /** Une proposition par taille de bloc considérée. */
+  options: BlockSuggestion[];
+  /** Proposition la plus économe parmi `options`. */
+  best: BlockSuggestion;
+}
+
 export interface WhatIfRuntime {
   kind: WhatIfKind;
   label: string;
@@ -87,6 +114,8 @@ export interface WhatIfRuntime {
   warnings: string[];
   /** Consommation de gaz (bail-out seulement). */
   gasUsage?: GasUsage[];
+  /** Gaz nécessaires et blocs conseillés (absent si inconnus : recycleur sans bail-out, RMV non fournis). */
+  gasNeeds?: RuntimeGasNeed[];
   /** Absent pour le nominal. */
   delta?: RuntimeDelta;
 }

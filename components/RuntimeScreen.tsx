@@ -1,9 +1,10 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
-  defaultGfFor, computeRuntime, computeWhatIf, definitionFromPlongee,
+  computeRuntime, computeWhatIf,
+  defaultGfFor,
+  definitionFromPlongee,
   DiveDefinition, Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
 } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -12,6 +13,7 @@ import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRuntimeSelection } from '../hooks/useRuntimeSelection';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
@@ -22,6 +24,7 @@ import PrintRunSheetButton from './PrintRunSheetButton';
 import RuntimeResult from './RuntimeResult';
 import SegmentedToggle from './SegmentedToggle';
 import WhatIfColumns from './WhatIfColumns';
+import WhatIfProfileChart from './WhatIfProfileChart';
 
 type ResultView = 'detail' | 'whatIf';
 
@@ -39,7 +42,7 @@ export default function RuntimeScreen() {
   const {
     gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr,
     descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
-    rmvDeco, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
+    rmvFond, rmvDeco, reserveBottomBar, reserveDecoBar, ccrSetpointLow, ccrSetpointHigh, ccrSwitchDepthM, ccrBailoutMaxEndM,
   } = usePreferencesStore();
   const [gfValues, setGfValues] = useState<GFValues>({
     gfLow: defaultGfLow,
@@ -53,6 +56,7 @@ export default function RuntimeScreen() {
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
   const [resultView, setResultView] = useState<ResultView>('detail');
+  const { selectedKind, select } = useRuntimeSelection(whatIf);
   // En-tête de la fiche imprimable : réglages utilisés au moment du calcul, pas ceux des curseurs.
   const [sheetOptions, setSheetOptions] = useState<Omit<RunSheetOptions, 'pageWidthPx'> | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -78,6 +82,8 @@ export default function RuntimeScreen() {
       descentRateMMin,
       ascentRateMMin,
       ascentRateBetweenStopsMMin,
+      rmv: { fondLMin: rmvFond, decoLMin: rmvDeco },
+      gasReserves: { bottomBar: reserveBottomBar, decoBar: reserveDecoBar },
       ccr: {
         setpointLowBar: ccrSetpointLow,
         setpointHighBar: ccrSetpointHigh,
@@ -125,12 +131,24 @@ export default function RuntimeScreen() {
       ));
     }
     setShowResult(false);
+    // Lancement du calcul directement après la sélection de la plongée, si on veut un affichage immédiat du résultat.
+    handleSubmit();
   };
 
+  function handleGFChange(newValues: GFValues) {
+    setGfValues(newValues);
+    setShowResult(false);
+    handleSubmit();
+  }
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
-      <View style={sharedStyles.screenContainer}>
+      {/* Tout l'écran défile d'un bloc : sur une fenêtre basse, le tableau et les gaz restent atteignables. */}
+      <ScrollView
+        style={styles.screenScroll}
+        contentContainerStyle={[sharedStyles.screenContainer, styles.screenContent]}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Le mode Successive choisit ses propres plongées : accessible sans calcul préalable */}
         <View style={styles.titleRow}>
@@ -152,21 +170,10 @@ export default function RuntimeScreen() {
         <View style={styles.gfCard}>
           <GFSliderPair
             values={gfValues}
-            onChange={setGfValues}
+            onChange={handleGFChange}
             accentColor={ocean.accent.blue}
           />
         </View>
-
-        {/* Bouton de calcul */}
-        <TouchableOpacity
-          style={[styles.calcBtn, !selectedPlongee && styles.calcBtnDisabled]}
-          onPress={handleSubmit}
-          disabled={!selectedPlongee}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="calculate" size={20} color={ocean.bg.deep} />
-          <Text style={styles.calcBtnTxt}>Calculer</Text>
-        </TouchableOpacity>
 
         {/* Résultat + bouton pédagogique */}
         {showResult && decoPlan.length > 0 && (
@@ -190,6 +197,9 @@ export default function RuntimeScreen() {
               )}
             </View>
 
+            {/* Profils superposés : au-dessus des onglets, visibles dans les deux vues */}
+            {whatIf && <WhatIfProfileChart result={whatIf} selectedKind={selectedKind} onSelect={select} />}
+
             {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal, et fiche à imprimer */}
             <View style={styles.toolbar}>
               <View style={styles.toggle}>
@@ -198,8 +208,8 @@ export default function RuntimeScreen() {
               {whatIf && sheetOptions && <PrintRunSheetButton result={whatIf} options={sheetOptions} />}
             </View>
 
-            {resultView === 'detail' && <RuntimeResult data={decoPlan} />}
-            {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} />}
+            {resultView === 'detail' && <RuntimeResult data={decoPlan} gasNeeds={whatIf?.nominal.gasNeeds} />}
+            {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} selectedKind={selectedKind} onSelect={select} />}
             {resultView === 'whatIf' && !whatIf && (
               <Text style={styles.whatIfError}>
                 Scénarios indisponibles{whatIfError ? ` : ${whatIfError}` : '.'}
@@ -208,7 +218,7 @@ export default function RuntimeScreen() {
           </View>
         )}
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -258,9 +268,10 @@ const styles = StyleSheet.create({
     color: ocean.bg.deep,
   },
 
+  screenScroll: { flex: 1, alignSelf: 'stretch' },
+  screenContent: { flex: undefined, flexGrow: 1, paddingBottom: spacing.xxl },
   resultArea: {
     alignSelf: 'stretch',
-    flex: 1,
   },
   resultHeader: {
     flexDirection: 'row',

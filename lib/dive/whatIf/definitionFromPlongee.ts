@@ -12,7 +12,7 @@ import type { DiluentLimits } from '../ccr/diluentCheck';
 import type { CcrDefinition } from '../ccr/types';
 import type { Plongee } from '../types';
 import { expandPlongeeSegments } from './bottomSegmentsFromPlongee';
-import type { DiveDefinition } from './types';
+import type { DiveDefinition, GasReserves } from './types';
 
 /** Réglages de calcul : GF de l'écran + vitesses des préférences. */
 export interface DiveSettings {
@@ -25,6 +25,10 @@ export interface DiveSettings {
   ascentRateBetweenStopsMMin: number;
   /** Réglages CCR (préférences) : utilisés seulement si la plongée a un diluant. */
   ccr?: CcrSettings;
+  /** RMV fond / déco (L/min) : sans eux, pas d'estimation des gaz nécessaires. */
+  rmv?: { fondLMin: number; decoLMin: number };
+  /** Réserves (bar) dans les blocs : fond, et déco + bail-out. */
+  gasReserves?: GasReserves;
 }
 
 /** Préférences CCR et hypothèses de bail-out. */
@@ -95,5 +99,7 @@ export function definitionFromPlongee(plongee: Plongee, settings: DiveSettings):
     ascentRateBetweenStopsMpm: settings.ascentRateBetweenStopsMMin,
     timeStepMin: TIME_STEP_MIN,
     ccr: ccrDefinitionOf(plongee, settings),
+    ...(settings.rmv ? { rmv: settings.rmv } : {}),
+    ...(settings.gasReserves ? { gasReserves: settings.gasReserves } : {}),
   };
 }

@@ -6,6 +6,8 @@ import Svg, {
   Path, Polyline, Rect, Stop, Text as SvgText,
 } from 'react-native-svg';
 
+import ProfileGrid from './charts/ProfileGrid';
+import { PT, depthAxisMax, profileScale, timeTicks } from './charts/profileFrame';
 import type { DivePlan, MN90Profile, PedagogicalSimulation, ProfileSegment } from '../lib/dive/types';
 
 export interface DiveProfileViewProps {
@@ -25,7 +27,6 @@ export interface DiveProfileViewProps {
   comparisonLabel?: string;
 }
 
-const PL = 38, PR = 8, PT = 10, PB = 28;
 
 export function DiveProfileView({
   plan, simulation, currentStep,
@@ -35,8 +36,6 @@ export function DiveProfileView({
 
   const [svgW, setSvgW] = useState(300);
   const svgH = 300;
-  const pw = svgW - PL - PR;
-  const ph = svgH - PT - PB;
 
   const hasComparison = !!comparisonPlan && !!comparisonSimulation;
 
@@ -46,8 +45,6 @@ export function DiveProfileView({
     ? Math.max(...comparisonPlan!.segments.map(s => Math.max(s.startDepthM, s.endDepthM)), 10)
     : 0;
   const maxDepth = Math.max(maxDepthA, maxDepthB);
-  // Arrondi au 10m supérieur pour un axe propre
-  const axisMax = Math.ceil(maxDepth / 10) * 10;
 
   // MN90 — points en unités réelles (temps/profondeur), calculés avant
   // totalTime car le profil MN90 peut durer plus longtemps que le plan
@@ -67,8 +64,9 @@ export function DiveProfileView({
     hasComparison ? comparisonSimulation!.totalTimeMin : 0,
     mn90EndTime,
   );
-  const tx = (t: number) => PL + (t / totalTime) * pw;
-  const ty = (d: number) => PT + (d / axisMax) * ph;
+  // Échelle commune à tous les graphiques de profil (axe arrondi au 10 m supérieur)
+  const scale = profileScale(svgW, svgH, totalTime, depthAxisMax(maxDepth));
+  const { ph, tx, ty } = scale;
 
   // ── Points des profils ────────────────────────────────────────────────────
   const buildPolyline = (p: DivePlan) =>
@@ -108,10 +106,6 @@ export function DiveProfileView({
     ? mn90Segments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
     : null;
 
-  // Grilles
-  const depthTicks = Array.from({ length: axisMax / 10 + 1 }, (_, i) => i * 10);
-  const timeTicks = buildTimeTicks(totalTime);
-
   return (
     <View style={[styles.card, style]} onLayout={e => setSvgW(e.nativeEvent.layout.width - 20)}>
       {/* En-tête */}
@@ -141,29 +135,11 @@ export function DiveProfileView({
           />
         ))}
 
-        {/* Grille profondeur */}
-        {depthTicks.map(d => (
-          <React.Fragment key={`dg${d}`}>
-            <Line x1={PL} y1={ty(d)} x2={PL + pw} y2={ty(d)}
-              stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} />
-            <SvgText x={PL - 4} y={ty(d) + 3.5}
-              textAnchor="end" fontSize={9} fill="#5F5E5A">{d}m</SvgText>
-          </React.Fragment>
-        ))}
-
-        {/* Grille temps */}
-        {timeTicks.map(t => (
-          <React.Fragment key={`tg${t}`}>
-            <Line x1={tx(t)} y1={PT} x2={tx(t)} y2={PT + ph}
-              stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />
-            <SvgText x={tx(t)} y={svgH - 6}
-              textAnchor="middle" fontSize={9} fill="#5F5E5A">{t}'</SvgText>
-          </React.Fragment>
-        ))}
-
-        {/* Surface */}
-        <Line x1={PL} y1={ty(0)} x2={PL + pw} y2={ty(0)}
-          stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} />
+        <ProfileGrid
+          scale={scale}
+          height={svgH}
+          timeTicks={timeTicks(totalTime).map(t => ({ atMin: t, label: `${t}'` }))}
+        />
 
         {/* ── Plan A : remplissage + courbe ───────────────────────────── */}
         <Path d={fillPathA} fill="url(#fillA)" />
@@ -251,13 +227,6 @@ function mergeConsecutiveStops(stops: ProfileSegment[]): ProfileSegment[] {
     }
   }
   return merged;
-}
-
-function buildTimeTicks(totalTime: number): number[] {
-  const step = totalTime <= 20 ? 5 : totalTime <= 60 ? 10 : 15;
-  const ticks: number[] = [];
-  for (let t = step; t < totalTime; t += step) ticks.push(t);
-  return ticks;
 }
 
 /** Un point du profil MN90 en unités réelles (minutes, mètres) — non mappé à l'écran. */

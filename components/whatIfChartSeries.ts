@@ -10,14 +10,14 @@ export interface WhatIfSeries {
     points: ProfilePoint[];
 }
 
-/** Une couleur distincte par scénario ; le nominal reste blanc, plus épais. */
+/** Une couleur distincte par scénario ; le nominal est bleu (comme le mode pédagogique), plus épais. */
 export const SERIES_COLORS: Record<WhatIfKind, string> = {
-    NOMINAL: '#E8EEF5',
+    NOMINAL: '#378ADD',
     DEEPER: '#E24B4A',
     LONGER: '#EF9F27',
     SHORT_BOTTOM: '#1D9E75',
     LOST_DECO_GAS: '#C06BE0',
-    BAILOUT: '#378ADD',
+    BAILOUT: '#D4537E',
 };
 
 export function buildWhatIfSeries(result: WhatIfResult): WhatIfSeries[] {

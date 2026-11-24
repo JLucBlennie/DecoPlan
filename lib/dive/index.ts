@@ -70,6 +70,9 @@ export type { TissueCoefficient } from './buhlmann';
 
 // Scénarios WhatIf (runtimes alternatifs à côté du nominal)
 export * from './whatIf';
+export * from './optimizer';
+export { BAILOUT_BLOCKS, BOTTOM_BLOCKS, DECO_BLOCKS, bestSuggestion, blockCapacityL, formatSuggestion, suggestAll, suggestBlocks } from './gasBlocks';
+export type { BlockSize, BlockSuggestion } from './gasBlocks';
 export { bailoutProblem, NO_BAILOUT_GAS_MESSAGE } from './ccr/bailoutCheck';
 export type { BailoutLimits } from './ccr/bailoutCheck';
 export { diluentAdvice } from './ccr/diluentCheck';

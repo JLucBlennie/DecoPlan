@@ -1,10 +1,11 @@
 // components/WhatIfColumn.tsx
 // Une colonne = un runtime (nominal ou scénario) : en-tête (libellé, durée, écart) puis corps.
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatMinutes, type WhatIfRuntime } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import WhatIfRuntimeBody, { Delta } from './WhatIfRuntimeBody';
+import { SERIES_COLORS } from './whatIfChartSeries';
 
 type Props = {
     runtime: WhatIfRuntime;
@@ -12,13 +13,26 @@ type Props = {
     width?: number;
     /** Vrai pour le nominal : colonne de référence, sans écarts. */
     isReference?: boolean;
+    /** Runtime mis en évidence dans le graphique : la colonne prend la couleur de son profil. */
+    selected?: boolean;
+    /** Toucher la colonne (en-tête ou tableau) la sélectionne. */
+    onSelect?: () => void;
 };
 
-export default function WhatIfColumn({ runtime, width, isReference = false }: Props) {
+export default function WhatIfColumn({ runtime, width, isReference = false, selected = false, onSelect }: Props) {
     const { summary, delta } = runtime;
 
     return (
-        <View style={[styles.column, width !== undefined ? { width } : styles.fill, isReference && styles.reference]}>
+        <Pressable
+            style={[
+                styles.column, width !== undefined ? { width } : styles.fill, isReference && styles.reference,
+                selected && { borderColor: SERIES_COLORS[runtime.kind], borderWidth: 1.5 },
+            ]}
+            onPress={onSelect}
+            disabled={!onSelect}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+        >
             <View style={styles.header}>
                 <Text style={styles.title} numberOfLines={2}>{runtime.label}</Text>
                 <View style={styles.totalRow}>
@@ -27,7 +41,7 @@ export default function WhatIfColumn({ runtime, width, isReference = false }: Pr
                 </View>
             </View>
             <WhatIfRuntimeBody runtime={runtime} />
-        </View>
+        </Pressable>
     );
 }
 
