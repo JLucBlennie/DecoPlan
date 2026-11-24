@@ -4,7 +4,7 @@
 //   2. les variantes (+5 m, +5 min, 5 min au fond) dans un accordéon ;
 //   3. les pertes de gaz : bail-out en recycleur, perte des gaz de déco en circuit ouvert.
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import type { WhatIfKind, WhatIfResult } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
@@ -32,7 +32,7 @@ export default function WhatIfColumns({ result }: Props) {
     const otherUnavailable = result.unavailable.filter(u => u !== gasLossUnavailable);
 
     return (
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View>
             <View style={[styles.columns, isWide && styles.columnsWide]}>
                 <View style={isWide ? styles.cell : undefined}>
                     <Text style={styles.sectionTitle}>Nominal</Text>
@@ -80,12 +80,11 @@ export default function WhatIfColumns({ result }: Props) {
                     Calcul indicatif uniquement — non qualifié pour la plongée réelle.
                 </Text>
             </View>
-        </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    scroll: { flex: 1 },
     columns: { gap: spacing.md },
     columnsWide: { flexDirection: 'row', alignItems: 'flex-start' },
     cell: { flex: 1 },

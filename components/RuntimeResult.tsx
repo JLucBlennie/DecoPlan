@@ -1,7 +1,7 @@
 // components/RuntimeResult.tsx
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { classifySegment, Segment, type RuntimeGasNeed } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
@@ -63,7 +63,7 @@ export default function RuntimeResult({ data, gasNeeds }: Props) {
             )}
 
             {/* Tableau */}
-            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+            <View>
                 <View style={styles.table}>
 
                     {/* En-tête */}
@@ -124,7 +124,7 @@ export default function RuntimeResult({ data, gasNeeds }: Props) {
                     })}
 
                 </View>
-            </ScrollView>
+            </View>
 
             {gasNeeds && <GasBlocksList needs={gasNeeds} />}
 
@@ -143,7 +143,7 @@ export default function RuntimeResult({ data, gasNeeds }: Props) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-    root: { flex: 1, gap: spacing.xs },
+    root: { gap: spacing.xs },
 
     // Résumé
     decoSummary: {
@@ -162,7 +162,6 @@ const styles = StyleSheet.create({
     ndlTxt: { fontSize: fontSize.xs, color: ocean.accent.teal },
 
     // Tableau
-    scroll: { flex: 1 },
     table: {
         borderRadius: radius.md, overflow: 'hidden',
         borderWidth: StyleSheet.hairlineWidth, borderColor: ocean.border.subtle,

@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
   defaultGfFor, computeRuntime, computeWhatIf, definitionFromPlongee,
@@ -133,7 +133,12 @@ export default function RuntimeScreen() {
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
-      <View style={sharedStyles.screenContainer}>
+      {/* Tout l'écran défile d'un bloc : sur une fenêtre basse, le tableau et les gaz restent atteignables. */}
+      <ScrollView
+        style={styles.screenScroll}
+        contentContainerStyle={[sharedStyles.screenContainer, styles.screenContent]}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Le mode Successive choisit ses propres plongées : accessible sans calcul préalable */}
         <View style={styles.titleRow}>
@@ -214,7 +219,7 @@ export default function RuntimeScreen() {
           </View>
         )}
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -264,9 +269,10 @@ const styles = StyleSheet.create({
     color: ocean.bg.deep,
   },
 
+  screenScroll: { flex: 1, alignSelf: 'stretch' },
+  screenContent: { flex: undefined, flexGrow: 1, paddingBottom: spacing.xxl },
   resultArea: {
     alignSelf: 'stretch',
-    flex: 1,
   },
   resultHeader: {
     flexDirection: 'row',
