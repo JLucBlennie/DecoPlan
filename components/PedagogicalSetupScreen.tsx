@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
-  computeRuntime, defaultGfFor, definitionFromPlongee, type DiveSettings, type Plongee,
+  computeRuntime, defaultGfFor, definitionFromPlongee, type DiveSettings, type Plongee, type Segment,
 } from '../lib/dive';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
@@ -16,6 +16,7 @@ import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import { GFSliderPair, type GFValues } from './GFSliderPair';
 import PedagogicalConfigPanel from './pedagogical/PedagogicalConfigPanel';
+import SimulationEditor from './pedagogical/SimulationEditor';
 import PlongeePicker from './PlongeePicker';
 import SegmentedToggle from './SegmentedToggle';
 import SuccessivePanel from './successive/SuccessivePanel';
@@ -39,6 +40,8 @@ export default function PedagogicalSetupScreen() {
   const [mode, setMode] = useState<Mode>('single');
   const [first, setFirst] = useState<Plongee | null>(null);
   const [second, setSecond] = useState<Plongee | null>(null);
+  // Niveaux modifiés pour la simulation (mode 1 plongée) ; null = plongée enregistrée telle quelle.
+  const [simulatedSegments, setSimulatedSegments] = useState<Segment[] | null>(null);
   const [gf, setGf] = useState<GFValues>({ gfLow: airGfLow, gfHigh: airGfHigh });
   const [gf2, setGf2] = useState<GFValues>({ gfLow: airGfLow, gfHigh: airGfHigh });
   const gfDefaults = { gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr };
@@ -47,6 +50,12 @@ export default function PedagogicalSetupScreen() {
   const { gfLow: defaultGfLow, gfHigh: defaultGfHigh } = first
     ? defaultGfFor({ gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr }, first)
     : { gfLow: airGfLow, gfHigh: airGfHigh };
+
+  // Plongée réellement calculée en mode 1 plongée : l'originale, ou sa copie modifiée.
+  const simulated: Plongee | null = useMemo(
+    () => (first && simulatedSegments ? { ...first, segments: simulatedSegments } : first),
+    [first, simulatedSegments],
+  );
 
   const find = (id: string | null) => plongeeList.find(p => p.id === id) ?? null;
 
@@ -64,18 +73,18 @@ export default function PedagogicalSetupScreen() {
   // Mode 1 plongée : les GF se règlent dans le panneau (réglage A / B) ; le Plan de départ
   // est calculé avec les GF par défaut des préférences.
   const single = useMemo(() => {
-    if (mode !== 'single' || !first) return null;
+    if (mode !== 'single' || !simulated) return null;
     try {
       const base: DiveSettings = {
         gfLow: defaultGfLow, gfHigh: defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin,
         ccr: ccrSettings,
       };
-      const definition = definitionFromPlongee(first, base);
+      const definition = definitionFromPlongee(simulated, base);
       return { plan: computeRuntime(definition).plan, definition, error: null as string | null };
     } catch (e) {
       return { plan: null, definition: undefined, error: e instanceof Error ? e.message : String(e) };
     }
-  }, [mode, first, defaultGfLow, defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin, ccrSettings]);
+  }, [mode, simulated, defaultGfLow, defaultGfHigh, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin, ccrSettings]);
 
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
@@ -93,6 +102,7 @@ export default function PedagogicalSetupScreen() {
           <PlongeePicker plongees={plongeeList} selectedId={first?.id ?? null} onSelect={id => {
             const plongee = find(id);
             setFirst(plongee);
+            setSimulatedSegments(null);
             if (plongee) {
               setGf(defaultGfFor(
                 { gfLow: airGfLow, gfHigh: airGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr }, plongee,
@@ -134,11 +144,14 @@ export default function PedagogicalSetupScreen() {
           <>
             {!first && <Text style={styles.hint}>Choisis une plongée pour lancer le mode pédagogique.</Text>}
             {single?.error && <Text style={styles.error}>Calcul impossible : {single.error}</Text>}
+            {first && (
+              <SimulationEditor original={first} simulated={simulatedSegments} onChange={setSimulatedSegments} />
+            )}
             {first && single?.plan && (
               <PedagogicalConfigPanel
                 key={first.id}
                 plan={single.plan}
-                planName={first.name}
+                planName={simulatedSegments ? `${first.name} (simulation)` : first.name}
                 definition={single.definition}
                 currentGfLow={defaultGfLow}
                 currentGfHigh={defaultGfHigh}
