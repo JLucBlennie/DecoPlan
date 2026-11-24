@@ -16,6 +16,7 @@ import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import OptimizerCriteriaForm from './optimizer/OptimizerCriteriaForm';
 import { criteriaFromDraft, initialDraft, type OptimizerDraft } from './optimizer/optimizerDraft';
+import OptimizerPedagogicalButton from './optimizer/OptimizerPedagogicalButton';
 import OptimizerResultView from './optimizer/OptimizerResultView';
 
 type Computation = { result: OptimizerResult; whatIf: WhatIfResult } | { error: string } | null;
@@ -81,6 +82,10 @@ export default function OptimizerScreen() {
         {!computation && <Text style={styles.hint}>Choisis un gaz de fond pour lancer la recherche.</Text>}
         {computation && 'error' in computation && <Text style={styles.error}>Calcul impossible : {computation.error}</Text>}
         {ok && <OptimizerResultView result={ok.result} whatIf={ok.whatIf} />}
+
+        {ok?.result.feasible && (
+          <OptimizerPedagogicalButton definition={ok.result.evaluation.definition} planName={shownName} />
+        )}
 
         {ok?.result.feasible && (
           <View style={styles.saveCard}>

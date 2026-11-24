@@ -42,11 +42,3 @@ export function computeProfileLayout(firstEndMin: number, secondEndMin: number, 
 export function shiftPoints(points: ProfilePoint[], offsetMin: number): ProfilePoint[] {
   return points.map(p => ({ timeMin: p.timeMin + offsetMin, depthM: p.depthM }));
 }
-
-/** Graduations du temps : 5 / 10 / 15 min selon la durée. */
-export function timeTicks(lenMin: number): number[] {
-  const step = lenMin <= 20 ? 5 : lenMin <= 60 ? 10 : lenMin <= 120 ? 15 : 30;
-  const ticks: number[] = [];
-  for (let t = step; t < lenMin; t += step) ticks.push(t);
-  return ticks;
-}
