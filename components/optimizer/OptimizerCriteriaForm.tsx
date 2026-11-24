@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { Gas } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
 import NumberStepper from '../ui/NumberStepper';
-import BlockSpecEditor from './BlockSpecEditor';
+import OptimizerBlocksSection from './OptimizerBlocksSection';
 import OptionalLimit from './OptionalLimit';
 import type { OptimizerDraft } from './optimizerDraft';
 import OptimizerGasSection from './OptimizerGasSection';
@@ -48,10 +48,12 @@ export default function OptimizerCriteriaForm({ draft, gases, onChange, onAddCus
             </Card>
 
             <Card title="Blocs">
-                <BlockSpecEditor title="Bloc(s) de fond" block={draft.bottomBlock}
-                    onChange={bottomBlock => onChange({ bottomBlock })} />
-                <BlockSpecEditor title="Bloc(s) de déco (par gaz)" block={draft.decoBlock}
-                    onChange={decoBlock => onChange({ decoBlock })} />
+                <OptimizerBlocksSection
+                    draft={draft}
+                    bottomGas={gases.find(g => g.id === draft.bottomId)}
+                    decoGases={gases.filter(g => draft.decoIds.includes(g.id))}
+                    onChange={onChange}
+                />
             </Card>
 
             <Card title="Réserves (par bloc)">

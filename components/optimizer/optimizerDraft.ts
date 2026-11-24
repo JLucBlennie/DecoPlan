@@ -8,11 +8,14 @@ export interface OptimizerDraft {
     bottomId: string | null;
     decoIds: string[];
     bottomBlock: BlockSpec;
-    decoBlock: BlockSpec;
+    /** Blocs de déco par id de gaz. */
+    decoBlocks: Record<string, BlockSpec>;
     reserves: GasReserves;
     maxDecoTimeMin: number | undefined;
     maxFirstStopDepthM: number | undefined;
 }
+
+export const DEFAULT_DECO_BLOCK: BlockSpec = { volumeL: 7, pressureBar: 200, count: 1 };
 
 export function initialDraft(reserves: GasReserves): OptimizerDraft {
     return {
@@ -20,7 +23,7 @@ export function initialDraft(reserves: GasReserves): OptimizerDraft {
         bottomId: null,
         decoIds: [],
         bottomBlock: { volumeL: 15, pressureBar: 200, count: 1 },
-        decoBlock: { volumeL: 7, pressureBar: 200, count: 1 },
+        decoBlocks: {},
         reserves,
         maxDecoTimeMin: undefined,
         maxFirstStopDepthM: undefined,
@@ -31,12 +34,15 @@ export function initialDraft(reserves: GasReserves): OptimizerDraft {
 export function criteriaFromDraft(draft: OptimizerDraft, gases: Gas[]): OptimizerCriteria | null {
     const bottomGas = gases.find(g => g.id === draft.bottomId);
     if (!bottomGas) return null;
+    const decoGases = gases.filter(g => draft.decoIds.includes(g.id));
     return {
         depthM: draft.depthM,
         bottomGas,
-        decoGases: gases.filter(g => draft.decoIds.includes(g.id)),
+        decoGases,
         bottomBlock: draft.bottomBlock,
-        decoBlock: draft.decoBlock,
+        decoBlocks: Object.fromEntries(
+            decoGases.map(g => [g.name, draft.decoBlocks[g.id] ?? DEFAULT_DECO_BLOCK]),
+        ),
         reserves: draft.reserves,
         ...(draft.maxDecoTimeMin !== undefined ? { maxDecoTimeMin: draft.maxDecoTimeMin } : {}),
         ...(draft.maxFirstStopDepthM !== undefined ? { maxFirstStopDepthM: draft.maxFirstStopDepthM } : {}),

@@ -12,6 +12,9 @@ import { summarizeRuntime } from '../whatIf/summary';
 import type { DiveDefinition } from '../whatIf/types';
 import type { BlockSpec, BottomTimeEvaluation, GasBudget, LimitingFactor, OptimizerCriteria } from './types';
 
+/** Gaz de déco utilisé sans bloc prévu : rien de disponible. */
+const NO_BLOCK: BlockSpec = { volumeL: 0, pressureBar: 0, count: 0 };
+
 function budgetOf(
   role: 'bottom' | 'deco', gasName: string, neededL: number, block: BlockSpec, reserveBar: number,
 ): GasBudget {
@@ -47,7 +50,7 @@ export function evaluateBottomTime(
   const budgets = needs.map(n =>
     n.role === 'bottom'
       ? budgetOf('bottom', n.gasName, n.litres, criteria.bottomBlock, criteria.reserves.bottomBar)
-      : budgetOf('deco', n.gasName, n.litres, criteria.decoBlock, criteria.reserves.decoBar));
+      : budgetOf('deco', n.gasName, n.litres, criteria.decoBlocks[n.gasName] ?? NO_BLOCK, criteria.reserves.decoBar));
 
   return {
     bottomTimeMin, definition, summary, budgets,

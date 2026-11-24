@@ -21,8 +21,8 @@ export interface OptimizerCriteria {
   bottomGas: Gas;
   decoGases: Gas[];
   bottomBlock: BlockSpec;
-  /** Même type de bloc pour chaque gaz de déco (`count` blocs par gaz). */
-  decoBlock: BlockSpec;
+  /** Blocs emportés pour chaque gaz de déco, par nom de gaz. */
+  decoBlocks: Record<string, BlockSpec>;
   reserves: GasReserves;
   /** Durée maximale de déco (somme des paliers), en minutes. Absent = pas de limite. */
   maxDecoTimeMin?: number;
