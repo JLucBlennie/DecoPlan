@@ -8,14 +8,19 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatMinutes, type WhatIfKind, type WhatIfRuntime } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import WhatIfRuntimeBody, { Delta } from './WhatIfRuntimeBody';
+import { SERIES_COLORS } from './whatIfChartSeries';
 
 type Props = {
     runtimes: WhatIfRuntime[];
     /** Variante ouverte au départ (si elle fait partie de la liste). */
     defaultOpenKind?: WhatIfKind;
+    /** Runtime mis en évidence dans le graphique. */
+    selectedKind?: WhatIfKind;
+    /** Toucher un en-tête ou un tableau sélectionne ce runtime. */
+    onSelect?: (kind: WhatIfKind) => void;
 };
 
-export default function WhatIfAccordion({ runtimes, defaultOpenKind }: Props) {
+export default function WhatIfAccordion({ runtimes, defaultOpenKind, selectedKind, onSelect }: Props) {
     const [openKind, setOpenKind] = useState<WhatIfKind | undefined>(
         runtimes.some(r => r.kind === defaultOpenKind) ? defaultOpenKind : undefined,
     );
@@ -26,10 +31,16 @@ export default function WhatIfAccordion({ runtimes, defaultOpenKind }: Props) {
                 const isOpen = runtime.kind === openKind;
                 const { summary, delta } = runtime;
                 return (
-                    <View key={runtime.kind} style={styles.item}>
+                    <View
+                        key={runtime.kind}
+                        style={[styles.item, runtime.kind === selectedKind && { borderColor: SERIES_COLORS[runtime.kind], borderWidth: 1.5 }]}
+                    >
                         <Pressable
                             style={styles.header}
-                            onPress={() => setOpenKind(isOpen ? undefined : runtime.kind)}
+                            onPress={() => {
+                                setOpenKind(isOpen ? undefined : runtime.kind);
+                                onSelect?.(runtime.kind);
+                            }}
                             accessibilityRole="button"
                             accessibilityState={{ expanded: isOpen }}
                         >
@@ -46,7 +57,11 @@ export default function WhatIfAccordion({ runtimes, defaultOpenKind }: Props) {
                                 color={ocean.text.secondary}
                             />
                         </Pressable>
-                        {isOpen && <WhatIfRuntimeBody runtime={runtime} />}
+                        {isOpen && (
+                            <Pressable onPress={onSelect ? () => onSelect(runtime.kind) : undefined} disabled={!onSelect}>
+                                <WhatIfRuntimeBody runtime={runtime} />
+                            </Pressable>
+                        )}
                     </View>
                 );
             })}

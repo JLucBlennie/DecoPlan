@@ -11,7 +11,12 @@ import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import WhatIfAccordion from './WhatIfAccordion';
 import WhatIfColumn from './WhatIfColumn';
 
-type Props = { result: WhatIfResult };
+type Props = {
+    result: WhatIfResult;
+    /** Runtime mis en évidence dans le graphique ; toucher une colonne le change. */
+    selectedKind?: WhatIfKind;
+    onSelect?: (kind: WhatIfKind) => void;
+};
 
 /** À partir de cette largeur d'écran, les trois colonnes sont côte à côte. */
 const WIDE_BREAKPOINT = 700;
@@ -19,7 +24,7 @@ const WIDE_BREAKPOINT = 700;
 const VARIANT_KINDS: readonly WhatIfKind[] = ['DEEPER', 'LONGER', 'SHORT_BOTTOM'];
 const GAS_LOSS_KINDS: readonly WhatIfKind[] = ['BAILOUT', 'LOST_DECO_GAS'];
 
-export default function WhatIfColumns({ result }: Props) {
+export default function WhatIfColumns({ result, selectedKind, onSelect }: Props) {
     const { width: screenWidth } = useWindowDimensions();
     const isWide = screenWidth >= WIDE_BREAKPOINT;
 
@@ -36,20 +41,31 @@ export default function WhatIfColumns({ result }: Props) {
             <View style={[styles.columns, isWide && styles.columnsWide]}>
                 <View style={isWide ? styles.cell : undefined}>
                     <Text style={styles.sectionTitle}>Nominal</Text>
-                    <WhatIfColumn runtime={result.nominal} isReference />
+                    <WhatIfColumn
+                        runtime={result.nominal} isReference
+                        selected={selectedKind === 'NOMINAL'} onSelect={onSelect && (() => onSelect('NOMINAL'))}
+                    />
                 </View>
 
                 {variants.length > 0 && (
                     <View style={isWide ? styles.cell : undefined}>
                         <Text style={styles.sectionTitle}>Écarts</Text>
-                        <WhatIfAccordion runtimes={variants} defaultOpenKind="LONGER" />
+                        <WhatIfAccordion
+                            runtimes={variants} defaultOpenKind="LONGER"
+                            selectedKind={selectedKind} onSelect={onSelect}
+                        />
                     </View>
                 )}
 
                 {(gasLoss || gasLossUnavailable) && (
                     <View style={isWide ? styles.cell : undefined}>
                         <Text style={styles.sectionTitle}>Pertes de gaz</Text>
-                        {gasLoss && <WhatIfColumn runtime={gasLoss} />}
+                        {gasLoss && (
+                            <WhatIfColumn
+                                runtime={gasLoss}
+                                selected={selectedKind === gasLoss.kind} onSelect={onSelect && (() => onSelect(gasLoss.kind))}
+                            />
+                        )}
                         {gasLossUnavailable && (
                             <View style={styles.unavailableCard}>
                                 <Text style={styles.unavailableTitle}>{gasLossUnavailable.label}</Text>

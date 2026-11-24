@@ -21,6 +21,7 @@ import PlongeePicker from './PlongeePicker';
 import PrintRunSheetButton from './PrintRunSheetButton';
 import RuntimeResult from './RuntimeResult';
 import WhatIfProfileChart from './WhatIfProfileChart';
+import { useRuntimeSelection } from '../hooks/useRuntimeSelection';
 import SegmentedToggle from './SegmentedToggle';
 import WhatIfColumns from './WhatIfColumns';
 
@@ -54,6 +55,7 @@ export default function RuntimeScreen() {
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
   const [resultView, setResultView] = useState<ResultView>('detail');
+  const { selectedKind, select } = useRuntimeSelection(whatIf);
   // En-tête de la fiche imprimable : réglages utilisés au moment du calcul, pas ceux des curseurs.
   const [sheetOptions, setSheetOptions] = useState<Omit<RunSheetOptions, 'pageWidthPx'> | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -199,7 +201,7 @@ export default function RuntimeScreen() {
             </View>
 
             {/* Profils superposés : au-dessus des onglets, visibles dans les deux vues */}
-            {whatIf && <WhatIfProfileChart result={whatIf} />}
+            {whatIf && <WhatIfProfileChart result={whatIf} selectedKind={selectedKind} onSelect={select} />}
 
             {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal, et fiche à imprimer */}
             <View style={styles.toolbar}>
@@ -210,7 +212,7 @@ export default function RuntimeScreen() {
             </View>
 
             {resultView === 'detail' && <RuntimeResult data={decoPlan} gasNeeds={whatIf?.nominal.gasNeeds} />}
-            {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} />}
+            {resultView === 'whatIf' && whatIf && <WhatIfColumns result={whatIf} selectedKind={selectedKind} onSelect={select} />}
             {resultView === 'whatIf' && !whatIf && (
               <Text style={styles.whatIfError}>
                 Scénarios indisponibles{whatIfError ? ` : ${whatIfError}` : '.'}

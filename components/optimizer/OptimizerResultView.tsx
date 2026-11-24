@@ -9,6 +9,7 @@ import RuntimeResult from '../RuntimeResult';
 import SegmentedToggle from '../SegmentedToggle';
 import WhatIfColumns from '../WhatIfColumns';
 import WhatIfProfileChart from '../WhatIfProfileChart';
+import { useRuntimeSelection } from '../../hooks/useRuntimeSelection';
 import GasBudgetList from './GasBudgetList';
 import { limitingText } from './limitingText';
 
@@ -22,6 +23,7 @@ type Props = { result: OptimizerResult; whatIf: WhatIfResult };
 
 export default function OptimizerResultView({ result, whatIf }: Props) {
     const [view, setView] = useState<View_>('detail');
+    const { selectedKind, select } = useRuntimeSelection(whatIf);
     const { evaluation } = result;
     const reserves = evaluation.definition.gasReserves ?? { bottomBar: 0, decoBar: 0 };
 
@@ -49,11 +51,11 @@ export default function OptimizerResultView({ result, whatIf }: Props) {
 
             <GasBudgetList budgets={evaluation.budgets} reserves={reserves} />
 
-            <WhatIfProfileChart result={whatIf} />
+            <WhatIfProfileChart result={whatIf} selectedKind={selectedKind} onSelect={select} />
             <SegmentedToggle value={view} options={VIEWS} onChange={setView} />
             {view === 'detail'
                 ? <RuntimeResult data={whatIf.nominal.segments} gasNeeds={whatIf.nominal.gasNeeds} />
-                : <WhatIfColumns result={whatIf} />}
+                : <WhatIfColumns result={whatIf} selectedKind={selectedKind} onSelect={select} />}
         </View>
     );
 }
