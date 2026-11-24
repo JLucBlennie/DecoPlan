@@ -1,9 +1,10 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
-  defaultGfFor, computeRuntime, computeWhatIf, definitionFromPlongee,
+  computeRuntime, computeWhatIf,
+  defaultGfFor,
+  definitionFromPlongee,
   DiveDefinition, Plan, Plongee, RunSheetOptions, Segment, WhatIfResult,
 } from '../lib/dive';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -12,6 +13,7 @@ import { fontSize, ocean, radius, spacing } from '../styles/theme';
 
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRuntimeSelection } from '../hooks/useRuntimeSelection';
 import { ROUTES } from '../navigation/types';
 import { usePedagogicalStore } from '../store/usePedagogicalStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
@@ -20,10 +22,9 @@ import { PedagogicalLaunchButton } from './PedagogicalLaunchButton';
 import PlongeePicker from './PlongeePicker';
 import PrintRunSheetButton from './PrintRunSheetButton';
 import RuntimeResult from './RuntimeResult';
-import WhatIfProfileChart from './WhatIfProfileChart';
-import { useRuntimeSelection } from '../hooks/useRuntimeSelection';
 import SegmentedToggle from './SegmentedToggle';
 import WhatIfColumns from './WhatIfColumns';
+import WhatIfProfileChart from './WhatIfProfileChart';
 
 type ResultView = 'detail' | 'whatIf';
 
@@ -130,8 +131,15 @@ export default function RuntimeScreen() {
       ));
     }
     setShowResult(false);
+    // Lancement du calcul directement après la sélection de la plongée, si on veut un affichage immédiat du résultat.
+    handleSubmit();
   };
 
+  function handleGFChange(newValues: GFValues) {
+    setGfValues(newValues);
+    setShowResult(false);
+    handleSubmit();
+  }
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={sharedStyles.screenContainer} edges={['top']}>
@@ -162,21 +170,10 @@ export default function RuntimeScreen() {
         <View style={styles.gfCard}>
           <GFSliderPair
             values={gfValues}
-            onChange={setGfValues}
+            onChange={handleGFChange}
             accentColor={ocean.accent.blue}
           />
         </View>
-
-        {/* Bouton de calcul */}
-        <TouchableOpacity
-          style={[styles.calcBtn, !selectedPlongee && styles.calcBtnDisabled]}
-          onPress={handleSubmit}
-          disabled={!selectedPlongee}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="calculate" size={20} color={ocean.bg.deep} />
-          <Text style={styles.calcBtnTxt}>Calculer</Text>
-        </TouchableOpacity>
 
         {/* Résultat + bouton pédagogique */}
         {showResult && decoPlan.length > 0 && (
