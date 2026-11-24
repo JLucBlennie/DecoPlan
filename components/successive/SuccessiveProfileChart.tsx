@@ -10,7 +10,8 @@ import {
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
 import ProfileGrid from '../charts/ProfileGrid';
 import ProfilePlot from '../charts/ProfilePlot';
-import { profileScale, PT, timeTicks, type ProfileScale } from '../charts/profileFrame';
+import { profileScale, PT, timeTicks } from '../charts/profileFrame';
+import { fillPathOf, polylineOf } from '../charts/profilePaths';
 import { computeProfileLayout, shiftPoints } from './successiveProfileLayout';
 import { formatInterval } from './successiveFormat';
 
@@ -39,14 +40,6 @@ function stopSegments(dive: ComputedDive) {
   }
   return out;
 }
-
-const polylineOf = (points: ProfilePoint[], { tx, ty }: ProfileScale) =>
-  points.map(p => `${tx(p.timeMin).toFixed(1)},${ty(p.depthM).toFixed(1)}`).join(' ');
-
-const fillPathOf = (points: ProfilePoint[], { tx, ty }: ProfileScale) => {
-  const line = points.map(p => `L ${tx(p.timeMin).toFixed(1)} ${ty(p.depthM).toFixed(1)}`).join(' ');
-  return `M ${tx(points[0].timeMin).toFixed(1)} ${ty(0).toFixed(1)} ${line} L ${tx(points[points.length - 1].timeMin).toFixed(1)} ${ty(0).toFixed(1)} Z`;
-};
 
 export default function SuccessiveProfileChart({ result, settings, showMn90, onToggleMn90 }: Props) {
   const { first, second, mn90, surfaceIntervalMin } = result;

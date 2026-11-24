@@ -7,7 +7,7 @@ import uuid from 'react-native-uuid';
 
 import {
   computeWhatIf, defaultGfFor, definitionFromPlongee, findMaxBottomTime, candidatePlongee,
-  type DiveSettings, type Gas, type OptimizerResult, type WhatIfResult,
+  type DiveSettings, type Gas, type OptimizerCriteria, type OptimizerResult, type WhatIfResult,
 } from '../lib/dive';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -19,7 +19,7 @@ import { criteriaFromDraft, initialDraft, type OptimizerDraft } from './optimize
 import OptimizerPedagogicalButton from './optimizer/OptimizerPedagogicalButton';
 import OptimizerResultView from './optimizer/OptimizerResultView';
 
-type Computation = { result: OptimizerResult; whatIf: WhatIfResult } | { error: string } | null;
+type Computation = { criteria: OptimizerCriteria; result: OptimizerResult; whatIf: WhatIfResult } | { error: string } | null;
 
 export default function OptimizerScreen() {
   const prefs = usePreferencesStore();
@@ -50,7 +50,7 @@ export default function OptimizerScreen() {
         gasReserves: criteria.reserves,
       };
       const result = findMaxBottomTime(criteria, settings);
-      return { result, whatIf: computeWhatIf(result.evaluation.definition) };
+      return { criteria, result, whatIf: computeWhatIf(result.evaluation.definition) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : String(e) };
     }
@@ -84,7 +84,9 @@ export default function OptimizerScreen() {
         {ok && <OptimizerResultView result={ok.result} whatIf={ok.whatIf} />}
 
         {ok?.result.feasible && (
-          <OptimizerPedagogicalButton definition={ok.result.evaluation.definition} planName={shownName} />
+          <OptimizerPedagogicalButton
+            definition={ok.result.evaluation.definition} criteria={ok.criteria} planName={shownName}
+          />
         )}
 
         {ok?.result.feasible && (

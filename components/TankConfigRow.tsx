@@ -24,6 +24,11 @@ export interface TankConfigRowProps {
   onCountChange?: (count: number) => void;
 }
 
+/** Touches rapides, plus le volume courant s'il n'en fait pas partie (ex. 30 L pour un jumelé 2 × 15 L). */
+function volumeChoices(current: number): number[] {
+  return QUICK_VOLUMES.includes(current) ? QUICK_VOLUMES : [...QUICK_VOLUMES, current].sort((a, b) => a - b);
+}
+
 export function TankConfigRow({ tank, gasLabel, gasRole, onChange, count = 1, onCountChange }: TankConfigRowProps) {
   const [pressureStr, setPressureStr] = useState(String(tank.startPressureBar));
 
@@ -61,7 +66,7 @@ export function TankConfigRow({ tank, gasLabel, gasRole, onChange, count = 1, on
       <View style={styles.volumeCol}>
         <Text style={styles.colHeader}>Volume</Text>
         <View style={styles.volumePicker}>
-          {QUICK_VOLUMES.map(v => (
+          {volumeChoices(tank.volumeLiters).map(v => (
             <TouchableOpacity
               key={v}
               onPress={() => handleVolumeChange(v)}

@@ -1,13 +1,16 @@
 // components/WhatIfProfileChart.tsx
 // Un seul graphique : le profil nominal et ceux de tous les scénarios « Et si ? » superposés.
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Svg, { Polyline } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, Polyline, Stop } from 'react-native-svg';
 
-import { endTimeMin, maxDepthM, type ProfilePoint, type WhatIfResult } from '../lib/dive';
+import { endTimeMin, maxDepthM, type WhatIfResult } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
+import { flatLevels } from './charts/flatLevels';
 import ProfileGrid from './charts/ProfileGrid';
+import ProfileLevelZones from './charts/ProfileLevelZones';
 import ProfilePlot from './charts/ProfilePlot';
 import { profileScale, PT, timeTicks } from './charts/profileFrame';
+import { fillPathOf, polylineOf } from './charts/profilePaths';
 import { buildWhatIfSeries } from './whatIfChartSeries';
 
 const HEIGHT = 200;
@@ -23,6 +26,7 @@ export default function WhatIfProfileChart({ result }: Props) {
     const series = buildWhatIfSeries(result);
     const maxTime = Math.max(1, ...series.map(s => endTimeMin(s.points)));
     const maxDepth = Math.max(10, ...series.map(s => maxDepthM(s.points)));
+    const nominal = series.find(s => s.isReference);
 
     return (
         <View style={styles.card}>
@@ -32,19 +36,25 @@ export default function WhatIfProfileChart({ result }: Props) {
                 <ProfilePlot height={HEIGHT} style={legendRight ? styles.plotFill : undefined}>
                     {width => {
                         const scale = profileScale(width, HEIGHT, maxTime, maxDepth);
-                        const polyline = (points: ProfilePoint[]) =>
-                            points.map(p => `${scale.tx(p.timeMin).toFixed(1)},${scale.ty(p.depthM).toFixed(1)}`).join(' ');
                         return (
                             <Svg width={width} height={HEIGHT}>
+                                <Defs>
+                                    <LinearGradient id="fillNominal" x1="0" y1="0" x2="0" y2="1">
+                                        <Stop offset="0" stopColor="#185FA5" stopOpacity="0.18" />
+                                        <Stop offset="1" stopColor="#185FA5" stopOpacity="0.02" />
+                                    </LinearGradient>
+                                </Defs>
+                                {nominal && <ProfileLevelZones scale={scale} levels={flatLevels(nominal.points)} />}
                                 <ProfileGrid
                                     scale={scale}
                                     height={HEIGHT}
                                     timeTicks={[0, ...timeTicks(maxTime)].map(t => ({ atMin: t, label: `${t}'` }))}
                                 />
+                                {nominal && <Path d={fillPathOf(nominal.points, scale)} fill="url(#fillNominal)" />}
                                 {series.map(s => (
                                     <Polyline
                                         key={s.kind}
-                                        points={polyline(s.points)}
+                                        points={polylineOf(s.points, scale)}
                                         fill="none"
                                         stroke={s.color}
                                         strokeWidth={s.isReference ? 2.2 : 1.4}

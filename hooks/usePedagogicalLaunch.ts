@@ -48,6 +48,9 @@ export interface UsePedagogicalLaunchOptions {
   /** Définition de la plongée de départ : active la comparaison avec un recycleur. */
   definition?: DiveDefinition;
 
+  /** Blocs de départ (ex. repris de l'optimiseur) ; absent = 12 L/200 b au fond, 7 L/200 b en déco. */
+  initialTanks?: TankConfig[];
+
   /**
    * Appelé quand l'utilisateur tape "Lancer".
    * C'est ici que vous appelez navigation.navigate() ou setModalVisible().
@@ -83,6 +86,13 @@ export interface UsePedagogicalLaunchReturn {
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
+/** Blocs par défaut : 12 L/200 b pour chaque gaz de fond, 7 L/200 b pour chaque gaz de déco. */
+function defaultTanks(plan: Plan): TankConfig[] {
+  const bottom = Object.values(plan.bottomGasses).map(g => ({ gasName: g.name, volumeLiters: 12, startPressureBar: 200 }));
+  const deco = Object.values(plan.decoGasses).map(g => ({ gasName: g.name, volumeLiters: 7, startPressureBar: 200 }));
+  return [...bottom, ...deco];
+}
+
 export function usePedagogicalLaunch(
   plan: Plan,
   options: UsePedagogicalLaunchOptions,
@@ -94,6 +104,7 @@ export function usePedagogicalLaunch(
     currentGfHigh  = 0.85,
     variant        = 'ZHL16C',
     definition,
+    initialTanks: providedTanks,
     onLaunch,
   } = options;
 
@@ -105,18 +116,11 @@ export function usePedagogicalLaunch(
 
   // ── Configuration initiale des blocs ────────────────────────────────────────
   const initialTanks = useMemo<TankConfig[]>(() => {
-    const bottomTanks = Object.values(plan.bottomGasses).map(g => ({
-      gasName:          g.name,
-      volumeLiters:     12,
-      startPressureBar: 200,
-    }));
-    const decoTanks = Object.values(plan.decoGasses).map(g => ({
-      gasName:          g.name,
-      volumeLiters:     7,
-      startPressureBar: 200,
-    }));
-    return [...bottomTanks, ...decoTanks];
-  }, [plan]);
+    const defaults = defaultTanks(plan);
+    // Un bloc fourni l'emporte sur le bloc par défaut du même gaz ; les autres gaz gardent le défaut.
+    return defaults.map(d => providedTanks?.find(t => t.gasName === d.gasName) ?? d);
+  }, [plan, providedTanks]);
+
 
   // ── État du formulaire ───────────────────────────────────────────────────────
   const [config, setConfig] = useState<LaunchConfig>(() => ({
