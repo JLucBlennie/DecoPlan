@@ -129,10 +129,10 @@ export default function RuntimeScreen() {
         { gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr },
         found,
       ));
+      handleSubmit();
+    } else {
+      setShowResult(false);
     }
-    setShowResult(false);
-    // Lancement du calcul directement après la sélection de la plongée, si on veut un affichage immédiat du résultat.
-    handleSubmit();
   };
 
   function handleGFChange(newValues: GFValues) {
