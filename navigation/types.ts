@@ -27,7 +27,8 @@ export const ROUTES = {
   PREFERENCES: '/preferences' as const,
   ABOUT: '/about' as const,
   PEDAGOGICAL_SETUP: '/pedagogical-setup' as const,
-  PEDAGOGICAL: '/pedagogical' as const
+  PEDAGOGICAL: '/pedagogical' as const,
+  OPTIMIZER: '/optimizer' as const,
 } as const;
 
 export type AppRoute = typeof ROUTES[keyof typeof ROUTES];

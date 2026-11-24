@@ -55,6 +55,9 @@ export default function RootLayout() {
         {/* À propos */}
         <Stack.Screen name="about" options={{ title: 'À propos' }} />
 
+        {/* Optimisation : temps de fond maximal pour des blocs et gaz donnés */}
+        <Stack.Screen name="optimizer" options={{ title: 'Optimiser' }} />
+
         {/* Mode pédagogique — préparation (1 ou 2 plongées) */}
         <Stack.Screen name="pedagogical-setup" options={{ title: 'Mode pédagogique' }} />
 
