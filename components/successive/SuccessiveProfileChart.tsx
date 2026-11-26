@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import {
-  buhlmannPoints, endTimeMin, maxDepthM, mn90Points,
+  buhlmannPoints, dciemResultToProfile, endTimeMin, maxDepthM, mn90Points,
   type ComputedDive, type DiveSettings, type ProfilePoint, type SuccessiveResult,
 } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
@@ -18,12 +18,15 @@ import { formatInterval } from './successiveFormat';
 const HEIGHT = 260;
 const COLOR_BUHLMANN = '#378ADD';
 const COLOR_MN90 = '#EF9F27';
+const COLOR_DCIEM = '#A78BFA';
 
 type Props = {
   result: SuccessiveResult;
   settings: DiveSettings;
   showMn90: boolean;
   onToggleMn90: () => void;
+  showDciem: boolean;
+  onToggleDciem: () => void;
 };
 
 /** Paliers de déco d'une plongée : segments à plat sous la profondeur de fond. */
@@ -41,8 +44,8 @@ function stopSegments(dive: ComputedDive) {
   return out;
 }
 
-export default function SuccessiveProfileChart({ result, settings, showMn90, onToggleMn90 }: Props) {
-  const { first, second, mn90, surfaceIntervalMin } = result;
+export default function SuccessiveProfileChart({ result, settings, showMn90, onToggleMn90, showDciem, onToggleDciem }: Props) {
+  const { first, second, mn90, dciem, surfaceIntervalMin } = result;
   const isConsecutive = mn90.relation === 'CONSECUTIVE';
 
   const buh1 = buhlmannPoints(first.segments);
@@ -56,11 +59,18 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
   const mn90First = showMn90 ? toMn90(isConsecutive ? mn90.secondDive : mn90.firstDive) : null;
   const mn90Second = showMn90 && !isConsecutive ? toMn90(mn90.secondDive) : null;
 
-  const firstEnd = Math.max(endTimeMin(buh1), isConsecutive ? 0 : endTimeMin(mn90First ?? []));
-  const secondEnd = Math.max(endTimeMin(buh2), endTimeMin(mn90Second ?? []));
+  // DCIEM : modèle calculé, deux vraies plongées même pour des consécutives.
+  const toDciem = (r: typeof dciem.first) =>
+    mn90Points(dciemResultToProfile(r), settings.descentRateMMin, settings.ascentRateMMin, settings.ascentRateBetweenStopsMMin);
+  const dciemFirst = showDciem ? toDciem(dciem.first) : null;
+  const dciemSecond = showDciem ? toDciem(dciem.second) : null;
+
+  const firstEnd = Math.max(endTimeMin(buh1), isConsecutive ? 0 : endTimeMin(mn90First ?? []), endTimeMin(dciemFirst ?? []));
+  const secondEnd = Math.max(endTimeMin(buh2), endTimeMin(mn90Second ?? []), endTimeMin(dciemSecond ?? []));
   const layout = computeProfileLayout(firstEnd, secondEnd, isConsecutive ? endTimeMin(mn90First ?? []) : 0);
 
-  const maxDepth = Math.max(10, maxDepthM(buh1), maxDepthM(buh2), maxDepthM(mn90First ?? []), maxDepthM(mn90Second ?? []));
+  const maxDepth = Math.max(10, maxDepthM(buh1), maxDepthM(buh2), maxDepthM(mn90First ?? []), maxDepthM(mn90Second ?? []),
+    maxDepthM(dciemFirst ?? []), maxDepthM(dciemSecond ?? []));
 
   const dives = [
     { dive: first, points: shiftPoints(buh1, 0), offset: 0, len: layout.firstLenMin },
@@ -71,9 +81,14 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.title}>Profils des deux plongées</Text>
-        <TouchableOpacity style={[styles.chip, showMn90 && styles.chipActive]} onPress={onToggleMn90}>
-          <Text style={[styles.chipTxt, showMn90 && styles.chipTxtActive]}>MN90</Text>
-        </TouchableOpacity>
+        <View style={styles.chips}>
+          <TouchableOpacity style={[styles.chip, showMn90 && styles.chipActive]} onPress={onToggleMn90}>
+            <Text style={[styles.chipTxt, showMn90 && styles.chipTxtActive]}>MN90</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.chip, showDciem && styles.chipDciemActive]} onPress={onToggleDciem}>
+            <Text style={[styles.chipTxt, showDciem && styles.chipTxtDciemActive]}>DCIEM</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ProfilePlot height={HEIGHT}>
@@ -125,6 +140,14 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
           <Polyline points={polylineOf(shiftPoints(mn90Second, layout.secondStartMin), scale)} fill="none" stroke={COLOR_MN90}
             strokeWidth={1.4} strokeDasharray="4,3" strokeLinejoin="round" />
         )}
+        {dciemFirst && (
+          <Polyline points={polylineOf(dciemFirst, scale)} fill="none" stroke={COLOR_DCIEM} strokeWidth={1.4}
+            strokeDasharray="2,3" strokeLinejoin="round" />
+        )}
+        {dciemSecond && (
+          <Polyline points={polylineOf(shiftPoints(dciemSecond, layout.secondStartMin), scale)} fill="none" stroke={COLOR_DCIEM}
+            strokeWidth={1.4} strokeDasharray="2,3" strokeLinejoin="round" />
+        )}
       </Svg>
           );
         }}
@@ -134,6 +157,9 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
         <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_BUHLMANN }]} /><Text style={styles.legendTxt}>Bühlmann</Text></View>
         {showMn90 && (
           <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_MN90 }]} /><Text style={styles.legendTxt}>MN90</Text></View>
+        )}
+        {showDciem && (
+          <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_DCIEM }]} /><Text style={styles.legendTxt}>DCIEM (modèle calculé)</Text></View>
         )}
         <Text style={styles.legendTxt}>Temps de chaque plongée depuis sa mise à l'eau ; l'intervalle n'est pas à l'échelle.</Text>
       </View>
@@ -158,6 +184,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.15)',
   },
+  chips: { flexDirection: 'row', gap: spacing.xs },
+  chipDciemActive: { backgroundColor: 'rgba(167,139,250,0.18)', borderColor: COLOR_DCIEM },
+  chipTxtDciemActive: { color: COLOR_DCIEM },
   chipActive: { backgroundColor: 'rgba(239,159,39,0.18)', borderColor: COLOR_MN90 },
   chipTxt: { fontSize: fontSize.xs, color: ocean.text.muted },
   chipTxtActive: { color: COLOR_MN90 },

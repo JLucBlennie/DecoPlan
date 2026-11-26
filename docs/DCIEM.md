@@ -91,11 +91,16 @@ passe simplement dans le calcul des compartiments.
 ## 6. Plongées successives
 
 Le modèle n'a pas de règle spéciale : l'état des 4 compartiments à la sortie de l'eau se
-poursuit pendant l'intervalle en surface (`P0 = Psl`). Les tables, elles, passent par un
-**groupe répétitif** (A à M) et un **facteur de répétition** lus dans une table intervalle de
-surface × groupe, qui majore le temps de la plongée suivante. Après environ 18 h, on
-considère que le plongeur est revenu à l'état de plongée unique. *(Non implémenté dans
-DecoPlan à ce jour : seul le mode « plongée simple » est branché.)*
+poursuit pendant l'intervalle en surface (`P0 = Psl`), puis la 2e plongée part de cet état. Les
+consécutives (intervalle très court) et les indépendantes (intervalle très long) sont deux cas
+particuliers du même calcul. Les tables, elles, passent par un **groupe répétitif** (A à M) et un
+**facteur de répétition** lus dans une table intervalle de surface × groupe, qui majore le temps
+de la plongée suivante ; après environ 18 h, on est revenu à l'état de plongée unique.
+
+Dans DecoPlan (`dciemSuccessive.ts`, écran « 2 plongées ») : plongée 1, intervalle en surface,
+plongée 2 depuis l'état reporté, et la même plongée 2 « seule » en référence. La courbe
+« effet de l'intervalle » ajoute le DCIEM à Bühlmann et MN90. C'est un calcul du modèle, pas
+une lecture des tables de répétition (non lues, non embarquées).
 
 ## 7. Ce qu'il y a dans DecoPlan
 
@@ -107,6 +112,7 @@ Dossier `lib/dive/dciem/` (un fichier = une responsabilité) :
 | `compartments.ts` | Équations 1 à 4 et pas Runge-Kutta 4 |
 | `safeAscentDepth.ts` | Calcul de la SAD |
 | `computeDciemDive.ts` | Descente, fond, remontée par paliers |
+| `dciemSuccessive.ts` | Deux plongées : report des compartiments pendant l'intervalle surface |
 | `dciemProfile.ts` | Adaptateur : plan de plongée → profil au format MN90 (pour l'affichage) |
 | `computeDciemDive.test.ts` | Tests contre les tables officielles |
 
@@ -154,7 +160,7 @@ quelques minutes, dans le sens prudent.
 - Modèle **à l'air** : pas de nitrox, d'oxygène ou de mélanges fond (le rapport 84-R-44 traite
   aussi l'oxygène en immersion ou en surface, non implémenté).
 - Pas de plongée en altitude (`Psl` fixé à 10,06 msw).
-- Profil carré : pas de multi-niveaux.
+- Profil carré : pas de multi-niveaux (profondeur max + durée totale saisie).
 
 ## Sources
 

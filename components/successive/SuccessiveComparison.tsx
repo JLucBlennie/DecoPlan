@@ -5,8 +5,9 @@ import {
   deltaTrend, formatDeltaMinutes, formatMinutes, type SuccessiveResult,
 } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
-import { formatBuhlmannStops, formatMn90Stops, RELATION_LABELS } from './successiveFormat';
+import { formatBuhlmannStops, formatDciemStops, formatMn90Stops, RELATION_LABELS } from './successiveFormat';
 
+const COLOR_DCIEM = '#A78BFA';
 const TREND_COLOR = { worse: ocean.accent.red, better: ocean.accent.teal, same: ocean.text.muted } as const;
 
 function Line({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -68,11 +69,33 @@ function Mn90Card({ result }: { result: SuccessiveResult }) {
   );
 }
 
+function DciemCard({ result }: { result: SuccessiveResult }) {
+  const { first, second, secondAlone } = result.dciem;
+  const delta = second.totalAscentTimeMin - secondAlone.totalAscentTimeMin;
+  return (
+    <View style={styles.card}>
+      <Text style={[styles.title, { color: COLOR_DCIEM }]}>DCIEM (modèle calculé)</Text>
+      <Text style={styles.relation}>Calcul du modèle sur l'état des compartiments, pas une lecture de table.</Text>
+      <Line label="Plongée 1 : remontée" value={`${formatMinutes(first.totalAscentTimeMin)} min`} />
+      <Text style={styles.stops}>{formatDciemStops(first.stops)}</Text>
+      <Line label="Plongée 2 : remontée" value={`${formatMinutes(second.totalAscentTimeMin)} min`} />
+      <Text style={styles.stops}>{formatDciemStops(second.stops)}</Text>
+      <Line label="Plongée 2 seule" value={`${formatMinutes(secondAlone.totalAscentTimeMin)} min`} />
+      <Line
+        label="Effet des compartiments chargés"
+        value={`${formatDeltaMinutes(delta)} min`}
+        color={TREND_COLOR[deltaTrend(delta)]}
+      />
+    </View>
+  );
+}
+
 export default function SuccessiveComparison({ result }: { result: SuccessiveResult }) {
   return (
     <View style={styles.root}>
       <BuhlmannCard result={result} />
       <Mn90Card result={result} />
+      <DciemCard result={result} />
     </View>
   );
 }

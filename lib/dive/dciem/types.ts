@@ -1,3 +1,5 @@
+import type { CompartmentPressures } from './compartments';
+
 export interface DciemStop {
   /** Profondeur du palier (m). */
   depthM: number;
@@ -16,6 +18,8 @@ export interface DciemParameters {
   ascentRateMMin: number;
   /** Vitesse de remontée entre paliers et jusqu'à la surface (m/min). */
   ascentRateBetweenStopsMMin: number;
+  /** État des compartiments au départ (plongée successive) ; défaut : saturé en surface. */
+  initialCompartments?: CompartmentPressures;
 }
 
 export interface DciemResult {
@@ -26,4 +30,6 @@ export interface DciemResult {
   totalAscentTimeMin: number;
   /** Plongée sans palier au sens du modèle (aucune attente > 0). */
   noStop: boolean;
+  /** État des compartiments à l'arrivée en surface (pour enchaîner une plongée). */
+  endCompartments: CompartmentPressures;
 }

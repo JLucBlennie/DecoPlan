@@ -3,6 +3,7 @@
  */
 
 import type { MN90DiveRelation, RuntimeStop } from '../../lib/dive';
+import type { DciemStop } from '../../lib/dive';
 import type { MN90Stop } from '../../lib/dive/types';
 
 /** 45 → « 45 min », 90 → « 1 h 30 », 120 → « 2 h ». */
@@ -25,6 +26,11 @@ export function formatBuhlmannStops(stops: RuntimeStop[]): string {
 }
 
 export function formatMn90Stops(stops: MN90Stop[]): string {
+  if (stops.length === 0) return 'sans palier';
+  return stops.map(s => `${s.depthM} m ${Math.round(s.durationMin)}′`).join(' · ');
+}
+
+export function formatDciemStops(stops: DciemStop[]): string {
   if (stops.length === 0) return 'sans palier';
   return stops.map(s => `${s.depthM} m ${Math.round(s.durationMin)}′`).join(' · ');
 }

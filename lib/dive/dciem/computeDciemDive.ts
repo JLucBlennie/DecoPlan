@@ -11,14 +11,15 @@ const MAX_STOP_WAIT_MIN = 1000;
 const WAIT_EPSILON_MIN = 1e-3;
 
 /** Fait évoluer les compartiments pendant une phase de profondeur linéaire. */
-function integratePhase(
+export function integratePhase(
   p: CompartmentPressures,
   fromDepthM: number,
   toDepthM: number,
   durationMin: number,
+  stepMin: number = DT_MIN,
 ): CompartmentPressures {
   if (durationMin <= 0) return p;
-  const steps = Math.max(1, Math.ceil(durationMin / DT_MIN));
+  const steps = Math.max(1, Math.ceil(durationMin / stepMin));
   const h = durationMin / steps;
   let state = p;
   for (let i = 0; i < steps; i++) {
@@ -42,7 +43,7 @@ function nextStopDepth(depthM: number): number {
 export function computeDciemDive(params: DciemParameters): DciemResult {
   const { depthM, diveTimeMin, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin } = params;
 
-  let p = surfaceCompartments();
+  let p = params.initialCompartments ?? surfaceCompartments();
   const descentMin = depthM / descentRateMMin;
   p = integratePhase(p, 0, depthM, Math.min(descentMin, diveTimeMin));
   p = integratePhase(p, depthM, depthM, diveTimeMin - descentMin);
@@ -78,5 +79,6 @@ export function computeDciemDive(params: DciemParameters): DciemResult {
     stops,
     totalAscentTimeMin: ascentTravelMin + stopsTotal,
     noStop: stops.length === 0,
+    endCompartments: p,
   };
 }

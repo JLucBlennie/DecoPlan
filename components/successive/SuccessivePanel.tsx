@@ -29,6 +29,7 @@ type Props = {
 export default function SuccessivePanel({ first, second, settings, secondGf }: Props) {
   const [intervalMin, setIntervalMin] = useState(DEFAULT_INTERVAL_MIN);
   const [showMn90, setShowMn90] = useState(false);
+  const [showDciem, setShowDciem] = useState(false);
 
   // Le balayage ne dépend pas de l'intervalle choisi : il n'est recalculé que si les plongées ou réglages changent.
   const computed = useMemo(() => {
@@ -69,6 +70,8 @@ export default function SuccessivePanel({ first, second, settings, secondGf }: P
             settings={settings}
             showMn90={showMn90}
             onToggleMn90={() => setShowMn90(v => !v)}
+            showDciem={showDciem}
+            onToggleDciem={() => setShowDciem(v => !v)}
           />
           <SuccessiveComparison result={result} />
           <DesaturationPanel compartments={result.desaturation} />

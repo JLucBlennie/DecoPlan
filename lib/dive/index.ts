@@ -86,5 +86,7 @@ export * from './printable';
 
 // Plongées successives : Bühlmann (tissus reportés) + comparaison MN90
 export * from './successive';
+export { computeDciemDive, computeDciemSuccessive, dciemResultToProfile, getDciemProfile } from './dciem';
+export type { DciemResult, DciemStop, DciemSuccessiveResult } from './dciem';
 export { getMN90SuccessiveProfile, getMN90SuccessiveProfileFromPlans } from './mn90Successive';
 export type { MN90DiveRelation, MN90SuccessiveDetail, MN90SuccessiveResult } from './mn90Successive';

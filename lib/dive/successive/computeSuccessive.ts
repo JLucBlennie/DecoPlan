@@ -10,12 +10,19 @@ import { summarizeRuntime } from '../whatIf/summary';
 import { bottomSegmentsOf } from '../whatIf/ccrBottom';
 import { computeRuntime } from '../whatIf/runtime';
 import type { DiveDefinition } from '../whatIf/types';
+import { computeDciemSuccessive } from '../dciem';
 import { getMN90SuccessiveProfile } from '../mn90Successive';
 import { mn90ParametersFromSegments } from './mn90Params';
 import { applySurfaceInterval, captureTissues } from './tissueState';
 import type {
   CompartmentDesaturation, ComputedDive, IntervalSweepPoint, SuccessiveDiveInput, SuccessiveResult, TissueState,
 } from './types';
+
+/** Vitesse de descente (m/min) lue sur la 1re descente saisie ; 20 m/min si elle n'est pas lisible. */
+function descentRateOf(def: DiveDefinition): number {
+  const descent = def.bottomSegments.find(s => s.endDepth > s.startDepth && s.time > 0);
+  return descent ? (descent.endDepth - descent.startDepth) / descent.time : 20;
+}
 
 function computeDive(def: DiveDefinition, initialTissues?: TissueState[], keepEndState = false) {
   const { plan, decoSegments } = computeRuntime(def, { initialTissues, keepEndState });
@@ -52,6 +59,16 @@ export function computeSuccessive(input: SuccessiveDiveInput): SuccessiveResult 
     second.ascentRateBetweenStopsMpm,
   );
 
+  const firstParams = mn90ParametersFromSegments(first.bottomSegments);
+  const secondParams = mn90ParametersFromSegments(second.bottomSegments);
+  const dciem = computeDciemSuccessive({
+    first: { depthM: firstParams.maxDepthM, diveTimeMin: firstParams.diveTimeMin, descentRateMMin: descentRateOf(first) },
+    second: { depthM: secondParams.maxDepthM, diveTimeMin: secondParams.diveTimeMin, descentRateMMin: descentRateOf(second) },
+    surfaceIntervalMin,
+    ascentRateMMin: second.ascentRateMpm,
+    ascentRateBetweenStopsMMin: second.ascentRateBetweenStopsMpm,
+  });
+
   return {
     surfaceIntervalMin,
     first: dive1.dive,
@@ -59,10 +76,11 @@ export function computeSuccessive(input: SuccessiveDiveInput): SuccessiveResult 
     secondAlone: alone.dive,
     desaturation,
     mn90,
+    dciem,
   };
 }
 
-/** Effet de l'intervalle sur la 2e plongée, Bühlmann et MN90 côte à côte. */
+/** Effet de l'intervalle sur la 2e plongée, Bühlmann, MN90 et DCIEM côte à côte. */
 export function computeIntervalSweep(
   input: Omit<SuccessiveDiveInput, 'surfaceIntervalMin'>,
   intervalsMin: number[],
@@ -75,6 +93,7 @@ export function computeIntervalSweep(
       secondTtsMin: r.second.summary.ttsMin,
       secondDecoTimeMin: r.second.summary.decoTimeMin,
       mn90SecondTtsMin: mn90?.totalAscentTimeMin,
+      dciemSecondTtsMin: r.dciem.second.totalAscentTimeMin,
     };
   });
 }
