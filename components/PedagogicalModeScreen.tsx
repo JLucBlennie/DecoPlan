@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { usePedagogicalSimulation } from '../hooks/usePedagogicalSimulation';
 import { DEFAULT_DT_MIN } from '../lib/dive/constants';
+import { getDciemProfile } from '../lib/dive/dciem';
 import { getMN90Profile } from '../lib/dive/mn90';
 import type { MN90Profile, PedagogicalModeProps } from '../lib/dive/types';
 import { usePreferencesStore } from '../store/usePreferencesStore';
@@ -82,6 +83,7 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
   // ── Toggles ───────────────────────────────────────────────────────────────
   const [showComparison, setShowComparison] = useState(false);
   const [showMN90, setShowMN90] = useState(false);
+  const [showDciem, setShowDciem] = useState(false);
 
   // ── Frames courantes ──────────────────────────────────────────────────────
   // Chaque plan a son propre stepCount — on borne séparément pour éviter
@@ -93,6 +95,10 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
   const { descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin } = usePreferencesStore();
   const mn90Profile: MN90Profile | undefined = showMN90
     ? getMN90Profile(plan, ascentRateMMin, ascentRateBetweenStopsMMin)
+    : undefined;
+
+  const dciemProfile: MN90Profile | undefined = showDciem
+    ? getDciemProfile(plan, descentRateMMin, ascentRateMMin, ascentRateBetweenStopsMMin)
     : undefined;
 
   const labelA = comparing
@@ -148,6 +154,13 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
         {showMN90 && !mn90Profile && (
           <Text style={styles.mn90Params}>hors table MN90</Text>
         )}
+        <Chip label="DCIEM" active={showDciem}
+          onPress={() => setShowDciem(v => !v)} />
+        {showDciem && dciemProfile && (
+          <Text style={styles.mn90Params}>
+            modèle calculé · {dciemProfile.stops.length === 0 ? 'sans palier' : `${dciemProfile.stops.length} palier(s)`}
+          </Text>
+        )}
       </View>
 
       {/* ── Zone principale : profil 3/4 + compartiments 1/4 ────────────── */}
@@ -159,6 +172,7 @@ export function PedagogicalModeScreen({ plan, comparisonPlan, onClose }: Pedagog
           simulation={simA}
           currentStep={Math.min(step, simA.stepCount)}
           mn90Profile={mn90Profile}
+          dciemProfile={dciemProfile}
           ascentRateMMin={ascentRateMMin}
           ascentRateBetweenStopsMMin={ascentRateBetweenStopsMMin}
           label={labelA}

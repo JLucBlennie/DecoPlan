@@ -15,6 +15,8 @@ export interface DiveProfileViewProps {
   simulation: PedagogicalSimulation;
   currentStep: number;
   mn90Profile?: MN90Profile;
+  /** Profil « modèle DCIEM calculé » (même format que MN90), tracé en violet. */
+  dciemProfile?: MN90Profile;
   /** Vitesse de remontée fond→1er palier (m/min), pour tracer la remontée du profil MN90. Défaut : 10. */
   ascentRateMMin?: number;
   /** Vitesse de remontée entre paliers et jusqu'à la surface (m/min). Défaut : 6. */
@@ -30,7 +32,7 @@ export interface DiveProfileViewProps {
 
 export function DiveProfileView({
   plan, simulation, currentStep,
-  mn90Profile, ascentRateMMin = 10, ascentRateBetweenStopsMMin = 6, label, style,
+  mn90Profile, dciemProfile, ascentRateMMin = 10, ascentRateBetweenStopsMMin = 6, label, style,
   comparisonPlan, comparisonSimulation, comparisonLabel,
 }: DiveProfileViewProps) {
 
@@ -56,6 +58,10 @@ export function DiveProfileView({
     ? buildMN90Segments(mn90Profile, mn90BottomTime, ascentRateMMin, ascentRateBetweenStopsMMin)
     : null;
   const mn90EndTime = mn90Segments ? mn90Segments[mn90Segments.length - 1].time : 0;
+  const dciemSegments = dciemProfile
+    ? buildMN90Segments(dciemProfile, mn90BottomTimeFor(dciemProfile, simulation), ascentRateMMin, ascentRateBetweenStopsMMin)
+    : null;
+  const dciemEndTime = dciemSegments ? dciemSegments[dciemSegments.length - 1].time : 0;
 
   // L'axe temps couvre le plan A, le plan B (comparaison) et le profil MN90
   // — le plus long des trois, pour ne jamais couper la fin d'un tracé.
@@ -63,6 +69,7 @@ export function DiveProfileView({
     simulation.totalTimeMin,
     hasComparison ? comparisonSimulation!.totalTimeMin : 0,
     mn90EndTime,
+    dciemEndTime,
   );
   // Échelle commune à tous les graphiques de profil (axe arrondi au 10 m supérieur)
   const scale = profileScale(svgW, svgH, totalTime, depthAxisMax(maxDepth));
@@ -104,6 +111,9 @@ export function DiveProfileView({
   // MN90 — mappage des points réels (temps/profondeur) vers l'écran
   const mn90Points = mn90Segments
     ? mn90Segments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
+    : null;
+  const dciemPoints = dciemSegments
+    ? dciemSegments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
     : null;
 
   return (
@@ -161,6 +171,13 @@ export function DiveProfileView({
             strokeDasharray="4,3" strokeLinejoin="round" />
         )}
 
+        {/* DCIEM (modèle calculé) */}
+        {dciemPoints && (
+          <Polyline points={dciemPoints} fill="none"
+            stroke="#A78BFA" strokeWidth={1.4}
+            strokeDasharray="2,3" strokeLinejoin="round" />
+        )}
+
         {/* Labels paliers plan A */}
         {stopSegsA.map((seg, i) => (
           <SvgText key={`sl${i}`}
@@ -198,6 +215,12 @@ export function DiveProfileView({
             <Text style={styles.legendTxt}>MN90</Text>
           </View>
         )}
+        {dciemProfile && (
+          <View style={styles.legendItem}>
+            <View style={[styles.legendLine, { backgroundColor: '#A78BFA' }]} />
+            <Text style={styles.legendTxt}>DCIEM (modèle calculé)</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -227,6 +250,11 @@ function mergeConsecutiveStops(stops: ProfileSegment[]): ProfileSegment[] {
     }
   }
   return merged;
+}
+
+/** Instant d'arrivée au fond (fin de descente) lu sur la simulation du plan. */
+function mn90BottomTimeFor(profile: MN90Profile, simulation: PedagogicalSimulation): number {
+  return simulation.frames.find(f => f.depthM >= profile.maxDepthM)?.timeMin ?? 2;
 }
 
 /** Un point du profil MN90 en unités réelles (minutes, mètres) — non mappé à l'écran. */
