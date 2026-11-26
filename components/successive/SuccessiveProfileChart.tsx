@@ -1,10 +1,10 @@
 // Profils des deux plongées bout à bout (Bühlmann), avec le profil MN90 en option.
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import {
-  buhlmannPoints, dciemResultToProfile, endTimeMin, maxDepthM, mn90Points,
+  buhlmannPoints, dciemResultToProfile, endTimeMin, maxDepthM, mn90Points, stopLabelsOf,
   type ComputedDive, type DiveSettings, type ProfilePoint, type SuccessiveResult,
 } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
@@ -16,6 +16,9 @@ import { computeProfileLayout, shiftPoints } from './successiveProfileLayout';
 import { formatInterval } from './successiveFormat';
 
 const HEIGHT = 260;
+
+/** Courbes sélectionnables par la légende. */
+type CurveId = 'BUHLMANN' | 'MN90' | 'DCIEM';
 const COLOR_BUHLMANN = '#378ADD';
 const COLOR_MN90 = '#EF9F27';
 const COLOR_DCIEM = '#A78BFA';
@@ -48,6 +51,12 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
   const { first, second, mn90, dciem, surfaceIntervalMin } = result;
   const isConsecutive = mn90.relation === 'CONSECUTIVE';
 
+  // Courbe mise en évidence en touchant sa légende (null = aucune : tout est normal).
+  const [highlight, setHighlight] = useState<CurveId | null>(null);
+  const toggleHighlight = (id: CurveId) => setHighlight(h => (h === id ? null : id));
+  const dim = (id: CurveId) => (highlight && highlight !== id ? 0.25 : 1);
+  const thick = (id: CurveId, base: number) => (highlight === id ? base + 1.5 : base);
+
   const buh1 = buhlmannPoints(first.segments);
   const buh2 = buhlmannPoints(second.segments);
 
@@ -76,6 +85,21 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
     { dive: first, points: shiftPoints(buh1, 0), offset: 0, len: layout.firstLenMin },
     { dive: second, points: shiftPoints(buh2, layout.secondStartMin), offset: layout.secondStartMin, len: layout.secondLenMin },
   ];
+
+  // Légende : durée de chaque plongée (de la mise à l'eau à la sortie) ; toucher un libellé met la courbe en évidence.
+  const minutes = (points: ProfilePoint[] | null) => `${Math.round(endTimeMin(points ?? []))}'`;
+  const legendItems: { id: CurveId; color: string; text: string }[] = [
+    { id: 'BUHLMANN', color: COLOR_BUHLMANN, text: `Bühlmann · ${minutes(buh1)} / ${minutes(buh2)}` },
+  ];
+  if (showMn90) {
+    legendItems.push({
+      id: 'MN90', color: COLOR_MN90,
+      text: isConsecutive ? `MN90 · ${minutes(mn90First)} (plongée unique)` : `MN90 · ${minutes(mn90First)} / ${minutes(mn90Second)}`,
+    });
+  }
+  if (showDciem) {
+    legendItems.push({ id: 'DCIEM', color: COLOR_DCIEM, text: `DCIEM (modèle calculé) · ${minutes(dciemFirst)} / ${minutes(dciemSecond)}` });
+  }
 
   return (
     <View style={styles.card}>
@@ -120,11 +144,12 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
 
         {dives.map(({ dive, points, offset }, i) => (
           <React.Fragment key={i}>
-            <Path d={fillPathOf(points, scale)} fill="url(#fillDive)" />
-            <Polyline points={polylineOf(points, scale)} fill="none" stroke={COLOR_BUHLMANN} strokeWidth={1.8} strokeLinejoin="round" />
+            <Path d={fillPathOf(points, scale)} fill="url(#fillDive)" opacity={dim('BUHLMANN')} />
+            <Polyline points={polylineOf(points, scale)} fill="none" stroke={COLOR_BUHLMANN} strokeWidth={thick('BUHLMANN', 1.8)}
+              opacity={dim('BUHLMANN')} strokeLinejoin="round" />
             {stopSegments(dive).map((s, k) => (
               <SvgText key={k} x={tx(offset + (s.startMin + s.endMin) / 2)} y={ty(s.depthM) - 5}
-                textAnchor="middle" fontSize={8} fill="#BA7517">
+                textAnchor="middle" fontSize={8} fill="#BA7517" opacity={dim('BUHLMANN')}>
                 {s.depthM}m·{Math.round(s.endMin - s.startMin)}'
               </SvgText>
             ))}
@@ -133,34 +158,43 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
         ))}
 
         {mn90First && (
-          <Polyline points={polylineOf(mn90First, scale)} fill="none" stroke={COLOR_MN90} strokeWidth={1.4}
-            strokeDasharray="4,3" strokeLinejoin="round" />
+          <Polyline points={polylineOf(mn90First, scale)} fill="none" stroke={COLOR_MN90} strokeWidth={thick('MN90', 1.4)}
+            opacity={dim('MN90')} strokeDasharray="4,3" strokeLinejoin="round" />
         )}
         {mn90Second && (
           <Polyline points={polylineOf(shiftPoints(mn90Second, layout.secondStartMin), scale)} fill="none" stroke={COLOR_MN90}
-            strokeWidth={1.4} strokeDasharray="4,3" strokeLinejoin="round" />
+            strokeWidth={thick('MN90', 1.4)} opacity={dim('MN90')} strokeDasharray="4,3" strokeLinejoin="round" />
         )}
         {dciemFirst && (
-          <Polyline points={polylineOf(dciemFirst, scale)} fill="none" stroke={COLOR_DCIEM} strokeWidth={1.4}
-            strokeDasharray="2,3" strokeLinejoin="round" />
+          <Polyline points={polylineOf(dciemFirst, scale)} fill="none" stroke={COLOR_DCIEM} strokeWidth={thick('DCIEM', 1.4)}
+            opacity={dim('DCIEM')} strokeDasharray="2,3" strokeLinejoin="round" />
         )}
         {dciemSecond && (
           <Polyline points={polylineOf(shiftPoints(dciemSecond, layout.secondStartMin), scale)} fill="none" stroke={COLOR_DCIEM}
-            strokeWidth={1.4} strokeDasharray="2,3" strokeLinejoin="round" />
+            strokeWidth={thick('DCIEM', 1.4)} opacity={dim('DCIEM')} strokeDasharray="2,3" strokeLinejoin="round" />
         )}
+        {/* Paliers MN90 / DCIEM : profondeur·durée, sous la ligne */}
+        {[
+          { id: 'MN90' as const, color: COLOR_MN90, dy: 10, sets: [[mn90First, 0], [mn90Second, layout.secondStartMin]] as const },
+          { id: 'DCIEM' as const, color: COLOR_DCIEM, dy: 19, sets: [[dciemFirst, 0], [dciemSecond, layout.secondStartMin]] as const },
+        ].flatMap(({ id, color, dy, sets }) => sets.flatMap(([points, offset], k) =>
+          (points ? stopLabelsOf(points) : []).map((l, j) => (
+            <SvgText key={`${id}${k}-${j}`} x={tx(offset + l.timeMin)} y={ty(l.depthM) + dy}
+              textAnchor="middle" fontSize={8} fill={color} opacity={dim(id)}>{l.text}</SvgText>
+          ))))}
       </Svg>
           );
         }}
       </ProfilePlot>
 
       <View style={styles.legend}>
-        <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_BUHLMANN }]} /><Text style={styles.legendTxt}>Bühlmann</Text></View>
-        {showMn90 && (
-          <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_MN90 }]} /><Text style={styles.legendTxt}>MN90</Text></View>
-        )}
-        {showDciem && (
-          <View style={styles.legendItem}><View style={[styles.legendLine, { backgroundColor: COLOR_DCIEM }]} /><Text style={styles.legendTxt}>DCIEM (modèle calculé)</Text></View>
-        )}
+        {legendItems.map(item => (
+          <TouchableOpacity key={item.id} style={styles.legendItem} onPress={() => toggleHighlight(item.id)}
+            activeOpacity={0.7} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+            <View style={[styles.legendLine, { backgroundColor: item.color, height: highlight === item.id ? 3 : 2 }]} />
+            <Text style={[styles.legendTxt, highlight === item.id && styles.legendTxtOn]}>{item.text}</Text>
+          </TouchableOpacity>
+        ))}
         <Text style={styles.legendTxt}>Temps de chaque plongée depuis sa mise à l'eau ; l'intervalle n'est pas à l'échelle.</Text>
       </View>
       {showMn90 && isConsecutive && (
@@ -194,4 +228,5 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendLine: { width: 14, height: 2, borderRadius: 1 },
   legendTxt: { fontSize: 10, color: ocean.text.muted },
+  legendTxtOn: { color: ocean.text.primary, fontWeight: '600' },
 });

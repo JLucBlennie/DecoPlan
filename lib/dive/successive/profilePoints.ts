@@ -65,3 +65,24 @@ export function endTimeMin(points: ProfilePoint[]): number {
 export function maxDepthM(points: ProfilePoint[]): number {
   return points.reduce((m, p) => Math.max(m, p.depthM), 0);
 }
+
+/** Étiquette « profondeur·durée » au milieu d'un palier d'un profil MN90/DCIEM. */
+export interface StopLabel {
+  timeMin: number;
+  depthM: number;
+  text: string;
+}
+
+/** Les paliers d'un profil : niveaux plats sous la profondeur max (le fond est exclu). */
+export function stopLabelsOf(points: ProfilePoint[]): StopLabel[] {
+  const max = maxDepthM(points);
+  const labels: StopLabel[] = [];
+  for (let i = 0; i + 1 < points.length; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (a.depthM === b.depthM && a.depthM > 0 && a.depthM < max && b.timeMin > a.timeMin) {
+      labels.push({ timeMin: (a.timeMin + b.timeMin) / 2, depthM: a.depthM, text: `${a.depthM}m·${Math.round(b.timeMin - a.timeMin)}'` });
+    }
+  }
+  return labels;
+}
