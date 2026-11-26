@@ -1,14 +1,31 @@
 // Bühlmann et MN90 côte à côte pour la même paire de plongées.
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
   deltaTrend, formatDeltaMinutes, formatMinutes, type SuccessiveResult,
 } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
+import { CURVE_COLORS, type CurveId } from './successiveCurves';
 import { formatBuhlmannStops, formatDciemStops, formatMn90Stops, RELATION_LABELS } from './successiveFormat';
 
-const COLOR_DCIEM = '#A78BFA';
 const TREND_COLOR = { worse: ocean.accent.red, better: ocean.accent.teal, same: ocean.text.muted } as const;
+
+type Selectable = { highlight: CurveId | null; onSelect: (id: CurveId) => void };
+
+/** Panneau d'un modèle : encadré de la couleur de sa courbe quand elle est mise en évidence. */
+function ModelCard({ id, highlight, onSelect, children }: Selectable & { id: CurveId; children: React.ReactNode }) {
+  const selected = highlight === id;
+  return (
+    <Pressable
+      style={[styles.card, selected && { borderColor: CURVE_COLORS[id], borderWidth: 1.5 }]}
+      onPress={() => onSelect(id)}
+      accessibilityState={{ selected }}
+    >
+      {children}
+    </Pressable>
+  );
+}
 
 function Line({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
@@ -19,11 +36,11 @@ function Line({ label, value, color }: { label: string; value: string; color?: s
   );
 }
 
-function BuhlmannCard({ result }: { result: SuccessiveResult }) {
+function BuhlmannCard({ result, ...sel }: { result: SuccessiveResult } & Selectable) {
   const { first, second, secondAlone } = result;
   const delta = second.summary.ttsMin - secondAlone.summary.ttsMin;
   return (
-    <View style={styles.card}>
+    <ModelCard id="BUHLMANN" {...sel}>
       <Text style={[styles.title, { color: ocean.accent.blue }]}>Bühlmann ZHL-16C</Text>
       <Line label="Plongée 1 : remontée" value={`${formatMinutes(first.summary.ttsMin)} min`} />
       <Text style={styles.stops}>{formatBuhlmannStops(first.summary.stops)}</Text>
@@ -35,16 +52,16 @@ function BuhlmannCard({ result }: { result: SuccessiveResult }) {
         value={`${formatDeltaMinutes(delta)} min`}
         color={TREND_COLOR[deltaTrend(delta)]}
       />
-    </View>
+    </ModelCard>
   );
 }
 
-function Mn90Card({ result }: { result: SuccessiveResult }) {
+function Mn90Card({ result, ...sel }: { result: SuccessiveResult } & Selectable) {
   const { mn90 } = result;
   const second = mn90.secondDive;
   return (
-    <View style={styles.card}>
-      <Text style={[styles.title, { color: ocean.accent.teal }]}>Tables MN90</Text>
+    <ModelCard id="MN90" {...sel}>
+      <Text style={[styles.title, { color: CURVE_COLORS.MN90 }]}>Tables MN90</Text>
       <Text style={styles.relation}>{RELATION_LABELS[mn90.relation]}</Text>
       {mn90.detail && (
         <>
@@ -65,16 +82,16 @@ function Mn90Card({ result }: { result: SuccessiveResult }) {
       ) : (
         <Text style={styles.unavailable}>{mn90.unavailableReason ?? 'Hors table.'}</Text>
       )}
-    </View>
+    </ModelCard>
   );
 }
 
-function DciemCard({ result }: { result: SuccessiveResult }) {
+function DciemCard({ result, ...sel }: { result: SuccessiveResult } & Selectable) {
   const { first, second, secondAlone } = result.dciem;
   const delta = second.totalAscentTimeMin - secondAlone.totalAscentTimeMin;
   return (
-    <View style={styles.card}>
-      <Text style={[styles.title, { color: COLOR_DCIEM }]}>DCIEM (modèle calculé)</Text>
+    <ModelCard id="DCIEM" {...sel}>
+      <Text style={[styles.title, { color: CURVE_COLORS.DCIEM }]}>DCIEM (modèle calculé)</Text>
       <Text style={styles.relation}>Calcul du modèle sur l'état des compartiments, pas une lecture de table.</Text>
       <Line label="Plongée 1 : remontée" value={`${formatMinutes(first.totalAscentTimeMin)} min`} />
       <Text style={styles.stops}>{formatDciemStops(first.stops)}</Text>
@@ -86,16 +103,16 @@ function DciemCard({ result }: { result: SuccessiveResult }) {
         value={`${formatDeltaMinutes(delta)} min`}
         color={TREND_COLOR[deltaTrend(delta)]}
       />
-    </View>
+    </ModelCard>
   );
 }
 
-export default function SuccessiveComparison({ result }: { result: SuccessiveResult }) {
+export default function SuccessiveComparison({ result, highlight, onSelect }: { result: SuccessiveResult } & Selectable) {
   return (
     <View style={styles.root}>
-      <BuhlmannCard result={result} />
-      <Mn90Card result={result} />
-      <DciemCard result={result} />
+      <BuhlmannCard result={result} highlight={highlight} onSelect={onSelect} />
+      <Mn90Card result={result} highlight={highlight} onSelect={onSelect} />
+      <DciemCard result={result} highlight={highlight} onSelect={onSelect} />
     </View>
   );
 }

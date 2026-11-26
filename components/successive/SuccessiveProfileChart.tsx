@@ -1,5 +1,5 @@
 // Profils des deux plongées bout à bout (Bühlmann), avec le profil MN90 en option.
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
@@ -14,14 +14,13 @@ import { profileScale, PT, timeTicks } from '../charts/profileFrame';
 import { fillPathOf, polylineOf } from '../charts/profilePaths';
 import { computeProfileLayout, shiftPoints } from './successiveProfileLayout';
 import { formatInterval } from './successiveFormat';
+import { CURVE_COLORS, type CurveId } from './successiveCurves';
 
 const HEIGHT = 260;
 
-/** Courbes sélectionnables par la légende. */
-type CurveId = 'BUHLMANN' | 'MN90' | 'DCIEM';
-const COLOR_BUHLMANN = '#378ADD';
-const COLOR_MN90 = '#EF9F27';
-const COLOR_DCIEM = '#A78BFA';
+const COLOR_BUHLMANN = CURVE_COLORS.BUHLMANN;
+const COLOR_MN90 = CURVE_COLORS.MN90;
+const COLOR_DCIEM = CURVE_COLORS.DCIEM;
 
 type Props = {
   result: SuccessiveResult;
@@ -30,6 +29,9 @@ type Props = {
   onToggleMn90: () => void;
   showDciem: boolean;
   onToggleDciem: () => void;
+  /** Courbe mise en évidence (null = aucune) ; l'état est porté par l'écran, partagé avec les panneaux. */
+  highlight: CurveId | null;
+  onHighlight: (id: CurveId) => void;
 };
 
 /** Paliers de déco d'une plongée : segments à plat sous la profondeur de fond. */
@@ -47,13 +49,13 @@ function stopSegments(dive: ComputedDive) {
   return out;
 }
 
-export default function SuccessiveProfileChart({ result, settings, showMn90, onToggleMn90, showDciem, onToggleDciem }: Props) {
+export default function SuccessiveProfileChart({ result, settings, showMn90, onToggleMn90, showDciem, onToggleDciem, highlight: requested, onHighlight }: Props) {
   const { first, second, mn90, dciem, surfaceIntervalMin } = result;
   const isConsecutive = mn90.relation === 'CONSECUTIVE';
 
-  // Courbe mise en évidence en touchant sa légende (null = aucune : tout est normal).
-  const [highlight, setHighlight] = useState<CurveId | null>(null);
-  const toggleHighlight = (id: CurveId) => setHighlight(h => (h === id ? null : id));
+  // Une courbe masquée ne peut pas être mise en évidence (sinon tout serait atténué).
+  const visible: Record<CurveId, boolean> = { BUHLMANN: true, MN90: showMn90, DCIEM: showDciem };
+  const highlight = requested && visible[requested] ? requested : null;
   const dim = (id: CurveId) => (highlight && highlight !== id ? 0.25 : 1);
   const thick = (id: CurveId, base: number) => (highlight === id ? base + 1.5 : base);
 
@@ -189,7 +191,7 @@ export default function SuccessiveProfileChart({ result, settings, showMn90, onT
 
       <View style={styles.legend}>
         {legendItems.map(item => (
-          <TouchableOpacity key={item.id} style={styles.legendItem} onPress={() => toggleHighlight(item.id)}
+          <TouchableOpacity key={item.id} style={styles.legendItem} onPress={() => onHighlight(item.id)}
             activeOpacity={0.7} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
             <View style={[styles.legendLine, { backgroundColor: item.color, height: highlight === item.id ? 3 : 2 }]} />
             <Text style={[styles.legendTxt, highlight === item.id && styles.legendTxtOn]}>{item.text}</Text>
