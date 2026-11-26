@@ -29,8 +29,7 @@ import WhatIfProfileChart from './WhatIfProfileChart';
 type ResultView = 'detail' | 'whatIf';
 
 const RESULT_VIEWS: { value: ResultView; label: string }[] = [
-  { value: 'detail', label: 'Détail' },
-  { value: 'whatIf', label: 'Et si ?' },
+  { value: 'whatIf', label: 'Les runtimes avec les What if ?' },
 ];
 
 export default function RuntimeScreen() {
@@ -55,7 +54,7 @@ export default function RuntimeScreen() {
   const [decoObject, setDecoObject] = useState<Plan | null>(null);  // ← Plan conservé pour le mode péda
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
-  const [resultView, setResultView] = useState<ResultView>('detail');
+  const [resultView, setResultView] = useState<ResultView>('whatIf');
   const { selectedKind, select } = useRuntimeSelection(whatIf);
   // En-tête de la fiche imprimable : réglages utilisés au moment du calcul, pas ceux des curseurs.
   const [sheetOptions, setSheetOptions] = useState<Omit<RunSheetOptions, 'pageWidthPx'> | null>(null);
@@ -69,6 +68,11 @@ export default function RuntimeScreen() {
    */
   function handleSubmit() {
     if (!selectedPlongee) return;
+    console.log('Lancement du calcul pour', selectedPlongee.name);
+    runtimeCalculation(selectedPlongee, gfValues);
+  }
+
+  function runtimeCalculation(selectedPlongee: Plongee, gfValues: GFValues) {
     setShowResult(false);
 
     // Chaque niveau de plongee.segments est un "palier" : profondeur cible + temps
@@ -129,7 +133,7 @@ export default function RuntimeScreen() {
         { gfLow: defaultGfLow, gfHigh: defaultGfHigh, gfLowTrimix, gfHighTrimix, gfLowCcr, gfHighCcr },
         found,
       ));
-      handleSubmit();
+      runtimeCalculation(found, gfValues);
     } else {
       setShowResult(false);
     }
@@ -138,7 +142,9 @@ export default function RuntimeScreen() {
   function handleGFChange(newValues: GFValues) {
     setGfValues(newValues);
     setShowResult(false);
-    handleSubmit();
+    if (selectedPlongee) {
+      runtimeCalculation(selectedPlongee, newValues);
+    }
   }
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
