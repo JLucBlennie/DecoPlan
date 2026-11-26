@@ -12,11 +12,11 @@ import ProfileGrid from '../charts/ProfileGrid';
 import ProfilePlot from '../charts/ProfilePlot';
 import { profileScale, PT, timeTicks } from '../charts/profileFrame';
 import { fillPathOf, polylineOf } from '../charts/profilePaths';
-import { computeProfileLayout, shiftPoints } from './successiveProfileLayout';
-import { formatInterval } from './successiveFormat';
 import { CURVE_COLORS, type CurveId } from './successiveCurves';
+import { formatInterval } from './successiveFormat';
+import { computeProfileLayout, shiftPoints } from './successiveProfileLayout';
 
-const HEIGHT = 260;
+const HEIGHT = 400;
 
 const COLOR_BUHLMANN = CURVE_COLORS.BUHLMANN;
 const COLOR_MN90 = CURVE_COLORS.MN90;

@@ -6,14 +6,14 @@ import Svg, { Defs, LinearGradient, Path, Polyline, Stop } from 'react-native-sv
 import { endTimeMin, maxDepthM, type WhatIfKind, type WhatIfResult } from '../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import { flatLevels } from './charts/flatLevels';
+import { profileScale, PT, timeTicks } from './charts/profileFrame';
 import ProfileGrid from './charts/ProfileGrid';
 import ProfileLevelZones from './charts/ProfileLevelZones';
-import ProfilePlot from './charts/ProfilePlot';
-import { profileScale, PT, timeTicks } from './charts/profileFrame';
 import { fillPathOf, polylineOf } from './charts/profilePaths';
+import ProfilePlot from './charts/ProfilePlot';
 import { buildWhatIfSeries } from './whatIfChartSeries';
 
-const HEIGHT = 200;
+const HEIGHT = 400;
 /** À partir de cette largeur d'écran, la légende passe à droite du graphique (sinon dessous). */
 const LEGEND_RIGHT_BREAKPOINT = 560;
 

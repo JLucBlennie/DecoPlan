@@ -10,9 +10,10 @@ type Props<T extends string> = {
     value: T;
     options: Option<T>[];
     onChange: (value: T) => void;
+    disabled?: boolean;
 };
 
-export default function SegmentedToggle<T extends string>({ value, options, onChange }: Props<T>) {
+export default function SegmentedToggle<T extends string>({ value, options, onChange, disabled = false }: Props<T>) {
     return (
         <View style={styles.root}>
             {options.map(option => {
@@ -25,6 +26,7 @@ export default function SegmentedToggle<T extends string>({ value, options, onCh
                         activeOpacity={0.8}
                         accessibilityRole="button"
                         accessibilityState={{ selected }}
+                        disabled={disabled}
                     >
                         <Text style={[styles.label, selected && styles.labelSelected]}>
                             {option.label}

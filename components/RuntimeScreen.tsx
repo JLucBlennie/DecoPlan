@@ -66,12 +66,6 @@ export default function RuntimeScreen() {
    * définition de plongée (lib/dive/whatIf). Le Plan du nominal est conservé :
    * il est nécessaire à buildDivePlanFromPlan() dans le mode pédagogique.
    */
-  function handleSubmit() {
-    if (!selectedPlongee) return;
-    console.log('Lancement du calcul pour', selectedPlongee.name);
-    runtimeCalculation(selectedPlongee, gfValues);
-  }
-
   function runtimeCalculation(selectedPlongee: Plongee, gfValues: GFValues) {
     setShowResult(false);
 
@@ -209,7 +203,7 @@ export default function RuntimeScreen() {
             {/* Détail du nominal ou scénarios « Et si ? » à côté du nominal, et fiche à imprimer */}
             <View style={styles.toolbar}>
               <View style={styles.toggle}>
-                <SegmentedToggle value={resultView} options={RESULT_VIEWS} onChange={setResultView} />
+                <SegmentedToggle value={resultView} options={RESULT_VIEWS} onChange={setResultView} disabled={true} />
               </View>
               {whatIf && sheetOptions && <PrintRunSheetButton result={whatIf} options={sheetOptions} />}
             </View>
@@ -278,6 +272,7 @@ const styles = StyleSheet.create({
   screenContent: { flex: undefined, flexGrow: 1, paddingBottom: spacing.xxl },
   resultArea: {
     alignSelf: 'stretch',
+    flexDirection: 'column',
   },
   resultHeader: {
     flexDirection: 'row',
@@ -303,5 +298,5 @@ const styles = StyleSheet.create({
   whatIfError: {
     fontSize: fontSize.xs,
     color: ocean.accent.red,
-  },
+  }
 });
