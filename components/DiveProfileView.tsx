@@ -178,6 +178,16 @@ export function DiveProfileView({
             strokeDasharray="2,3" strokeLinejoin="round" />
         )}
 
+        {/* Paliers MN90 / DCIEM : profondeur·durée, sous la ligne */}
+        {mn90Segments && stopLabels(mn90Segments, mn90Profile!.maxDepthM).map((l, i) => (
+          <SvgText key={`m9${i}`} x={tx(l.time)} y={ty(l.depth) + 10}
+            textAnchor="middle" fontSize={8} fill="#EF9F27">{l.text}</SvgText>
+        ))}
+        {dciemSegments && stopLabels(dciemSegments, dciemProfile!.maxDepthM).map((l, i) => (
+          <SvgText key={`dc${i}`} x={tx(l.time)} y={ty(l.depth) + 19}
+            textAnchor="middle" fontSize={8} fill="#A78BFA">{l.text}</SvgText>
+        ))}
+
         {/* Labels paliers plan A */}
         {stopSegsA.map((seg, i) => (
           <SvgText key={`sl${i}`}
@@ -197,28 +207,34 @@ export function DiveProfileView({
 
       {/* Légende */}
       <View style={styles.legendRow}>
+        {!hasComparison && (mn90Profile || dciemProfile) && (
+          <View style={styles.legendItem}>
+            <View style={[styles.legendLine, { backgroundColor: '#378ADD' }]} />
+            <Text style={styles.legendTxt}>Bühlmann · {Math.round(simulation.totalTimeMin)} min</Text>
+          </View>
+        )}
         {hasComparison && (
           <>
             <View style={styles.legendItem}>
               <View style={[styles.legendLine, { backgroundColor: '#378ADD' }]} />
-              <Text style={styles.legendTxt}>{label ?? 'Plan A'}</Text>
+              <Text style={styles.legendTxt}>{label ?? 'Plan A'} · {Math.round(simulation.totalTimeMin)} min</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendLine, { backgroundColor: '#1D9E75', borderStyle: 'dashed' }]} />
-              <Text style={styles.legendTxt}>{comparisonLabel ?? 'Plan B'}</Text>
+              <Text style={styles.legendTxt}>{comparisonLabel ?? 'Plan B'} · {Math.round(comparisonSimulation!.totalTimeMin)} min</Text>
             </View>
           </>
         )}
         {mn90Profile && (
           <View style={styles.legendItem}>
             <View style={[styles.legendLine, { backgroundColor: '#EF9F27' }]} />
-            <Text style={styles.legendTxt}>MN90</Text>
+            <Text style={styles.legendTxt}>MN90 · {Math.round(mn90EndTime)} min</Text>
           </View>
         )}
         {dciemProfile && (
           <View style={styles.legendItem}>
             <View style={[styles.legendLine, { backgroundColor: '#A78BFA' }]} />
-            <Text style={styles.legendTxt}>DCIEM (modèle calculé)</Text>
+            <Text style={styles.legendTxt}>DCIEM (modèle calculé) · {Math.round(dciemEndTime)} min</Text>
           </View>
         )}
       </View>
@@ -255,6 +271,22 @@ function mergeConsecutiveStops(stops: ProfileSegment[]): ProfileSegment[] {
 /** Instant d'arrivée au fond (fin de descente) lu sur la simulation du plan. */
 function mn90BottomTimeFor(profile: MN90Profile, simulation: PedagogicalSimulation): number {
   return simulation.frames.find(f => f.depthM >= profile.maxDepthM)?.timeMin ?? 2;
+}
+
+/** Étiquette « profondeur·durée » placée au milieu de chaque palier d'un profil MN90/DCIEM. */
+function stopLabels(
+  points: { time: number; depth: number }[],
+  maxDepthM: number,
+): { time: number; depth: number; text: string }[] {
+  const labels: { time: number; depth: number; text: string }[] = [];
+  for (let i = 0; i + 1 < points.length; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (a.depth === b.depth && a.depth > 0 && a.depth < maxDepthM && b.time > a.time) {
+      labels.push({ time: (a.time + b.time) / 2, depth: a.depth, text: `${a.depth}m·${Math.round(b.time - a.time)}'` });
+    }
+  }
+  return labels;
 }
 
 /** Un point du profil MN90 en unités réelles (minutes, mètres) — non mappé à l'écran. */
