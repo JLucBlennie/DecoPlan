@@ -13,6 +13,7 @@ import IntervalControl from './IntervalControl';
 import IntervalSweepChart from './IntervalSweepChart';
 import SuccessiveComparison from './SuccessiveComparison';
 import SuccessiveProfileChart from './SuccessiveProfileChart';
+import type { CurveId } from './successiveCurves';
 
 const SWEEP_INTERVALS_MIN = [0, 15, 30, 60, 120, 180, 240, 360, 480, 720];
 const DEFAULT_INTERVAL_MIN = 60;
@@ -29,6 +30,10 @@ type Props = {
 export default function SuccessivePanel({ first, second, settings, secondGf }: Props) {
   const [intervalMin, setIntervalMin] = useState(DEFAULT_INTERVAL_MIN);
   const [showMn90, setShowMn90] = useState(false);
+  const [showDciem, setShowDciem] = useState(false);
+  // Courbe + panneau mis en évidence ensemble (légende ou panneau touché, re-toucher pour annuler).
+  const [highlight, setHighlight] = useState<CurveId | null>(null);
+  const toggleHighlight = (id: CurveId) => setHighlight(h => (h === id ? null : id));
 
   // Le balayage ne dépend pas de l'intervalle choisi : il n'est recalculé que si les plongées ou réglages changent.
   const computed = useMemo(() => {
@@ -69,8 +74,12 @@ export default function SuccessivePanel({ first, second, settings, secondGf }: P
             settings={settings}
             showMn90={showMn90}
             onToggleMn90={() => setShowMn90(v => !v)}
+            showDciem={showDciem}
+            onToggleDciem={() => setShowDciem(v => !v)}
+            highlight={highlight}
+            onHighlight={toggleHighlight}
           />
-          <SuccessiveComparison result={result} />
+          <SuccessiveComparison result={result} highlight={highlight} onSelect={toggleHighlight} showMN90={showMn90} showDCIEM={showDciem} />
           <DesaturationPanel compartments={result.desaturation} />
           <IntervalSweepChart points={computed.sweep} currentIntervalMin={intervalMin} />
         </View>

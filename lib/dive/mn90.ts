@@ -25,14 +25,16 @@ export interface MN90DiveParameters {
  * repasser ici : elle est déjà intégrée dans endTimeMin.
  */
 export function getMN90DiveParameters(plan: DivePlan): MN90DiveParameters {
+  // Cas normal : le profil saisi, avant décompression (renseigné au lancement du mode pédagogique).
+  if (plan.enteredDive) return plan.enteredDive;
+
+  // Repli (plan sans profil saisi) : tout ce qui précède la première remontée depuis
+  // la profondeur max ; ce qui suit est de la décompression calculée.
   const maxDepthM = Math.max(...plan.segments.map(s => Math.max(s.startDepthM, s.endDepthM)));
-
-  const bottomSegments = plan.segments
-    .filter(s => s.startDepthM === s.endDepthM);
-  const diveTimeMin = bottomSegments.length > 0
-    ? bottomSegments[bottomSegments.length - 1].endTimeMin
-    : 0;
-
+  const firstAscent = plan.segments.find(s => s.startDepthM === maxDepthM && s.endDepthM < s.startDepthM);
+  const diveTimeMin = firstAscent
+    ? firstAscent.startTimeMin
+    : plan.segments[plan.segments.length - 1]?.endTimeMin ?? 0;
   return { maxDepthM, diveTimeMin };
 }
 

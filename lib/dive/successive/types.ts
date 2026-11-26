@@ -5,6 +5,7 @@
  */
 
 import type { DiveDefinition, RuntimeSummary } from '../whatIf';
+import type { DciemSuccessiveResult } from '../dciem';
 import type { MN90SuccessiveResult } from '../mn90Successive';
 import type { Segment } from '../types';
 
@@ -48,6 +49,8 @@ export interface SuccessiveResult {
   desaturation: CompartmentDesaturation[];
   /** Lecture des tables MN90 pour la même paire de plongées. */
   mn90: MN90SuccessiveResult;
+  /** Modèle DCIEM calculé (pas une lecture de table) pour la même paire de plongées. */
+  dciem: DciemSuccessiveResult;
 }
 
 /** Un point de la courbe « effet de l'intervalle » sur la 2e plongée. */
@@ -57,4 +60,6 @@ export interface IntervalSweepPoint {
   secondDecoTimeMin: number;
   /** TTS de la 2e plongée lue en MN90 (undefined : hors table). */
   mn90SecondTtsMin: number | undefined;
+  /** TTS de la 2e plongée selon le modèle DCIEM calculé. */
+  dciemSecondTtsMin: number;
 }

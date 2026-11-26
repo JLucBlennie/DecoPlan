@@ -1,6 +1,6 @@
 // components/DiveProfileView.tsx
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import Svg, {
   Circle, Defs, Line, LinearGradient,
   Path, Polyline, Rect, Stop, Text as SvgText,
@@ -10,11 +10,16 @@ import ProfileGrid from './charts/ProfileGrid';
 import { PT, depthAxisMax, profileScale, timeTicks } from './charts/profileFrame';
 import type { DivePlan, MN90Profile, PedagogicalSimulation, ProfileSegment } from '../lib/dive/types';
 
+/** Courbes sélectionnables par la légende. */
+type CurveId = 'A' | 'B' | 'MN90' | 'DCIEM';
+
 export interface DiveProfileViewProps {
   plan: DivePlan;
   simulation: PedagogicalSimulation;
   currentStep: number;
   mn90Profile?: MN90Profile;
+  /** Profil « modèle DCIEM calculé » (même format que MN90), tracé en violet. */
+  dciemProfile?: MN90Profile;
   /** Vitesse de remontée fond→1er palier (m/min), pour tracer la remontée du profil MN90. Défaut : 10. */
   ascentRateMMin?: number;
   /** Vitesse de remontée entre paliers et jusqu'à la surface (m/min). Défaut : 6. */
@@ -30,11 +35,18 @@ export interface DiveProfileViewProps {
 
 export function DiveProfileView({
   plan, simulation, currentStep,
-  mn90Profile, ascentRateMMin = 10, ascentRateBetweenStopsMMin = 6, label, style,
+  mn90Profile, dciemProfile, ascentRateMMin = 10, ascentRateBetweenStopsMMin = 6, label, style,
   comparisonPlan, comparisonSimulation, comparisonLabel,
 }: DiveProfileViewProps) {
 
   const [svgW, setSvgW] = useState(300);
+  // Courbe mise en évidence en touchant sa légende (null = aucune : tout est normal).
+  const [highlight, setHighlight] = useState<CurveId | null>(null);
+  const toggleHighlight = (id: CurveId) => setHighlight(h => (h === id ? null : id));
+  /** Opacité d'une courbe : atténuée si une autre est mise en évidence. */
+  const dim = (id: CurveId) => (highlight && highlight !== id ? 0.25 : 1);
+  /** Épaisseur : plus épaisse pour la courbe mise en évidence. */
+  const thick = (id: CurveId, base: number) => (highlight === id ? base + 1.5 : base);
   const svgH = 300;
 
   const hasComparison = !!comparisonPlan && !!comparisonSimulation;
@@ -56,6 +68,10 @@ export function DiveProfileView({
     ? buildMN90Segments(mn90Profile, mn90BottomTime, ascentRateMMin, ascentRateBetweenStopsMMin)
     : null;
   const mn90EndTime = mn90Segments ? mn90Segments[mn90Segments.length - 1].time : 0;
+  const dciemSegments = dciemProfile
+    ? buildMN90Segments(dciemProfile, mn90BottomTimeFor(dciemProfile, simulation), ascentRateMMin, ascentRateBetweenStopsMMin)
+    : null;
+  const dciemEndTime = dciemSegments ? dciemSegments[dciemSegments.length - 1].time : 0;
 
   // L'axe temps couvre le plan A, le plan B (comparaison) et le profil MN90
   // — le plus long des trois, pour ne jamais couper la fin d'un tracé.
@@ -63,6 +79,7 @@ export function DiveProfileView({
     simulation.totalTimeMin,
     hasComparison ? comparisonSimulation!.totalTimeMin : 0,
     mn90EndTime,
+    dciemEndTime,
   );
   // Échelle commune à tous les graphiques de profil (axe arrondi au 10 m supérieur)
   const scale = profileScale(svgW, svgH, totalTime, depthAxisMax(maxDepth));
@@ -105,6 +122,19 @@ export function DiveProfileView({
   const mn90Points = mn90Segments
     ? mn90Segments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
     : null;
+  const dciemPoints = dciemSegments
+    ? dciemSegments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
+    : null;
+
+  const legendItems: { id: CurveId; color: string; text: string }[] = [];
+  if (hasComparison) {
+    legendItems.push({ id: 'A', color: '#378ADD', text: `${label ?? 'Plan A'} · ${Math.round(simulation.totalTimeMin)} min` });
+    legendItems.push({ id: 'B', color: '#1D9E75', text: `${comparisonLabel ?? 'Plan B'} · ${Math.round(comparisonSimulation!.totalTimeMin)} min` });
+  } else if (mn90Profile || dciemProfile) {
+    legendItems.push({ id: 'A', color: '#378ADD', text: `Bühlmann · ${Math.round(simulation.totalTimeMin)} min` });
+  }
+  if (mn90Profile) legendItems.push({ id: 'MN90', color: '#EF9F27', text: `MN90 · ${Math.round(mn90EndTime)} min` });
+  if (dciemProfile) legendItems.push({ id: 'DCIEM', color: '#A78BFA', text: `DCIEM (modèle calculé) · ${Math.round(dciemEndTime)} min` });
 
   return (
     <View style={[styles.card, style]} onLayout={e => setSvgW(e.nativeEvent.layout.width - 20)}>
@@ -142,30 +172,47 @@ export function DiveProfileView({
         />
 
         {/* ── Plan A : remplissage + courbe ───────────────────────────── */}
-        <Path d={fillPathA} fill="url(#fillA)" />
+        <Path d={fillPathA} fill="url(#fillA)" opacity={dim('A')} />
         <Polyline points={polylineA} fill="none"
-          stroke="#378ADD" strokeWidth={hasComparison ? 1.5 : 1.8}
-          strokeLinejoin="round" />
+          stroke="#378ADD" strokeWidth={thick('A', hasComparison ? 1.5 : 1.8)}
+          opacity={dim('A')} strokeLinejoin="round" />
 
         {/* ── Plan B : courbe en overlay (teal pointillé) ──────────────── */}
         {polylineB && (
           <Polyline points={polylineB} fill="none"
-            stroke="#1D9E75" strokeWidth={3}
+            stroke="#1D9E75" strokeWidth={thick('B', 3)} opacity={dim('B')}
             strokeDasharray="5,3" strokeLinejoin="round" />
         )}
 
         {/* MN90 */}
         {mn90Points && (
           <Polyline points={mn90Points} fill="none"
-            stroke="#EF9F27" strokeWidth={1.4}
+            stroke="#EF9F27" strokeWidth={thick('MN90', 1.4)} opacity={dim('MN90')}
             strokeDasharray="4,3" strokeLinejoin="round" />
         )}
+
+        {/* DCIEM (modèle calculé) */}
+        {dciemPoints && (
+          <Polyline points={dciemPoints} fill="none"
+            stroke="#A78BFA" strokeWidth={thick('DCIEM', 1.4)} opacity={dim('DCIEM')}
+            strokeDasharray="2,3" strokeLinejoin="round" />
+        )}
+
+        {/* Paliers MN90 / DCIEM : profondeur·durée, sous la ligne */}
+        {mn90Segments && stopLabels(mn90Segments, mn90Profile!.maxDepthM).map((l, i) => (
+          <SvgText key={`m9${i}`} x={tx(l.time)} y={ty(l.depth) + 10}
+            textAnchor="middle" fontSize={8} fill="#EF9F27" opacity={dim('MN90')}>{l.text}</SvgText>
+        ))}
+        {dciemSegments && stopLabels(dciemSegments, dciemProfile!.maxDepthM).map((l, i) => (
+          <SvgText key={`dc${i}`} x={tx(l.time)} y={ty(l.depth) + 19}
+            textAnchor="middle" fontSize={8} fill="#A78BFA" opacity={dim('DCIEM')}>{l.text}</SvgText>
+        ))}
 
         {/* Labels paliers plan A */}
         {stopSegsA.map((seg, i) => (
           <SvgText key={`sl${i}`}
             x={tx((seg.startTimeMin + seg.endTimeMin) / 2)} y={ty(seg.startDepthM) - 5}
-            textAnchor="middle" fontSize={8} fill="#BA7517">
+            textAnchor="middle" fontSize={8} fill="#BA7517" opacity={dim('A')}>
             {seg.startDepthM}m·{Math.round(seg.endTimeMin - seg.startTimeMin)}'
           </SvgText>
         ))}
@@ -178,26 +225,20 @@ export function DiveProfileView({
           stroke="#0A0F1E" strokeWidth={1.5} />
       </Svg>
 
-      {/* Légende */}
+      {/* Légende : toucher un libellé met la courbe en évidence (re-toucher pour annuler) */}
       <View style={styles.legendRow}>
-        {hasComparison && (
-          <>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendLine, { backgroundColor: '#378ADD' }]} />
-              <Text style={styles.legendTxt}>{label ?? 'Plan A'}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendLine, { backgroundColor: '#1D9E75', borderStyle: 'dashed' }]} />
-              <Text style={styles.legendTxt}>{comparisonLabel ?? 'Plan B'}</Text>
-            </View>
-          </>
-        )}
-        {mn90Profile && (
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: '#EF9F27' }]} />
-            <Text style={styles.legendTxt}>MN90</Text>
-          </View>
-        )}
+        {legendItems.map(item => (
+          <TouchableOpacity key={item.id} style={styles.legendItem}
+            onPress={() => toggleHighlight(item.id)} activeOpacity={0.7}
+            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+            <View style={[styles.legendLine, {
+              backgroundColor: item.color, height: highlight === item.id ? 3 : 2,
+            }]} />
+            <Text style={[styles.legendTxt, highlight === item.id && styles.legendTxtOn]}>
+              {item.text}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -227,6 +268,27 @@ function mergeConsecutiveStops(stops: ProfileSegment[]): ProfileSegment[] {
     }
   }
   return merged;
+}
+
+/** Instant d'arrivée au fond (fin de descente) lu sur la simulation du plan. */
+function mn90BottomTimeFor(profile: MN90Profile, simulation: PedagogicalSimulation): number {
+  return simulation.frames.find(f => f.depthM >= profile.maxDepthM)?.timeMin ?? 2;
+}
+
+/** Étiquette « profondeur·durée » placée au milieu de chaque palier d'un profil MN90/DCIEM. */
+function stopLabels(
+  points: { time: number; depth: number }[],
+  maxDepthM: number,
+): { time: number; depth: number; text: string }[] {
+  const labels: { time: number; depth: number; text: string }[] = [];
+  for (let i = 0; i + 1 < points.length; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (a.depth === b.depth && a.depth > 0 && a.depth < maxDepthM && b.time > a.time) {
+      labels.push({ time: (a.time + b.time) / 2, depth: a.depth, text: `${a.depth}m·${Math.round(b.time - a.time)}'` });
+    }
+  }
+  return labels;
 }
 
 /** Un point du profil MN90 en unités réelles (minutes, mètres) — non mappé à l'écran. */
@@ -297,5 +359,6 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendLine: { width: 14, height: 2, borderRadius: 1 },
-  legendTxt: { fontSize: 8, color: '#5F5E5A' },
+  legendTxt: { fontSize: 9, color: '#5F5E5A' },
+  legendTxtOn: { color: '#E8ECF4', fontWeight: '600' },
 });

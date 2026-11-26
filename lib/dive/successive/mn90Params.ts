@@ -1,9 +1,10 @@
 /**
- * DecoPlan – Plongées successives : paramètres MN90 d'une plongée Bühlmann
+ * DecoPlan – Paramètres de table d'une plongée saisie (MN90, DCIEM)
  *
- * Même convention que getMN90Profile : profondeur max, et temps de plongée = temps
- * écoulé depuis la surface jusqu'à la fin du dernier palier de fond (≥ 90 % de la
- * profondeur max), descente comprise.
+ * Les segments reçus sont ceux saisis par l'opérateur, SANS la décompression
+ * calculée : la profondeur est la plus grande atteinte, le temps de plongée est la
+ * durée totale de ces niveaux depuis la surface, descente comprise (convention MN90).
+ * Aucun seuil de profondeur : tout ce qui est saisi fait partie de la plongée.
  */
 
 import type { MN90DiveParameters } from '../mn90';
@@ -11,12 +12,6 @@ import type { Segment } from '../types';
 
 export function mn90ParametersFromSegments(bottomSegments: Segment[]): MN90DiveParameters {
   const maxDepthM = Math.max(0, ...bottomSegments.map(s => Math.max(s.startDepth, s.endDepth)));
-
-  let elapsed = 0;
-  let diveTimeMin = 0;
-  for (const s of bottomSegments) {
-    elapsed += s.time;
-    if (s.startDepth === s.endDepth && s.startDepth >= maxDepthM * 0.9) diveTimeMin = elapsed;
-  }
+  const diveTimeMin = bottomSegments.reduce((sum, s) => sum + s.time, 0);
   return { maxDepthM, diveTimeMin };
 }

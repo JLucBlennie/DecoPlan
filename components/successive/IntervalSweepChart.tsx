@@ -1,4 +1,4 @@
-// Remontée de la plongée 2 selon l'intervalle : Bühlmann (bleu) et MN90 (vert).
+// Remontée de la plongée 2 selon l'intervalle : Bühlmann (bleu), MN90 (vert) et DCIEM (violet).
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { IntervalSweepPoint } from '../../lib/dive';
@@ -8,13 +8,14 @@ import { formatInterval } from './successiveFormat';
 type Props = { points: IntervalSweepPoint[]; currentIntervalMin: number };
 
 export default function IntervalSweepChart({ points, currentIntervalMin }: Props) {
-  const max = Math.max(1, ...points.flatMap(p => [p.secondTtsMin, p.mn90SecondTtsMin ?? 0]));
+  const max = Math.max(1, ...points.flatMap(p => [p.secondTtsMin, p.mn90SecondTtsMin ?? 0, p.dciemSecondTtsMin]));
   // Ligne mise en évidence : la plus grande valeur de la courbe ≤ intervalle choisi.
   const current = points.filter(p => p.surfaceIntervalMin <= currentIntervalMin).pop();
 
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Effet de l'intervalle sur la plongée 2 (remontée, min)</Text>
+      <Text style={styles.hint}>Bleu : Bühlmann · vert : MN90 · violet : DCIEM (modèle calculé)</Text>
       {points.map(p => {
         const highlighted = p === current;
         return (
@@ -35,6 +36,10 @@ export default function IntervalSweepChart({ points, currentIntervalMin }: Props
                   <Text style={styles.num}>hors table</Text>
                 )}
               </View>
+              <View style={styles.barLine}>
+                <View style={[styles.bar, { width: `${(p.dciemSecondTtsMin / max) * 100}%`, backgroundColor: '#A78BFA' }]} />
+                <Text style={styles.num}>{Math.round(p.dciemSecondTtsMin)}</Text>
+              </View>
             </View>
           </View>
         );
@@ -49,6 +54,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5, borderColor: ocean.border.subtle, padding: spacing.md,
   },
   title: { fontSize: fontSize.sm, fontWeight: '500', color: ocean.text.primary, marginBottom: spacing.sm },
+  hint: { fontSize: 10, color: ocean.text.muted, marginBottom: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 3, paddingHorizontal: 4, borderRadius: 4 },
   rowActive: { backgroundColor: 'rgba(55,138,221,0.14)' },
   interval: { width: 56, fontSize: fontSize.xs, color: ocean.text.secondary },
