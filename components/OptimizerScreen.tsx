@@ -6,8 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import uuid from 'react-native-uuid';
 
 import {
-  computeWhatIf, defaultGfFor, definitionFromPlongee, findMaxBottomTime, candidatePlongee,
-  type DiveSettings, type Gas, type OptimizerCriteria, type OptimizerResult, type WhatIfResult,
+  candidatePlongee,
+  computeWhatIf, defaultGfFor,
+  findMaxBottomTime,
+  type DiveSettings, type Gas, type OptimizerCriteria, type OptimizerResult, type WhatIfResult
 } from '../lib/dive';
 import { useGazStore } from '../store/useGazStore';
 import { usePlongeeStore } from '../store/usePlongeeStore';
@@ -16,7 +18,6 @@ import { sharedStyles } from '../styles/sharedStyles';
 import { fontSize, ocean, radius, spacing } from '../styles/theme';
 import OptimizerCriteriaForm from './optimizer/OptimizerCriteriaForm';
 import { criteriaFromDraft, initialDraft, type OptimizerDraft } from './optimizer/optimizerDraft';
-import OptimizerPedagogicalButton from './optimizer/OptimizerPedagogicalButton';
 import OptimizerResultView from './optimizer/OptimizerResultView';
 
 type Computation = { criteria: OptimizerCriteria; result: OptimizerResult; whatIf: WhatIfResult } | { error: string } | null;
@@ -81,13 +82,13 @@ export default function OptimizerScreen() {
 
         {!computation && <Text style={styles.hint}>Choisis un gaz de fond pour lancer la recherche.</Text>}
         {computation && 'error' in computation && <Text style={styles.error}>Calcul impossible : {computation.error}</Text>}
-        {ok && <OptimizerResultView result={ok.result} whatIf={ok.whatIf} />}
+        {ok && <OptimizerResultView result={ok.result} whatIf={ok.whatIf} criteria={ok.criteria} planName={shownName} />}
 
-        {ok?.result.feasible && (
+        {/*ok?.result.feasible && (
           <OptimizerPedagogicalButton
             definition={ok.result.evaluation.definition} criteria={ok.criteria} planName={shownName}
           />
-        )}
+        )*/}
 
         {ok?.result.feasible && (
           <View style={styles.saveCard}>

@@ -3,26 +3,25 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { OptimizerResult, WhatIfResult } from '../../lib/dive';
+import { useRuntimeSelection } from '../../hooks/useRuntimeSelection';
+import type { OptimizerCriteria, OptimizerResult, WhatIfResult } from '../../lib/dive';
 import { fontSize, ocean, radius, spacing } from '../../styles/theme';
-import RuntimeResult from '../RuntimeResult';
 import SegmentedToggle from '../SegmentedToggle';
 import WhatIfColumns from '../WhatIfColumns';
 import WhatIfProfileChart from '../WhatIfProfileChart';
-import { useRuntimeSelection } from '../../hooks/useRuntimeSelection';
 import GasBudgetList from './GasBudgetList';
 import { limitingText } from './limitingText';
+import OptimizerPedagogicalButton from './OptimizerPedagogicalButton';
 
 type View_ = 'detail' | 'whatIf';
 const VIEWS: { value: View_; label: string }[] = [
-    { value: 'detail', label: 'Détail' },
-    { value: 'whatIf', label: 'Et si ?' },
+    { value: 'whatIf', label: 'Les runtimes avec les What if ?' },
 ];
 
-type Props = { result: OptimizerResult; whatIf: WhatIfResult };
+type Props = { result: OptimizerResult; whatIf: WhatIfResult, criteria: OptimizerCriteria, planName: string };
 
-export default function OptimizerResultView({ result, whatIf }: Props) {
-    const [view, setView] = useState<View_>('detail');
+export default function OptimizerResultView({ result, whatIf, criteria, planName }: Props) {
+    const [view, setView] = useState<View_>('whatIf');
     const { selectedKind, select } = useRuntimeSelection(whatIf);
     const { evaluation } = result;
     const reserves = evaluation.definition.gasReserves ?? { bottomBar: 0, decoBar: 0 };
@@ -52,10 +51,18 @@ export default function OptimizerResultView({ result, whatIf }: Props) {
             <GasBudgetList budgets={evaluation.budgets} reserves={reserves} />
 
             <WhatIfProfileChart result={whatIf} selectedKind={selectedKind} onSelect={select} />
-            <SegmentedToggle value={view} options={VIEWS} onChange={setView} />
-            {view === 'detail'
-                ? <RuntimeResult data={whatIf.nominal.segments} gasNeeds={whatIf.nominal.gasNeeds} />
-                : <WhatIfColumns result={whatIf} selectedKind={selectedKind} onSelect={select} />}
+            <View style={styles.toolbar}>
+                <View style={styles.toggle}>
+                    <SegmentedToggle value={view} options={VIEWS} onChange={setView} disabled={true} />
+                </View>
+                {whatIf && result.feasible && (
+                    <OptimizerPedagogicalButton
+                        definition={result.evaluation.definition} criteria={criteria} planName={planName}
+                    />
+                )}
+            </View>
+
+            <WhatIfColumns result={whatIf} selectedKind={selectedKind} onSelect={select} />
         </View>
     );
 }
@@ -70,4 +77,12 @@ const styles = StyleSheet.create({
     time: { fontSize: fontSize.lg, fontWeight: '600', color: ocean.accent.teal },
     timeKo: { fontSize: fontSize.md, fontWeight: '600', color: ocean.accent.red },
     sub: { fontSize: fontSize.xs, color: ocean.text.secondary },
+    toolbar: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        gap: spacing.sm,
+    },
+    toggle: {
+        flex: 1,
+    },
 });
