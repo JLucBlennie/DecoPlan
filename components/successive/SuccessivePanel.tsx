@@ -79,7 +79,7 @@ export default function SuccessivePanel({ first, second, settings, secondGf }: P
             highlight={highlight}
             onHighlight={toggleHighlight}
           />
-          <SuccessiveComparison result={result} highlight={highlight} onSelect={toggleHighlight} />
+          <SuccessiveComparison result={result} highlight={highlight} onSelect={toggleHighlight} showMN90={showMn90} showDCIEM={showDciem} />
           <DesaturationPanel compartments={result.desaturation} />
           <IntervalSweepChart points={computed.sweep} currentIntervalMin={intervalMin} />
         </View>

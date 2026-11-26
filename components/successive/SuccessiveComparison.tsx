@@ -12,6 +12,7 @@ import { formatBuhlmannStops, formatDciemStops, formatMn90Stops, RELATION_LABELS
 const TREND_COLOR = { worse: ocean.accent.red, better: ocean.accent.teal, same: ocean.text.muted } as const;
 
 type Selectable = { highlight: CurveId | null; onSelect: (id: CurveId) => void };
+type Showable = { showMN90: boolean | null; showDCIEM: boolean | null };
 
 /** Panneau d'un modèle : encadré de la couleur de sa courbe quand elle est mise en évidence. */
 function ModelCard({ id, highlight, onSelect, children }: Selectable & { id: CurveId; children: React.ReactNode }) {
@@ -107,12 +108,12 @@ function DciemCard({ result, ...sel }: { result: SuccessiveResult } & Selectable
   );
 }
 
-export default function SuccessiveComparison({ result, highlight, onSelect }: { result: SuccessiveResult } & Selectable) {
+export default function SuccessiveComparison({ result, highlight, onSelect, showMN90, showDCIEM }: { result: SuccessiveResult } & Selectable & Showable) {
   return (
     <View style={styles.root}>
       <BuhlmannCard result={result} highlight={highlight} onSelect={onSelect} />
-      <Mn90Card result={result} highlight={highlight} onSelect={onSelect} />
-      <DciemCard result={result} highlight={highlight} onSelect={onSelect} />
+      {showMN90 && <Mn90Card result={result} highlight={highlight} onSelect={onSelect} />}
+      {showDCIEM && <DciemCard result={result} highlight={highlight} onSelect={onSelect} />}
     </View>
   );
 }
