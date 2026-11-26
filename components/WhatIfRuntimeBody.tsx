@@ -56,15 +56,25 @@ export default function WhatIfRuntimeBody({ runtime }: Props) {
 
             {/* Phases */}
             <View style={styles.tableHeader}>
+                <Text style={[styles.hCell, styles.colPhase]}>Phase</Text>
                 <Text style={[styles.hCell, styles.colDepth]}>Prof.</Text>
                 <Text style={[styles.hCell, styles.colTime]}>Durée</Text>
                 <Text style={[styles.hCell, styles.colRuntime]}>Runtime</Text>
+                <Text style={[styles.hCell, styles.colGas]}>Gaz</Text>
             </View>
             {rows.map((row, i) => {
                 const meta = KIND_META[row.kind];
                 return (
                     <View key={i} style={[styles.row, { backgroundColor: meta.bg }]}>
                         <View style={[styles.bar, { backgroundColor: meta.color }]} />
+                        {/* Indicateur de phase */}
+                        <View style={[styles.dCell, styles.colPhase, styles.phaseCell]}>
+                            <View style={[styles.phaseBar, { backgroundColor: meta.color }]} />
+                            <Text style={[styles.phaseTxt, { color: meta.color }]}>
+                                {meta.label}
+                            </Text>
+                        </View>
+
                         <View style={styles.colDepth}>
                             <Text style={styles.cellTxt}>{depthLabel(row)}</Text>
                             {row.gasSwitch && (
@@ -82,6 +92,11 @@ export default function WhatIfRuntimeBody({ runtime }: Props) {
                         <Text style={[styles.cellTxt, styles.runtimeTxt, styles.colRuntime]}>
                             {formatMinutes(row.cumulativeMin)}'
                         </Text>
+                        {/* Gaz */}
+                        <Text style={[styles.gasTxt, styles.colGas]} numberOfLines={1}>
+                            {row.gasName}
+                        </Text>
+
                     </View>
                 );
             })}
@@ -139,6 +154,10 @@ const styles = StyleSheet.create({
         fontSize: 9, fontWeight: '600', color: ocean.text.muted,
         textTransform: 'uppercase', letterSpacing: 0.2, textAlign: 'center',
     },
+    dCell: {
+        justifyContent: 'center', alignItems: 'center',
+        paddingVertical: 7,
+    },
 
     row: {
         flexDirection: 'row', alignItems: 'center',
@@ -149,9 +168,14 @@ const styles = StyleSheet.create({
     cellTxt: { fontSize: fontSize.xs, color: ocean.text.primary, textAlign: 'center' },
     runtimeTxt: { fontWeight: '500', color: ocean.text.secondary },
     gasTxt: { fontSize: 9, color: ocean.accent.blue, textAlign: 'center' },
+    phaseCell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 6, gap: 5 },
+    phaseBar: { width: 2.5, height: 16, borderRadius: 2 },
+    phaseTxt: { fontSize: 10, fontWeight: '500' },
 
-    colDepth: { flex: 2.2, alignItems: 'center' },
-    colTime: { flex: 1.2 },
+    colPhase: { flex: 2.2 },
+    colDepth: { flex: 2, alignItems: 'center' },
+    colTime: { flex: 1.4 },
     colRuntime: { flex: 1.4 },
+    colGas: { flex: 1.8 },
     delta: { fontSize: fontSize.xs, fontWeight: '600' },
 });

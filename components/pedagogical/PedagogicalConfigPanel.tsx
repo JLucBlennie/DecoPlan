@@ -1,15 +1,15 @@
 // Configuration du mode pédagogique sur une plongée, DANS l'écran (plus de fenêtre modale) :
 // réglage A, comparaison avec un réglage B, blocs, paliers calculés, bouton de lancement.
 // Même logique que PedagogicalConfigSheet (hook usePedagogicalLaunch), sans Modal.
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { usePedagogicalLaunch } from '../../hooks/usePedagogicalLaunch';
-import { labelFromComposition } from '../../lib/dive/buildDivePlan';
 import type { Plan } from '../../lib/dive/buhlmann';
+import { labelFromComposition } from '../../lib/dive/buildDivePlan';
 import type { DivePlan } from '../../lib/dive/types';
+import type { DiveDefinition } from '../../lib/dive/whatIf/types';
 import { GFSliderPair } from '../GFSliderPair';
 import { TankConfigRow } from '../TankConfigRow';
-import type { DiveDefinition } from '../../lib/dive/whatIf/types';
 import ComparisonSettings, { isComparisonBlocked } from './ComparisonSettings';
 import ConfigSection from './ConfigSection';
 
@@ -67,7 +67,7 @@ export default function PedagogicalConfigPanel({
         })}
       </ConfigSection>
 
-      {stopSummary.length > 0 ? (
+      {/*stopSummary.length > 0 ? (
         <ConfigSection label="Paliers calculés" badge="lecture seule">
           {stopSummary.map((stop, i) => (
             <View key={i} style={styles.stopRow}>
@@ -81,7 +81,7 @@ export default function PedagogicalConfigPanel({
         <View style={styles.ndlBanner}>
           <Text style={styles.ndlText}>✓  Plongée sans palier de décompression</Text>
         </View>
-      )}
+      )*/}
 
       <TouchableOpacity
         style={[styles.launchBtn, launchBlocked && styles.launchBtnDisabled]}
