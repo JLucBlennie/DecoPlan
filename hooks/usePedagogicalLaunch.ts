@@ -12,6 +12,7 @@ import type { GFValues } from '../components/GFSliderPair';
 import type { Plan } from '../lib/dive/buhlmann';
 import type { DecoStopSummary, TankConfig } from '../lib/dive/buildDivePlan';
 import type { DecoModel, DivePlan } from '../lib/dive/types';
+import { mn90ParametersFromSegments } from '../lib/dive/successive/mn90Params';
 import type { DiveDefinition } from '../lib/dive/whatIf/types';
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { usePedagogicalCcr, type UsePedagogicalCcrReturn } from './usePedagogicalCcr';
@@ -167,13 +168,17 @@ export function usePedagogicalLaunch(
   const launch = useCallback(() => {
     // Plan A : on utilise les GF du formulaire (potentiellement différents
     // des GF du calcul courant → recalcule la déco si nécessaire)
-    const planA = buildDivePlanFromPlan(plan, {
+    const builtA = buildDivePlanFromPlan(plan, {
       variant:   config.variant,
       gfLow:     config.gfA.gfLow,
       gfHigh:    config.gfA.gfHigh,
       planName:  config.planName,
       tanks:     config.tanks,
     });
+    // Profil saisi (sans la déco calculée) : c'est lui que lisent MN90 et DCIEM.
+    const planA: DivePlan = definition
+      ? { ...builtA, enteredDive: mn90ParametersFromSegments(definition.bottomSegments) }
+      : builtA;
 
     // Plan B (comparaison) : même profil, GF différents
     // Plan B : soit la même plongée en recycleur, soit les mêmes niveaux avec d'autres GF.
@@ -190,7 +195,7 @@ export function usePedagogicalLaunch(
 
     close();
     onLaunch(planA, planB);
-  }, [plan, config, ccr, oc, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
+  }, [plan, config, definition, ccr, oc, close, onLaunch, ascentRateMMin, ascentRateBetweenStopsMMin]);
 
   return {
     visible, open, close,

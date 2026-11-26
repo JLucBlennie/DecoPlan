@@ -81,6 +81,18 @@ export interface DivePlan {
   gfHigh: number;                // ex. 0.85
   /** Volumes de gaz nécessaires en circuit ouvert (litres détendus), si calculés pour ce plan. */
   gasNeedsL?: GasNeed[];
+  /**
+   * Profil tel que saisi par l'opérateur (profondeur max, durée des niveaux),
+   * AVANT la décompression calculée. C'est lui que lisent les tables (MN90) et
+   * le modèle DCIEM, pas le runtime Bühlmann.
+   */
+  enteredDive?: EnteredDive;
+}
+
+/** Profil de fond saisi : profondeur maximale et temps depuis la surface (descente comprise). */
+export interface EnteredDive {
+  maxDepthM: number;
+  diveTimeMin: number;
 }
 
 /** Volume de gaz nécessaire pour une plongée en circuit ouvert. */

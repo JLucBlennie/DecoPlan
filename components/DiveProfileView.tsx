@@ -1,6 +1,6 @@
 // components/DiveProfileView.tsx
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import Svg, {
   Circle, Defs, Line, LinearGradient,
   Path, Polyline, Rect, Stop, Text as SvgText,
@@ -9,6 +9,9 @@ import Svg, {
 import ProfileGrid from './charts/ProfileGrid';
 import { PT, depthAxisMax, profileScale, timeTicks } from './charts/profileFrame';
 import type { DivePlan, MN90Profile, PedagogicalSimulation, ProfileSegment } from '../lib/dive/types';
+
+/** Courbes sélectionnables par la légende. */
+type CurveId = 'A' | 'B' | 'MN90' | 'DCIEM';
 
 export interface DiveProfileViewProps {
   plan: DivePlan;
@@ -37,6 +40,13 @@ export function DiveProfileView({
 }: DiveProfileViewProps) {
 
   const [svgW, setSvgW] = useState(300);
+  // Courbe mise en évidence en touchant sa légende (null = aucune : tout est normal).
+  const [highlight, setHighlight] = useState<CurveId | null>(null);
+  const toggleHighlight = (id: CurveId) => setHighlight(h => (h === id ? null : id));
+  /** Opacité d'une courbe : atténuée si une autre est mise en évidence. */
+  const dim = (id: CurveId) => (highlight && highlight !== id ? 0.25 : 1);
+  /** Épaisseur : plus épaisse pour la courbe mise en évidence. */
+  const thick = (id: CurveId, base: number) => (highlight === id ? base + 1.5 : base);
   const svgH = 300;
 
   const hasComparison = !!comparisonPlan && !!comparisonSimulation;
@@ -116,6 +126,16 @@ export function DiveProfileView({
     ? dciemSegments.map((p: Mn90Point) => `${tx(p.time)},${ty(p.depth)}`).join(' ')
     : null;
 
+  const legendItems: { id: CurveId; color: string; text: string }[] = [];
+  if (hasComparison) {
+    legendItems.push({ id: 'A', color: '#378ADD', text: `${label ?? 'Plan A'} · ${Math.round(simulation.totalTimeMin)} min` });
+    legendItems.push({ id: 'B', color: '#1D9E75', text: `${comparisonLabel ?? 'Plan B'} · ${Math.round(comparisonSimulation!.totalTimeMin)} min` });
+  } else if (mn90Profile || dciemProfile) {
+    legendItems.push({ id: 'A', color: '#378ADD', text: `Bühlmann · ${Math.round(simulation.totalTimeMin)} min` });
+  }
+  if (mn90Profile) legendItems.push({ id: 'MN90', color: '#EF9F27', text: `MN90 · ${Math.round(mn90EndTime)} min` });
+  if (dciemProfile) legendItems.push({ id: 'DCIEM', color: '#A78BFA', text: `DCIEM (modèle calculé) · ${Math.round(dciemEndTime)} min` });
+
   return (
     <View style={[styles.card, style]} onLayout={e => setSvgW(e.nativeEvent.layout.width - 20)}>
       {/* En-tête */}
@@ -152,47 +172,47 @@ export function DiveProfileView({
         />
 
         {/* ── Plan A : remplissage + courbe ───────────────────────────── */}
-        <Path d={fillPathA} fill="url(#fillA)" />
+        <Path d={fillPathA} fill="url(#fillA)" opacity={dim('A')} />
         <Polyline points={polylineA} fill="none"
-          stroke="#378ADD" strokeWidth={hasComparison ? 1.5 : 1.8}
-          strokeLinejoin="round" />
+          stroke="#378ADD" strokeWidth={thick('A', hasComparison ? 1.5 : 1.8)}
+          opacity={dim('A')} strokeLinejoin="round" />
 
         {/* ── Plan B : courbe en overlay (teal pointillé) ──────────────── */}
         {polylineB && (
           <Polyline points={polylineB} fill="none"
-            stroke="#1D9E75" strokeWidth={3}
+            stroke="#1D9E75" strokeWidth={thick('B', 3)} opacity={dim('B')}
             strokeDasharray="5,3" strokeLinejoin="round" />
         )}
 
         {/* MN90 */}
         {mn90Points && (
           <Polyline points={mn90Points} fill="none"
-            stroke="#EF9F27" strokeWidth={1.4}
+            stroke="#EF9F27" strokeWidth={thick('MN90', 1.4)} opacity={dim('MN90')}
             strokeDasharray="4,3" strokeLinejoin="round" />
         )}
 
         {/* DCIEM (modèle calculé) */}
         {dciemPoints && (
           <Polyline points={dciemPoints} fill="none"
-            stroke="#A78BFA" strokeWidth={1.4}
+            stroke="#A78BFA" strokeWidth={thick('DCIEM', 1.4)} opacity={dim('DCIEM')}
             strokeDasharray="2,3" strokeLinejoin="round" />
         )}
 
         {/* Paliers MN90 / DCIEM : profondeur·durée, sous la ligne */}
         {mn90Segments && stopLabels(mn90Segments, mn90Profile!.maxDepthM).map((l, i) => (
           <SvgText key={`m9${i}`} x={tx(l.time)} y={ty(l.depth) + 10}
-            textAnchor="middle" fontSize={8} fill="#EF9F27">{l.text}</SvgText>
+            textAnchor="middle" fontSize={8} fill="#EF9F27" opacity={dim('MN90')}>{l.text}</SvgText>
         ))}
         {dciemSegments && stopLabels(dciemSegments, dciemProfile!.maxDepthM).map((l, i) => (
           <SvgText key={`dc${i}`} x={tx(l.time)} y={ty(l.depth) + 19}
-            textAnchor="middle" fontSize={8} fill="#A78BFA">{l.text}</SvgText>
+            textAnchor="middle" fontSize={8} fill="#A78BFA" opacity={dim('DCIEM')}>{l.text}</SvgText>
         ))}
 
         {/* Labels paliers plan A */}
         {stopSegsA.map((seg, i) => (
           <SvgText key={`sl${i}`}
             x={tx((seg.startTimeMin + seg.endTimeMin) / 2)} y={ty(seg.startDepthM) - 5}
-            textAnchor="middle" fontSize={8} fill="#BA7517">
+            textAnchor="middle" fontSize={8} fill="#BA7517" opacity={dim('A')}>
             {seg.startDepthM}m·{Math.round(seg.endTimeMin - seg.startTimeMin)}'
           </SvgText>
         ))}
@@ -205,38 +225,20 @@ export function DiveProfileView({
           stroke="#0A0F1E" strokeWidth={1.5} />
       </Svg>
 
-      {/* Légende */}
+      {/* Légende : toucher un libellé met la courbe en évidence (re-toucher pour annuler) */}
       <View style={styles.legendRow}>
-        {!hasComparison && (mn90Profile || dciemProfile) && (
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: '#378ADD' }]} />
-            <Text style={styles.legendTxt}>Bühlmann · {Math.round(simulation.totalTimeMin)} min</Text>
-          </View>
-        )}
-        {hasComparison && (
-          <>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendLine, { backgroundColor: '#378ADD' }]} />
-              <Text style={styles.legendTxt}>{label ?? 'Plan A'} · {Math.round(simulation.totalTimeMin)} min</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendLine, { backgroundColor: '#1D9E75', borderStyle: 'dashed' }]} />
-              <Text style={styles.legendTxt}>{comparisonLabel ?? 'Plan B'} · {Math.round(comparisonSimulation!.totalTimeMin)} min</Text>
-            </View>
-          </>
-        )}
-        {mn90Profile && (
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: '#EF9F27' }]} />
-            <Text style={styles.legendTxt}>MN90 · {Math.round(mn90EndTime)} min</Text>
-          </View>
-        )}
-        {dciemProfile && (
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: '#A78BFA' }]} />
-            <Text style={styles.legendTxt}>DCIEM (modèle calculé) · {Math.round(dciemEndTime)} min</Text>
-          </View>
-        )}
+        {legendItems.map(item => (
+          <TouchableOpacity key={item.id} style={styles.legendItem}
+            onPress={() => toggleHighlight(item.id)} activeOpacity={0.7}
+            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+            <View style={[styles.legendLine, {
+              backgroundColor: item.color, height: highlight === item.id ? 3 : 2,
+            }]} />
+            <Text style={[styles.legendTxt, highlight === item.id && styles.legendTxtOn]}>
+              {item.text}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -357,5 +359,6 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendLine: { width: 14, height: 2, borderRadius: 1 },
-  legendTxt: { fontSize: 8, color: '#5F5E5A' },
+  legendTxt: { fontSize: 9, color: '#5F5E5A' },
+  legendTxtOn: { color: '#E8ECF4', fontWeight: '600' },
 });

@@ -113,7 +113,11 @@ Dossier `lib/dive/dciem/` (un fichier = une responsabilité) :
 **Affichage** : mode pédagogique, bouton « DCIEM », tracé violet et légende
 « DCIEM (modèle calculé) ». Ce n'est **pas** une lecture de table : le résultat est calculé,
 avec les vitesses de descente et de remontée des préférences, pour un profil carré
-(profondeur maximale, temps de plongée descente comprise, comme MN90).
+(profondeur maximale, temps de plongée descente comprise, comme MN90). Les deux paramètres
+viennent du **profil saisi par l'opérateur, avant la décompression calculée** (`DivePlan.enteredDive`),
+et non du runtime Bühlmann.
+
+Dans le graphique, toucher un libellé de la légende met la courbe correspondante en évidence.
 
 Tests : `npx tsx --test lib/dive/dciem/computeDciemDive.test.ts`
 

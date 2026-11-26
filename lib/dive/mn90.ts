@@ -4,9 +4,6 @@
 import { MN90_DEPTHS, MN90_TABLE, type Mn90Entry } from './mn90Table';
 import type { DivePlan, MN90Profile, MN90Stop } from './types';
 
-/** Un niveau plat à au moins 85 % de la profondeur max est un « fond » (cf. segmentKind.ts), sinon un palier. */
-const BOTTOM_DEPTH_RATIO = 0.85;
-
 /** Profondeurs de palier gérées par la table, de la plus profonde à la plus proche de la surface. */
 const STOP_DEPTHS = [15, 12, 9, 6, 3] as const;
 
@@ -28,16 +25,16 @@ export interface MN90DiveParameters {
  * repasser ici : elle est déjà intégrée dans endTimeMin.
  */
 export function getMN90DiveParameters(plan: DivePlan): MN90DiveParameters {
+  // Cas normal : le profil saisi, avant décompression (renseigné au lancement du mode pédagogique).
+  if (plan.enteredDive) return plan.enteredDive;
+
+  // Repli (plan sans profil saisi) : tout ce qui précède la première remontée depuis
+  // la profondeur max ; ce qui suit est de la décompression calculée.
   const maxDepthM = Math.max(...plan.segments.map(s => Math.max(s.startDepthM, s.endDepthM)));
-
-  // Seuls les niveaux plats « de fond » comptent : les paliers de décompression
-  // (plats eux aussi, mais peu profonds) feraient prendre le runtime total.
-  const bottomSegments = plan.segments
-    .filter(s => s.startDepthM === s.endDepthM && s.startDepthM >= maxDepthM * BOTTOM_DEPTH_RATIO);
-  const diveTimeMin = bottomSegments.length > 0
-    ? bottomSegments[bottomSegments.length - 1].endTimeMin
-    : 0;
-
+  const firstAscent = plan.segments.find(s => s.startDepthM === maxDepthM && s.endDepthM < s.startDepthM);
+  const diveTimeMin = firstAscent
+    ? firstAscent.startTimeMin
+    : plan.segments[plan.segments.length - 1]?.endTimeMin ?? 0;
   return { maxDepthM, diveTimeMin };
 }
 
